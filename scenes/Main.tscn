@@ -1,10 +1,15 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/entities/Character.tscn" id="1_character"]
 [ext_resource type="PackedScene" path="res://scenes/world/ThornfieldMeadow.tscn" id="2_world"]
+[ext_resource type="Script" path="res://scripts/ui/camera_controller.gd" id="3_camera"]
 
 [node name="Main" type="Node2D"]
 
 [node name="World" parent="." instance=ExtResource("2_world")]
 
 [node name="Character" parent="." instance=ExtResource("1_character")]
+
+[node name="Camera2D" type="Camera2D" parent="."]
+script = ExtResource("3_camera")
+enabled = true
