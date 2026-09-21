@@ -12,3 +12,5 @@ config/features=PackedStringArray("4.6")
 
 [autoload]
 
+GameState="*res://scripts/autoload/game_state.gd"
+
