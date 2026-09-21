@@ -14,6 +14,8 @@ func _ready() -> void:
 	if GameState.character:
 		_on_hp_changed(GameState.character.hp, GameState.character.max_hp)
 		_on_leveled_up(GameState.character.level)
+		_on_xp_changed(GameState.character.xp)
+		_on_equipment_changed(GameState.character.equipped_weapon_id, GameState.character.equipped_armor_id)
 
 func _on_hp_changed(hp: int, max_hp: int) -> void:
 	hp_bar.max_value = max_hp
