@@ -69,4 +69,4 @@ func _drop_loot() -> void:
 	var item := item_scene.instantiate()
 	item.item_id = item_id
 	item.global_position = global_position
-	get_tree().current_scene.add_child(item)
+	get_tree().current_scene.add_child.call_deferred(item)

@@ -6,6 +6,5 @@
 [node name="Main" type="Node2D"]
 
 [node name="World" parent="." instance=ExtResource("2_world")]
-position = Vector2(0, 0)
 
 [node name="Character" parent="." instance=ExtResource("1_character")]

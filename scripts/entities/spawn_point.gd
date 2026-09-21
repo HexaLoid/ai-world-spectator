@@ -11,6 +11,7 @@ extends Node2D
 @export var attack_damage_min_override: int = 0
 @export var attack_damage_max_override: int = 0
 @export var xp_reward_override: int = 0
+@export var aggro_range_override: float = 0.0
 @export var color_override: Color = Color.WHITE
 
 var current_enemy: Node2D = null
@@ -36,6 +37,8 @@ func _spawn() -> void:
 		current_enemy.attack_damage_max = attack_damage_max_override
 	if xp_reward_override > 0:
 		current_enemy.xp_reward = xp_reward_override
+	if aggro_range_override > 0.0:
+		current_enemy.aggro_range = aggro_range_override
 	if color_override != Color.WHITE:
 		# Assumes enemy_scene's root has a child literally named "ColorRect"
 		# (true of Enemy.tscn today) — a rename there would break this silently.
