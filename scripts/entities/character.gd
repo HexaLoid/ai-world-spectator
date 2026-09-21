@@ -21,6 +21,7 @@ var current_state: String = "wander"
 var last_attack_time_ms: int = 0
 var wander_target: Vector2 = Vector2.ZERO
 var rng := RandomNumberGenerator.new()
+var is_dead: bool = false
 
 func _ready() -> void:
 	rng.randomize()
@@ -117,12 +118,15 @@ func _attack_nearest_hostile() -> void:
 	hostile.take_damage(damage)
 
 func take_damage(amount: int) -> void:
+	if is_dead:
+		return
 	hp = max(0, hp - amount)
 	GameState.emit_signal("character_hp_changed", hp, max_hp)
 	if hp <= 0:
 		_die()
 
 func _die() -> void:
+	is_dead = true
 	GameState.log_event("Character died - respawning")
 	visible = false
 	set_physics_process(false)
@@ -131,6 +135,7 @@ func _die() -> void:
 	global_position = RESPAWN_POSITION
 	visible = true
 	set_physics_process(true)
+	is_dead = false
 	GameState.emit_signal("character_hp_changed", hp, max_hp)
 
 func gain_xp(amount: int) -> void:
@@ -160,15 +165,20 @@ func _pickup_item(item: Node2D) -> void:
 		GameState.emit_signal("character_hp_changed", hp, max_hp)
 	elif item_type == "weapon":
 		if LootTable.should_equip(equipped_weapon_id, item_id):
+			var old_bonus: int = int(LootTable.ITEMS.get(equipped_weapon_id, {}).get("damage", 0))
+			var new_bonus: int = int(item_def.get("damage", 0))
+			var delta: int = new_bonus - old_bonus
+			attack_damage_min += delta
+			attack_damage_max += delta
 			equipped_weapon_id = item_id
-			attack_damage_min = int(item_def.get("damage", attack_damage_min))
-			attack_damage_max = attack_damage_min + 4
 			GameState.log_event("Equipped %s" % item_id)
 			GameState.emit_signal("character_equipment_changed", equipped_weapon_id, equipped_armor_id)
 	elif item_type == "armor":
 		if LootTable.should_equip(equipped_armor_id, item_id):
+			var old_bonus: int = int(LootTable.ITEMS.get(equipped_armor_id, {}).get("max_hp", 0))
+			var new_bonus: int = int(item_def.get("max_hp", 0))
+			max_hp += new_bonus - old_bonus
 			equipped_armor_id = item_id
-			max_hp += int(item_def.get("max_hp", 0))
 			GameState.log_event("Equipped %s" % item_id)
 			GameState.emit_signal("character_equipment_changed", equipped_weapon_id, equipped_armor_id)
 	item.queue_free()
