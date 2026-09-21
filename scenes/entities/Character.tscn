@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/entities/character.gd" id="1_chscr"]
+
+[node name="root" type="CharacterBody2D" unique_id=1611882073]
+script = ExtResource("1_chscr")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1482558762]
+position = Vector2(-12, -12)
+size = Vector2(24, 24)
+color = Color(0.2, 0.4, 0.9, 1.0)

@@ -1,0 +1,174 @@
+extends CharacterBody2D
+
+const MOVE_SPEED := 80.0
+const ATTACK_RANGE := 28.0
+const AGGRO_RANGE := 160.0
+const PICKUP_RANGE := 20.0
+const ATTACK_COOLDOWN_MS := 900
+const RESPAWN_DELAY_S := 2.0
+const RESPAWN_POSITION := Vector2(0, 0)
+
+@export var max_hp: int = 60
+@export var hp: int = 60
+@export var level: int = 1
+@export var xp: int = 0
+@export var attack_damage_min: int = 4
+@export var attack_damage_max: int = 8
+
+var equipped_weapon_id: String = ""
+var equipped_armor_id: String = ""
+var current_state: String = "wander"
+var last_attack_time_ms: int = 0
+var wander_target: Vector2 = Vector2.ZERO
+var rng := RandomNumberGenerator.new()
+
+func _ready() -> void:
+	rng.randomize()
+	wander_target = global_position
+	GameState.character = self
+
+func _physics_process(delta: float) -> void:
+	if hp <= 0:
+		return
+	var context := _build_context()
+	var decision := AIDecision.resolve_state(context)
+	var new_state: String = decision["state"]
+	if new_state != current_state:
+		current_state = new_state
+		GameState.log_event(decision["reason"])
+		GameState.emit_signal("character_state_changed", current_state)
+	_act(delta, context)
+
+func _build_context() -> Dictionary:
+	var nearest_hostile := _find_nearest_in_group("enemies")
+	var nearest_item := _find_nearest_in_group("items")
+	var context := {
+		"hp_percent": float(hp) / float(max_hp),
+		"hostile_in_attack_range": false,
+		"hostile_in_aggro_range": false,
+		"hostile_name": "",
+		"item_nearby": false,
+	}
+	if nearest_hostile:
+		var dist := global_position.distance_to(nearest_hostile.global_position)
+		context["hostile_in_attack_range"] = dist <= ATTACK_RANGE
+		context["hostile_in_aggro_range"] = dist <= AGGRO_RANGE
+		context["hostile_name"] = nearest_hostile.enemy_name
+	if nearest_item:
+		var item_dist := global_position.distance_to(nearest_item.global_position)
+		context["item_nearby"] = item_dist <= AGGRO_RANGE
+	return context
+
+func _find_nearest_in_group(group_name: String) -> Node2D:
+	var nodes := get_tree().get_nodes_in_group(group_name)
+	var nearest: Node2D = null
+	var nearest_dist := INF
+	for node in nodes:
+		if not is_instance_valid(node):
+			continue
+		var d := global_position.distance_to(node.global_position)
+		if d < nearest_dist:
+			nearest_dist = d
+			nearest = node
+	return nearest
+
+func _act(delta: float, context: Dictionary) -> void:
+	match current_state:
+		"flee":
+			var hostile := _find_nearest_in_group("enemies")
+			if hostile:
+				velocity = (global_position - hostile.global_position).normalized() * MOVE_SPEED
+				move_and_slide()
+		"rest":
+			velocity = Vector2.ZERO
+			hp = min(max_hp, hp + 1)
+		"combat":
+			velocity = Vector2.ZERO
+			_attack_nearest_hostile()
+		"chase":
+			var hostile := _find_nearest_in_group("enemies")
+			if hostile:
+				velocity = (hostile.global_position - global_position).normalized() * MOVE_SPEED
+				move_and_slide()
+		"loot":
+			var item := _find_nearest_in_group("items")
+			if item:
+				var to_item := item.global_position - global_position
+				if to_item.length() <= PICKUP_RANGE:
+					_pickup_item(item)
+				else:
+					velocity = to_item.normalized() * MOVE_SPEED
+					move_and_slide()
+		"wander":
+			if global_position.distance_to(wander_target) < 8.0:
+				wander_target = global_position + Vector2(rng.randf_range(-100, 100), rng.randf_range(-100, 100))
+			velocity = (wander_target - global_position).normalized() * MOVE_SPEED * 0.5
+			move_and_slide()
+
+func _attack_nearest_hostile() -> void:
+	var now := Time.get_ticks_msec()
+	if not CombatSystem.is_off_cooldown(last_attack_time_ms, ATTACK_COOLDOWN_MS, now):
+		return
+	var hostile := _find_nearest_in_group("enemies")
+	if hostile == null:
+		return
+	last_attack_time_ms = now
+	var damage := CombatSystem.roll_damage(attack_damage_min, attack_damage_max, rng)
+	hostile.take_damage(damage)
+
+func take_damage(amount: int) -> void:
+	hp = max(0, hp - amount)
+	GameState.emit_signal("character_hp_changed", hp, max_hp)
+	if hp <= 0:
+		_die()
+
+func _die() -> void:
+	GameState.log_event("Character died - respawning")
+	visible = false
+	set_physics_process(false)
+	await get_tree().create_timer(RESPAWN_DELAY_S).timeout
+	hp = max_hp
+	global_position = RESPAWN_POSITION
+	visible = true
+	set_physics_process(true)
+	GameState.emit_signal("character_hp_changed", hp, max_hp)
+
+func gain_xp(amount: int) -> void:
+	var result := LevelingSystem.apply_xp(level, xp, amount)
+	level = result["level"]
+	xp = result["xp"]
+	if result["leveled_up"]:
+		max_hp += result["hp_bonus"]
+		hp += result["hp_bonus"]
+		attack_damage_min += result["damage_bonus"]
+		attack_damage_max += result["damage_bonus"]
+		GameState.log_event("Leveled up to %d!" % level)
+		GameState.emit_signal("character_leveled_up", level)
+	GameState.emit_signal("character_xp_changed", xp)
+
+func take_kill_credit(enemy_name: String, xp_reward: int) -> void:
+	GameState.log_event("Defeated %s" % enemy_name)
+	gain_xp(xp_reward)
+
+func _pickup_item(item: Node2D) -> void:
+	var item_id: String = item.item_id
+	var item_def: Dictionary = LootTable.ITEMS.get(item_id, {})
+	var item_type: String = item_def.get("type", "")
+	if item_type == "consumable":
+		hp = min(max_hp, hp + int(item_def.get("heal", 0)))
+		GameState.log_event("Used %s" % item_id)
+		GameState.emit_signal("character_hp_changed", hp, max_hp)
+	elif item_type == "weapon":
+		if LootTable.should_equip(equipped_weapon_id, item_id):
+			equipped_weapon_id = item_id
+			attack_damage_min = int(item_def.get("damage", attack_damage_min))
+			attack_damage_max = attack_damage_min + 4
+			GameState.log_event("Equipped %s" % item_id)
+			GameState.emit_signal("character_equipment_changed", equipped_weapon_id, equipped_armor_id)
+	elif item_type == "armor":
+		if LootTable.should_equip(equipped_armor_id, item_id):
+			equipped_armor_id = item_id
+			max_hp += int(item_def.get("max_hp", 0))
+			GameState.log_event("Equipped %s" % item_id)
+			GameState.emit_signal("character_equipment_changed", equipped_weapon_id, equipped_armor_id)
+	item.queue_free()
