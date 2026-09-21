@@ -1,0 +1,30 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/unit_frame.gd" id="1_unitframe"]
+
+[node name="SpectatorUI" type="CanvasLayer"]
+
+[node name="UnitFrame" type="Control" parent="."]
+script = ExtResource("1_unitframe")
+position = Vector2(16, 16)
+size = Vector2(220, 110)
+
+[node name="HPBar" type="ProgressBar" parent="UnitFrame"]
+position = Vector2(0, 0)
+size = Vector2(200, 20)
+
+[node name="LevelLabel" type="Label" parent="UnitFrame"]
+position = Vector2(0, 24)
+text = "Level 1"
+
+[node name="XPBar" type="ProgressBar" parent="UnitFrame"]
+position = Vector2(0, 48)
+size = Vector2(200, 12)
+
+[node name="WeaponLabel" type="Label" parent="UnitFrame"]
+position = Vector2(0, 66)
+text = "Weapon: None"
+
+[node name="ArmorLabel" type="Label" parent="UnitFrame"]
+position = Vector2(0, 88)
+text = "Armor: None"
