@@ -40,7 +40,7 @@ func _spawn() -> void:
 		# Assumes enemy_scene's root has a child literally named "ColorRect"
 		# (true of Enemy.tscn today) — a rename there would break this silently.
 		current_enemy.get_node("ColorRect").color = color_override
-	get_tree().current_scene.add_child(current_enemy)
+	get_tree().current_scene.add_child.call_deferred(current_enemy)
 
 func on_enemy_died() -> void:
 	current_enemy = null
