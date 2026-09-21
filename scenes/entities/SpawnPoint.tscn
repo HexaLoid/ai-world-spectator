@@ -2,5 +2,5 @@
 
 [ext_resource type="Script" path="res://scripts/entities/spawn_point.gd" id="1_xqid7"]
 
-[node name="root" type="Node2D" unique_id=1626872407]
+[node name="root" type="Node2D"]
 script = ExtResource("1_xqid7")

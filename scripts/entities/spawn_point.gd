@@ -1,5 +1,8 @@
 extends Node2D
 
+## Sentinel-value overrides: 0 / "" / Color.WHITE all mean "don't override the
+## enemy's default for this field." There's currently no way to force an
+## override TO zero/empty/white — acceptable for v1's fixed 2-enemy-type scope.
 @export var enemy_scene: PackedScene
 @export var respawn_delay_s: float = 8.0
 @export var enemy_name_override: String = ""
@@ -34,6 +37,8 @@ func _spawn() -> void:
 	if xp_reward_override > 0:
 		current_enemy.xp_reward = xp_reward_override
 	if color_override != Color.WHITE:
+		# Assumes enemy_scene's root has a child literally named "ColorRect"
+		# (true of Enemy.tscn today) — a rename there would break this silently.
 		current_enemy.get_node("ColorRect").color = color_override
 	get_tree().current_scene.add_child(current_enemy)
 
