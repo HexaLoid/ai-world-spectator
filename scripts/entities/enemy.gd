@@ -14,6 +14,7 @@ var hp: int
 var last_attack_time_ms: int = 0
 var rng := RandomNumberGenerator.new()
 var spawn_point: Node2D = null
+var is_dead: bool = false
 
 func _ready() -> void:
 	hp = max_hp
@@ -37,7 +38,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		velocity = Vector2.ZERO
 
-func _attack(character: Node) -> void:
+func _attack(character: Node2D) -> void:
 	var now := Time.get_ticks_msec()
 	if not CombatSystem.is_off_cooldown(last_attack_time_ms, attack_cooldown_ms, now):
 		return
@@ -46,11 +47,14 @@ func _attack(character: Node) -> void:
 	character.take_damage(damage)
 
 func take_damage(amount: int) -> void:
+	if is_dead:
+		return
 	hp = max(0, hp - amount)
 	if hp <= 0:
 		_die()
 
 func _die() -> void:
+	is_dead = true
 	var character := GameState.character
 	if character and is_instance_valid(character):
 		character.take_kill_credit(enemy_name, xp_reward)
