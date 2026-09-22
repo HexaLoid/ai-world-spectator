@@ -114,6 +114,7 @@ func _find_nearest_in_group(group_name: String) -> Node2D:
 
 func _act(delta: float, context: Dictionary) -> void:
 	var base_anim := "idle"
+	var combat_hostile: Node2D = null
 	match current_state:
 		"flee":
 			var hostile := _find_nearest_in_group("enemies")
@@ -129,6 +130,7 @@ func _act(delta: float, context: Dictionary) -> void:
 				hp_regen_accumulator -= 1.0
 		"combat":
 			velocity = Vector2.ZERO
+			combat_hostile = _find_nearest_in_group("enemies")
 			_attack_nearest_hostile()
 		"chase":
 			var hostile := _find_nearest_in_group("enemies")
@@ -153,6 +155,8 @@ func _act(delta: float, context: Dictionary) -> void:
 			move_and_slide()
 			base_anim = "walk"
 	var facing := _facing_from_velocity(velocity)
+	if combat_hostile:
+		facing = _facing_from_velocity(combat_hostile.global_position - global_position)
 	if game_time_ms < attack_anim_until_ms:
 		base_anim = "slash"
 	_play_animation(base_anim, facing)

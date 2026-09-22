@@ -47,6 +47,8 @@ func _physics_process(delta: float) -> void:
 	else:
 		velocity = Vector2.ZERO
 	var facing := _facing_from_velocity(velocity)
+	if dist <= attack_range:
+		facing = _facing_from_velocity(character.global_position - global_position)
 	var base_anim := "idle" if velocity.length() < 1.0 else "walk"
 	if game_time_ms < attack_anim_until_ms:
 		base_anim = "combat"
