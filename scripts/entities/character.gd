@@ -55,13 +55,16 @@ func _facing_from_velocity(vel: Vector2) -> String:
 		return "right" if vel.x > 0.0 else "left"
 	return "down" if vel.y > 0.0 else "up"
 
-func _play_animation(base: String, facing: String) -> void:
+func _play_animation(base_anim: String, facing: String) -> void:
 	if sprite.sprite_frames == null:
 		return
-	var anim_name := base + "_" + facing
+	var anim_name := base_anim + "_" + facing
 	var mirrored := false
 	if not sprite.sprite_frames.has_animation(anim_name):
-		var fallback := base + "_right"
+		# Sheets without a dedicated up/down pose (e.g. the Wolf) only have a
+		# "_right" animation; mirror it via flip_h for left, but up/down just
+		# reuse the right-facing pose unmirrored since there's no better option.
+		var fallback := base_anim + "_right"
 		if not sprite.sprite_frames.has_animation(fallback):
 			return
 		anim_name = fallback
@@ -110,12 +113,14 @@ func _find_nearest_in_group(group_name: String) -> Node2D:
 	return nearest
 
 func _act(delta: float, context: Dictionary) -> void:
+	var base_anim := "idle"
 	match current_state:
 		"flee":
 			var hostile := _find_nearest_in_group("enemies")
 			if hostile:
 				velocity = (global_position - hostile.global_position).normalized() * MOVE_SPEED
 				move_and_slide()
+			base_anim = "run"
 		"rest":
 			velocity = Vector2.ZERO
 			hp_regen_accumulator += HP_REGEN_PER_SECOND * delta
@@ -130,6 +135,7 @@ func _act(delta: float, context: Dictionary) -> void:
 			if hostile:
 				velocity = (hostile.global_position - global_position).normalized() * MOVE_SPEED
 				move_and_slide()
+			base_anim = "run"
 		"loot":
 			var item := _find_nearest_in_group("items")
 			if item:
@@ -139,22 +145,14 @@ func _act(delta: float, context: Dictionary) -> void:
 				else:
 					velocity = to_item.normalized() * MOVE_SPEED
 					move_and_slide()
+			base_anim = "walk"
 		"wander":
 			if global_position.distance_to(wander_target) < 8.0:
 				wander_target = global_position + Vector2(rng.randf_range(-100, 100), rng.randf_range(-100, 100))
 			velocity = (wander_target - global_position).normalized() * MOVE_SPEED * 0.5
 			move_and_slide()
-	var facing := _facing_from_velocity(velocity)
-	var base_anim := "idle"
-	match current_state:
-		"wander", "loot":
 			base_anim = "walk"
-		"chase", "flee":
-			base_anim = "run"
-		"combat":
-			base_anim = "idle"
-		"rest":
-			base_anim = "idle"
+	var facing := _facing_from_velocity(velocity)
 	if game_time_ms < attack_anim_until_ms:
 		base_anim = "slash"
 	_play_animation(base_anim, facing)
