@@ -12,7 +12,7 @@ extends Node2D
 @export var attack_damage_max_override: int = 0
 @export var xp_reward_override: int = 0
 @export var aggro_range_override: float = 0.0
-@export var color_override: Color = Color.WHITE
+@export var sprite_frames_override: SpriteFrames = null
 
 var current_enemy: Node2D = null
 
@@ -39,11 +39,8 @@ func _spawn() -> void:
 		current_enemy.xp_reward = xp_reward_override
 	if aggro_range_override > 0.0:
 		current_enemy.aggro_range = aggro_range_override
-	if color_override != Color.WHITE and current_enemy.has_node("ColorRect"):
-		# Enemy.tscn no longer has a ColorRect (real sprites replaced it) —
-		# guard skips the override rather than crashing until Task 6 replaces
-		# this whole mechanism with sprite_frames_override.
-		current_enemy.get_node("ColorRect").color = color_override
+	if sprite_frames_override != null:
+		current_enemy.get_node("AnimatedSprite2D").sprite_frames = sprite_frames_override
 	get_tree().current_scene.add_child.call_deferred(current_enemy)
 
 func on_enemy_died() -> void:
