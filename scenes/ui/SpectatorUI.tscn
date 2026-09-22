@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/unit_frame.gd" id="1_unitframe"]
 [ext_resource type="Script" path="res://scripts/ui/activity_log.gd" id="2_activitylog"]
+[ext_resource type="Script" path="res://scripts/ui/speed_control.gd" id="3_speedcontrol"]
 
 [node name="SpectatorUI" type="CanvasLayer"]
 
@@ -38,3 +39,22 @@ size = Vector2(320, 160)
 [node name="LogList" type="ItemList" parent="ActivityLog"]
 position = Vector2(0, 0)
 size = Vector2(320, 160)
+
+[node name="SpeedControl" type="HBoxContainer" parent="."]
+script = ExtResource("3_speedcontrol")
+position = Vector2(500, 16)
+
+[node name="PauseButton" type="Button" parent="SpeedControl"]
+text = "Pause"
+
+[node name="Speed1Button" type="Button" parent="SpeedControl"]
+text = "1x"
+
+[node name="Speed2Button" type="Button" parent="SpeedControl"]
+text = "2x"
+
+[node name="Speed4Button" type="Button" parent="SpeedControl"]
+text = "4x"
+
+[node name="RecenterButton" type="Button" parent="SpeedControl"]
+text = "Recenter"
