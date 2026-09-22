@@ -8,6 +8,8 @@ const ATTACK_COOLDOWN_MS := 900
 const RESPAWN_DELAY_S := 2.0
 const RESPAWN_POSITION := Vector2(0, 0)
 const HP_REGEN_PER_SECOND := 3.0
+const TARGET_SPRITE_SIZE := 40.0
+const ATTACK_ANIM_DURATION_MS := 400.0
 
 @export var max_hp: int = 60
 @export var hp: int = 60
@@ -25,6 +27,8 @@ var rng := RandomNumberGenerator.new()
 var is_dead: bool = false
 var game_time_ms: float = 0.0
 var hp_regen_accumulator: float = 0.0
+@onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
+var attack_anim_until_ms: float = 0.0
 
 func _ready() -> void:
 	rng.randomize()
@@ -43,6 +47,34 @@ func _physics_process(delta: float) -> void:
 		GameState.log_event(decision["reason"])
 		GameState.emit_signal("character_state_changed", current_state)
 	_act(delta, context)
+
+func _facing_from_velocity(vel: Vector2) -> String:
+	if vel.length() < 1.0:
+		return "down"
+	if abs(vel.x) > abs(vel.y):
+		return "right" if vel.x > 0.0 else "left"
+	return "down" if vel.y > 0.0 else "up"
+
+func _play_animation(base: String, facing: String) -> void:
+	if sprite.sprite_frames == null:
+		return
+	var anim_name := base + "_" + facing
+	var mirrored := false
+	if not sprite.sprite_frames.has_animation(anim_name):
+		var fallback := base + "_right"
+		if not sprite.sprite_frames.has_animation(fallback):
+			return
+		anim_name = fallback
+		mirrored = facing == "left"
+	sprite.flip_h = mirrored
+	if sprite.animation != anim_name or not sprite.is_playing():
+		sprite.play(anim_name)
+	var first_frame := sprite.sprite_frames.get_frame_texture(anim_name, 0)
+	if first_frame:
+		var native_size: Vector2 = first_frame.get_size()
+		if native_size.x > 0.0 and native_size.y > 0.0:
+			var s: float = TARGET_SPRITE_SIZE / max(native_size.x, native_size.y)
+			sprite.scale = Vector2(s, s)
 
 func _build_context() -> Dictionary:
 	var nearest_hostile := _find_nearest_in_group("enemies")
@@ -112,6 +144,20 @@ func _act(delta: float, context: Dictionary) -> void:
 				wander_target = global_position + Vector2(rng.randf_range(-100, 100), rng.randf_range(-100, 100))
 			velocity = (wander_target - global_position).normalized() * MOVE_SPEED * 0.5
 			move_and_slide()
+	var facing := _facing_from_velocity(velocity)
+	var base_anim := "idle"
+	match current_state:
+		"wander", "loot":
+			base_anim = "walk"
+		"chase", "flee":
+			base_anim = "run"
+		"combat":
+			base_anim = "idle"
+		"rest":
+			base_anim = "idle"
+	if game_time_ms < attack_anim_until_ms:
+		base_anim = "slash"
+	_play_animation(base_anim, facing)
 
 func _attack_nearest_hostile() -> void:
 	var now := int(game_time_ms)
@@ -123,6 +169,7 @@ func _attack_nearest_hostile() -> void:
 	last_attack_time_ms = now
 	var damage := CombatSystem.roll_damage(attack_damage_min, attack_damage_max, rng)
 	hostile.take_damage(damage)
+	attack_anim_until_ms = game_time_ms + ATTACK_ANIM_DURATION_MS
 
 func take_damage(amount: int) -> void:
 	if is_dead:
