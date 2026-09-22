@@ -7,6 +7,7 @@ const PICKUP_RANGE := 20.0
 const ATTACK_COOLDOWN_MS := 900
 const RESPAWN_DELAY_S := 2.0
 const RESPAWN_POSITION := Vector2(0, 0)
+const HP_REGEN_PER_SECOND := 3.0
 
 @export var max_hp: int = 60
 @export var hp: int = 60
@@ -22,6 +23,8 @@ var last_attack_time_ms: int = 0
 var wander_target: Vector2 = Vector2.ZERO
 var rng := RandomNumberGenerator.new()
 var is_dead: bool = false
+var game_time_ms: float = 0.0
+var hp_regen_accumulator: float = 0.0
 
 func _ready() -> void:
 	rng.randomize()
@@ -29,6 +32,7 @@ func _ready() -> void:
 	GameState.character = self
 
 func _physics_process(delta: float) -> void:
+	game_time_ms += delta * 1000.0
 	if hp <= 0:
 		return
 	var context := _build_context()
@@ -82,7 +86,10 @@ func _act(delta: float, context: Dictionary) -> void:
 				move_and_slide()
 		"rest":
 			velocity = Vector2.ZERO
-			hp = min(max_hp, hp + 1)
+			hp_regen_accumulator += HP_REGEN_PER_SECOND * delta
+			while hp_regen_accumulator >= 1.0 and hp < max_hp:
+				hp += 1
+				hp_regen_accumulator -= 1.0
 		"combat":
 			velocity = Vector2.ZERO
 			_attack_nearest_hostile()
@@ -107,7 +114,7 @@ func _act(delta: float, context: Dictionary) -> void:
 			move_and_slide()
 
 func _attack_nearest_hostile() -> void:
-	var now := Time.get_ticks_msec()
+	var now := int(game_time_ms)
 	if not CombatSystem.is_off_cooldown(last_attack_time_ms, ATTACK_COOLDOWN_MS, now):
 		return
 	var hostile := _find_nearest_in_group("enemies")
