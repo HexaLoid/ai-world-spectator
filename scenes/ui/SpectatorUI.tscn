@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/unit_frame.gd" id="1_unitframe"]
+[ext_resource type="Script" path="res://scripts/ui/activity_log.gd" id="2_activitylog"]
 
 [node name="SpectatorUI" type="CanvasLayer"]
 
@@ -28,3 +29,12 @@ text = "Weapon: None"
 [node name="ArmorLabel" type="Label" parent="UnitFrame"]
 position = Vector2(0, 88)
 text = "Armor: None"
+
+[node name="ActivityLog" type="Control" parent="."]
+script = ExtResource("2_activitylog")
+position = Vector2(16, 400)
+size = Vector2(320, 160)
+
+[node name="LogList" type="ItemList" parent="ActivityLog"]
+position = Vector2(0, 0)
+size = Vector2(320, 160)
