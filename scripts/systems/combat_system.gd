@@ -8,7 +8,8 @@ static func roll_damage(min_damage: int, max_damage: int, rng: RandomNumberGener
 	return rng.randi_range(min_damage, max_damage)
 
 ## Returns true once cooldown_ms have elapsed since last_attack_time_ms, given the
-## current time now_ms. Callers pass Time.get_ticks_msec() for now_ms/last_attack_time_ms,
-## which is monotonic for the lifetime of the process.
+## current time now_ms. Callers pass a per-entity, Engine.time_scale-aware game-time
+## accumulator (see Character/Enemy's game_time_ms) for now_ms/last_attack_time_ms, not
+## Time.get_ticks_msec() — that would ignore pause/speed controls.
 static func is_off_cooldown(last_attack_time_ms: int, cooldown_ms: int, now_ms: int) -> bool:
 	return now_ms - last_attack_time_ms >= cooldown_ms
