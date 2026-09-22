@@ -29,19 +29,19 @@ region = Rect2(0, 0, 64, 64)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_sudwg"]
 atlas = ExtResource("1_gkqm4")
-region = Rect2(320, 0, 64, 64)
+region = Rect2(320, 0, 64, 40)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_bmer2"]
 atlas = ExtResource("1_gkqm4")
-region = Rect2(384, 0, 64, 64)
+region = Rect2(384, 0, 64, 40)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_y6t4h"]
 atlas = ExtResource("1_gkqm4")
-region = Rect2(448, 0, 64, 64)
+region = Rect2(448, 0, 64, 40)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_4nji1"]
 atlas = ExtResource("1_gkqm4")
-region = Rect2(512, 0, 64, 64)
+region = Rect2(512, 0, 64, 40)
 
 [resource]
 animations = [{
