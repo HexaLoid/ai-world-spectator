@@ -35,6 +35,7 @@ func _physics_process(delta: float) -> void:
 	var character := GameState.character
 	if character == null or not is_instance_valid(character):
 		velocity = Vector2.ZERO
+		_play_animation("idle", "down")
 		return
 	var dist := global_position.distance_to(character.global_position)
 	if dist <= attack_range:
