@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/entities/SpawnPoint.tscn" id="1_spawnpoint"]
 [ext_resource type="PackedScene" path="res://scenes/entities/Enemy.tscn" id="2_enemy"]
 [ext_resource type="SpriteFrames" path="res://assets/sprites/wolf/wolf_frames.tres" id="3_wolf_frames"]
 [ext_resource type="SpriteFrames" path="res://assets/sprites/bandit/bandit_frames.tres" id="4_bandit_frames"]
+[ext_resource type="Texture2D" path="res://assets/tiles/tree_pine.png" id="5_tree_pine"]
 
 [node name="ThornfieldMeadow" type="Node2D"]
 
@@ -44,3 +45,59 @@ attack_damage_min_override = 4
 attack_damage_max_override = 8
 xp_reward_override = 35
 sprite_frames_override = ExtResource("4_bandit_frames")
+
+[node name="Tree1" type="Sprite2D" parent="."]
+texture = ExtResource("5_tree_pine")
+position = Vector2(-350, -320)
+
+[node name="Tree2" type="Sprite2D" parent="."]
+texture = ExtResource("5_tree_pine")
+position = Vector2(-150, -320)
+
+[node name="Tree3" type="Sprite2D" parent="."]
+texture = ExtResource("5_tree_pine")
+position = Vector2(150, -320)
+
+[node name="Tree4" type="Sprite2D" parent="."]
+texture = ExtResource("5_tree_pine")
+position = Vector2(350, -320)
+
+[node name="Tree5" type="Sprite2D" parent="."]
+texture = ExtResource("5_tree_pine")
+position = Vector2(-350, 320)
+
+[node name="Tree6" type="Sprite2D" parent="."]
+texture = ExtResource("5_tree_pine")
+position = Vector2(-150, 320)
+
+[node name="Tree7" type="Sprite2D" parent="."]
+texture = ExtResource("5_tree_pine")
+position = Vector2(150, 320)
+
+[node name="Tree8" type="Sprite2D" parent="."]
+texture = ExtResource("5_tree_pine")
+position = Vector2(350, 320)
+
+[node name="Tree9" type="Sprite2D" parent="."]
+texture = ExtResource("5_tree_pine")
+position = Vector2(-420, -200)
+
+[node name="Tree10" type="Sprite2D" parent="."]
+texture = ExtResource("5_tree_pine")
+position = Vector2(-420, 0)
+
+[node name="Tree11" type="Sprite2D" parent="."]
+texture = ExtResource("5_tree_pine")
+position = Vector2(-420, 200)
+
+[node name="Tree12" type="Sprite2D" parent="."]
+texture = ExtResource("5_tree_pine")
+position = Vector2(420, -200)
+
+[node name="Tree13" type="Sprite2D" parent="."]
+texture = ExtResource("5_tree_pine")
+position = Vector2(420, 0)
+
+[node name="Tree14" type="Sprite2D" parent="."]
+texture = ExtResource("5_tree_pine")
+position = Vector2(420, 200)
