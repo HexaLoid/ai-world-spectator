@@ -39,7 +39,7 @@ func _spawn() -> void:
 		current_enemy.xp_reward = xp_reward_override
 	if aggro_range_override > 0.0:
 		current_enemy.aggro_range = aggro_range_override
-	if color_override != Color.WHITE:
+	if color_override != Color.WHITE and current_enemy.has_node("ColorRect"):
 		# Assumes enemy_scene's root has a child literally named "ColorRect"
 		# (true of Enemy.tscn today) — a rename there would break this silently.
 		current_enemy.get_node("ColorRect").color = color_override
