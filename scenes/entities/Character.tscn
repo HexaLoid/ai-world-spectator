@@ -1,11 +1,11 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/entities/character.gd" id="1_chscr"]
+[ext_resource type="SpriteFrames" path="res://assets/sprites/character/character_frames.tres" id="2_frames"]
 
 [node name="root" type="CharacterBody2D"]
 script = ExtResource("1_chscr")
 
-[node name="ColorRect" type="ColorRect" parent="."]
-position = Vector2(-12, -12)
-size = Vector2(24, 24)
-color = Color(0.2, 0.4, 0.9, 1.0)
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = ExtResource("2_frames")
+animation = &"idle_down"
