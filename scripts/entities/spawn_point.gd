@@ -40,8 +40,9 @@ func _spawn() -> void:
 	if aggro_range_override > 0.0:
 		current_enemy.aggro_range = aggro_range_override
 	if color_override != Color.WHITE and current_enemy.has_node("ColorRect"):
-		# Assumes enemy_scene's root has a child literally named "ColorRect"
-		# (true of Enemy.tscn today) — a rename there would break this silently.
+		# Enemy.tscn no longer has a ColorRect (real sprites replaced it) —
+		# guard skips the override rather than crashing until Task 6 replaces
+		# this whole mechanism with sprite_frames_override.
 		current_enemy.get_node("ColorRect").color = color_override
 	get_tree().current_scene.add_child.call_deferred(current_enemy)
 
