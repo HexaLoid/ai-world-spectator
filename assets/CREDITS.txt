@@ -87,8 +87,11 @@ Files: lpc_terrain_atlas.png (primary — grass/farming/vegetation terrain,
 used for the meadow + forest-edge border), lpc_base_out_atlas.png
 (secondary — LPC "outside" building/structure tiles, not required by the
 current design but bundled from the same source in case walls/props are
-needed later), Attribution.txt (full original attribution file as shipped
-in the source zip)
+needed later), tree_pine.png (a single tree cropped from
+lpc_terrain_atlas.png's region (960,0,64,160), used for the meadow's
+tree-line border — same source/author/license as the atlas below),
+Attribution.txt (full original attribution file as shipped in the
+source zip)
 Source: "LPC Tile Atlas" on OpenGameArt.org
         https://opengameart.org/content/lpc-tile-atlas
 Submitted by: adrix89 (compiler/packer of the atlas)
