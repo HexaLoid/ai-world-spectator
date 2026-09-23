@@ -1,8 +1,8 @@
 extends Node2D
 
-## Sentinel-value overrides: 0 / "" / Color.WHITE all mean "don't override the
-## enemy's default for this field." There's currently no way to force an
-## override TO zero/empty/white — acceptable for v1's fixed 2-enemy-type scope.
+## Sentinel-value overrides: 0 / "" all mean "don't override the enemy's
+## default for this field." There's currently no way to force an override TO
+## zero/empty — acceptable for v1's fixed 2-enemy-type scope.
 @export var enemy_scene: PackedScene
 @export var respawn_delay_s: float = 8.0
 @export var enemy_name_override: String = ""
