@@ -103,6 +103,7 @@ func take_damage(amount: int) -> void:
 	if is_dead:
 		return
 	hp = max(0, hp - amount)
+	GameState.emit_signal("damage_dealt", global_position, amount, false)
 	if hp <= 0:
 		_die()
 

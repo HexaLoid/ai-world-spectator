@@ -178,6 +178,7 @@ func take_damage(amount: int) -> void:
 		return
 	hp = max(0, hp - amount)
 	GameState.emit_signal("character_hp_changed", hp, max_hp)
+	GameState.emit_signal("damage_dealt", global_position, amount, false)
 	if hp <= 0:
 		_die()
 
@@ -218,9 +219,13 @@ func _pickup_item(item: Node2D) -> void:
 	var item_def: Dictionary = LootTable.ITEMS.get(item_id, {})
 	var item_type: String = item_def.get("type", "")
 	if item_type == "consumable":
+		var old_hp := hp
 		hp = min(max_hp, hp + int(item_def.get("heal", 0)))
+		var healed := hp - old_hp
 		GameState.log_event("Used %s" % item_id)
 		GameState.emit_signal("character_hp_changed", hp, max_hp)
+		if healed > 0:
+			GameState.emit_signal("damage_dealt", global_position, healed, true)
 	elif item_type == "weapon":
 		if LootTable.should_equip(equipped_weapon_id, item_id):
 			var old_bonus: int = int(LootTable.ITEMS.get(equipped_weapon_id, {}).get("damage", 0))

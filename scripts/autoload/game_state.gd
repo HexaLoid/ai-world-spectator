@@ -16,6 +16,11 @@ signal character_equipment_changed(weapon_id: String, armor_id: String)
 ## Emitted for every logged activity event; message is the human-readable
 ## text describing what happened, for the spectator UI's activity feed.
 signal activity_logged(message: String)
+## Emitted whenever damage is dealt or healing is applied, so the UI can
+## spawn a floating number at the location; position is the world position
+## to spawn it at, amount is the value (always positive), is_heal
+## distinguishes healing (green) from damage (red).
+signal damage_dealt(position: Vector2, amount: int, is_heal: bool)
 
 var character: Node2D = null
 var camera: Camera2D = null
