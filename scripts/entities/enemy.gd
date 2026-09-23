@@ -51,7 +51,7 @@ func _physics_process(delta: float) -> void:
 		facing = _facing_from_velocity(character.global_position - global_position)
 	var base_anim := "idle" if velocity.length() < 1.0 else "walk"
 	if game_time_ms < attack_anim_until_ms:
-		base_anim = "combat"
+		base_anim = "slash"
 	_play_animation(base_anim, facing)
 
 func _facing_from_velocity(vel: Vector2) -> String:
@@ -71,7 +71,13 @@ func _play_animation(base_anim: String, facing: String) -> void:
 		# flip_h for left, but reuse it unmirrored for up/down — there's no better option.
 		var fallback := base_anim + "_right"
 		if not sprite.sprite_frames.has_animation(fallback):
-			return
+			# The Wolf's attack animation predates the LPC "slash" naming used by
+			# Bandit/Character and is still named "combat_right" in its SpriteFrames.
+			# Fall back to that legacy alias before giving up.
+			if base_anim == "slash" and sprite.sprite_frames.has_animation("combat_right"):
+				fallback = "combat_right"
+			else:
+				return
 		anim_name = fallback
 		mirrored = facing == "left"
 	sprite.flip_h = mirrored
