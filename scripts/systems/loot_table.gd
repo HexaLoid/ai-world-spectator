@@ -6,10 +6,10 @@ extends RefCounted
 ## consumables carry a "heal" amount. Callers read these fields directly (see
 ## Character._pickup_item in Task 7).
 const ITEMS := {
-	"rusty_sword": {"type": "weapon", "damage": 4},
-	"iron_sword": {"type": "weapon", "damage": 7},
-	"leather_armor": {"type": "armor", "max_hp": 15},
-	"health_potion": {"type": "consumable", "heal": 20},
+	"rusty_sword": {"type": "weapon", "damage": 4, "icon": "res://assets/icons/sword_rusty_icon.png"},
+	"iron_sword": {"type": "weapon", "damage": 7, "icon": "res://assets/icons/sword_iron_icon.png"},
+	"leather_armor": {"type": "armor", "max_hp": 15, "icon": "res://assets/icons/armor_icon.png"},
+	"health_potion": {"type": "consumable", "heal": 20, "icon": "res://assets/icons/potion_icon.png"},
 }
 
 ## Picks a random item key from ITEMS using the given rng. Uniform across all items.

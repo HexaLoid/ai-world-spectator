@@ -3,7 +3,9 @@ extends Control
 @onready var hp_bar: ProgressBar = $HPBar
 @onready var level_label: Label = $LevelLabel
 @onready var xp_bar: ProgressBar = $XPBar
+@onready var weapon_icon: TextureRect = $WeaponIcon
 @onready var weapon_label: Label = $WeaponLabel
+@onready var armor_icon: TextureRect = $ArmorIcon
 @onready var armor_label: Label = $ArmorLabel
 
 func _ready() -> void:
@@ -33,4 +35,6 @@ func _on_leveled_up(level: int) -> void:
 
 func _on_equipment_changed(weapon_id: String, armor_id: String) -> void:
 	weapon_label.text = "Weapon: %s" % (weapon_id if weapon_id != "" else "None")
+	weapon_icon.texture = load(LootTable.ITEMS[weapon_id]["icon"]) if weapon_id != "" else null
 	armor_label.text = "Armor: %s" % (armor_id if armor_id != "" else "None")
+	armor_icon.texture = load(LootTable.ITEMS[armor_id]["icon"]) if armor_id != "" else null
