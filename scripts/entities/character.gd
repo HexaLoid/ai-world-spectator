@@ -257,6 +257,8 @@ func _pickup_item(item: Node2D) -> void:
 			equipped_weapon_id = item_id
 			GameState.log_event("Equipped %s" % item_id)
 			GameState.emit_signal("character_equipment_changed", equipped_weapon_id, equipped_armor_id)
+		else:
+			GameState.log_event("Found %s - current gear is better" % item_id)
 	elif item_type == "armor":
 		if LootTable.should_equip(equipped_armor_id, item_id):
 			var old_bonus: int = int(LootTable.ITEMS.get(equipped_armor_id, {}).get("max_hp", 0))
@@ -266,4 +268,6 @@ func _pickup_item(item: Node2D) -> void:
 			GameState.log_event("Equipped %s" % item_id)
 			GameState.emit_signal("character_equipment_changed", equipped_weapon_id, equipped_armor_id)
 			GameState.emit_signal("character_hp_changed", hp, max_hp)
+		else:
+			GameState.log_event("Found %s - current gear is better" % item_id)
 	item.queue_free()
