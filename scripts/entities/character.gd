@@ -189,6 +189,7 @@ func _die() -> void:
 	await get_tree().create_timer(RESPAWN_DELAY_S).timeout
 	hp = max_hp
 	global_position = RESPAWN_POSITION
+	wander_target = RESPAWN_POSITION
 	visible = true
 	set_physics_process(true)
 	is_dead = false
