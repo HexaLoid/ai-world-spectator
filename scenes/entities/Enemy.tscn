@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/entities/enemy.gd" id="1_enscr"]
 [ext_resource type="SpriteFrames" path="res://assets/sprites/wolf/wolf_frames.tres" id="2_frames"]
+[ext_resource type="Script" path="res://scripts/ui/enemy_health_bar.gd" id="3_healthbar"]
 
 [node name="Enemy" type="CharacterBody2D"]
 script = ExtResource("1_enscr")
@@ -9,3 +10,10 @@ script = ExtResource("1_enscr")
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = ExtResource("2_frames")
 animation = &"idle_right"
+
+[node name="EnemyHealthBar" type="ProgressBar" parent="."]
+script = ExtResource("3_healthbar")
+position = Vector2(-16, -30)
+size = Vector2(32, 6)
+show_percentage = false
+visible = false

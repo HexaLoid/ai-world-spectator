@@ -21,6 +21,11 @@ signal activity_logged(message: String)
 ## to spawn it at, amount is the value (always positive), is_heal
 ## distinguishes healing (green) from damage (red).
 signal damage_dealt(position: Vector2, amount: int, is_heal: bool)
+## Emitted whenever the character's current combat target changes (or
+## becomes/stops being null); target is the Enemy node being fought, or
+## null if not currently in combat. Enemy health bars listen to this to
+## decide whether to show themselves.
+signal combat_target_changed(target: Node2D)
 
 var character: Node2D = null
 var camera: Camera2D = null

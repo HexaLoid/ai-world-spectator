@@ -21,12 +21,15 @@ var is_dead: bool = false
 var game_time_ms: float = 0.0
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var health_bar: ProgressBar = $EnemyHealthBar
 var attack_anim_until_ms: float = 0.0
 
 func _ready() -> void:
 	hp = max_hp
 	rng.randomize()
 	add_to_group("enemies")
+	health_bar.max_value = max_hp
+	health_bar.value = hp
 
 func _physics_process(delta: float) -> void:
 	game_time_ms += delta * 1000.0
@@ -103,6 +106,7 @@ func take_damage(amount: int) -> void:
 	if is_dead:
 		return
 	hp = max(0, hp - amount)
+	health_bar.value = hp
 	GameState.emit_signal("damage_dealt", global_position, amount, false)
 	if hp <= 0:
 		_die()
