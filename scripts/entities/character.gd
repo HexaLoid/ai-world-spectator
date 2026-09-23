@@ -206,6 +206,7 @@ func gain_xp(amount: int) -> void:
 		attack_damage_max += result["damage_bonus"]
 		GameState.log_event("Leveled up to %d!" % level)
 		GameState.emit_signal("character_leveled_up", level)
+		GameState.emit_signal("character_hp_changed", hp, max_hp)
 	GameState.emit_signal("character_xp_changed", xp)
 
 func take_kill_credit(enemy_name: String, xp_reward: int) -> void:
@@ -238,4 +239,5 @@ func _pickup_item(item: Node2D) -> void:
 			equipped_armor_id = item_id
 			GameState.log_event("Equipped %s" % item_id)
 			GameState.emit_signal("character_equipment_changed", equipped_weapon_id, equipped_armor_id)
+			GameState.emit_signal("character_hp_changed", hp, max_hp)
 	item.queue_free()
