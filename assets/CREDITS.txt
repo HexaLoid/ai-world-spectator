@@ -108,11 +108,34 @@ Detail file: assets/tiles/Attribution.txt (full original, ~140 lines,
 lists every source tileset and its author)
 
 ------------------------------------------------------------
+5. HUD ICONS — assets/icons/
+------------------------------------------------------------
+Files: sword_rusty_icon.png, sword_iron_icon.png (equipment icons for the
+"rusty_sword"/"iron_sword" weapon items), armor_icon.png (for the
+"leather_armor" item — a shield icon, used as the conventional "defense/
+armor" symbol since the pack has no dedicated body-armor icon),
+potion_icon.png (for the "health_potion" item)
+Source: "Kyrise's Free 16x16 RPG Icon Pack" on OpenGameArt.org
+        https://opengameart.org/content/kyrises-free-16x16-rpg-icon-pack
+Author: Kyrise (https://kyrise.itch.io/)
+License: CC-BY 4.0
+Attribution (per the source page): "Kyrise's Free 16x16 RPG Icon Pack |
+Graphics made by Kyrise: https://kyrise.itch.io/"
+Note: this pack is a separate, non-LPC pixel-art icon set (not
+CC-BY-SA-compatible in the LPC sense, but standalone CC-BY 4.0 — fine to
+use alongside the LPC assets, just requires its own attribution line
+rather than folding into the LPC general notes below). Sourced at the
+32x32 size variant the pack ships (three sizes are provided: 16x16, 32x32,
+48x48); 32x32 was chosen as a good match for the HUD's icon display size
+without upscaling blur.
+
+------------------------------------------------------------
 General notes
 ------------------------------------------------------------
-- All four asset groups trace back to the Liberated Pixel Cup (LPC)
-  project (https://lpc.opengameart.org) and are mutually license-compatible
-  under CC-BY-SA 3.0.
+- The four LPC-sourced asset groups above trace back to the Liberated
+  Pixel Cup (LPC) project (https://lpc.opengameart.org) and are mutually
+  license-compatible under CC-BY-SA 3.0. The HUD icons (group 5) are a
+  separate CC-BY 4.0 source and are credited independently above.
 - Per the CC-BY-SA 3.0 terms: attribution is required (satisfied by this
   file + the detail files it references), and any modified/derivative
   re-release of the *art itself* must remain under a compatible license.
