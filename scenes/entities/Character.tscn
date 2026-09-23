@@ -9,3 +9,11 @@ script = ExtResource("1_chscr")
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = ExtResource("2_frames")
 animation = &"idle_down"
+
+[node name="ActionLabel" type="Label" parent="."]
+offset_left = -40.0
+offset_top = -52.0
+offset_right = 40.0
+offset_bottom = -36.0
+horizontal_alignment = 1
+text = "Wandering"

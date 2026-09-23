@@ -11,6 +11,15 @@ const HP_REGEN_PER_SECOND := 3.0
 const TARGET_SPRITE_SIZE := 40.0
 const ATTACK_ANIM_DURATION_MS := 400.0
 
+const STATE_DISPLAY_NAMES := {
+	"wander": "Wandering",
+	"chase": "Chasing",
+	"combat": "Fighting",
+	"flee": "Fleeing",
+	"loot": "Looting",
+	"rest": "Resting",
+}
+
 @export var max_hp: int = 60
 @export var hp: int = 60
 @export var level: int = 1
@@ -29,6 +38,7 @@ var game_time_ms: float = 0.0
 var hp_regen_accumulator: float = 0.0
 var last_combat_target: Node2D = null
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var action_label: Label = $ActionLabel
 var attack_anim_until_ms: float = 0.0
 
 func _ready() -> void:
@@ -47,6 +57,7 @@ func _physics_process(delta: float) -> void:
 		current_state = new_state
 		GameState.log_event(decision["reason"])
 		GameState.emit_signal("character_state_changed", current_state)
+		action_label.text = STATE_DISPLAY_NAMES.get(current_state, current_state.capitalize())
 	_act(delta, context)
 
 func _facing_from_velocity(vel: Vector2) -> String:
