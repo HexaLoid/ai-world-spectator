@@ -10,6 +10,8 @@ const RESPAWN_POSITION := Vector2(0, 0)
 const HP_REGEN_PER_SECOND := 3.0
 const TARGET_SPRITE_SIZE := 40.0
 const ATTACK_ANIM_DURATION_MS := 400.0
+const MEADOW_MIN := Vector2(-380, -280)
+const MEADOW_MAX := Vector2(380, 280)
 
 const STATE_DISPLAY_NAMES := {
 	"wander": "Wandering",
@@ -163,6 +165,7 @@ func _act(delta: float, context: Dictionary) -> void:
 		"wander":
 			if global_position.distance_to(wander_target) < 8.0:
 				wander_target = global_position + Vector2(rng.randf_range(-100, 100), rng.randf_range(-100, 100))
+				wander_target = wander_target.clamp(MEADOW_MIN, MEADOW_MAX)
 			velocity = (wander_target - global_position).normalized() * MOVE_SPEED * 0.5
 			move_and_slide()
 			base_anim = "walk"
@@ -175,6 +178,7 @@ func _act(delta: float, context: Dictionary) -> void:
 	if game_time_ms < attack_anim_until_ms:
 		base_anim = "slash"
 	_play_animation(base_anim, facing)
+	global_position = global_position.clamp(MEADOW_MIN, MEADOW_MAX)
 
 func _attack_nearest_hostile() -> void:
 	var now := int(game_time_ms)
