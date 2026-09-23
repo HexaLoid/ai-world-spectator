@@ -35,6 +35,8 @@ func _on_leveled_up(level: int) -> void:
 
 func _on_equipment_changed(weapon_id: String, armor_id: String) -> void:
 	weapon_label.text = "Weapon: %s" % (weapon_id if weapon_id != "" else "None")
-	weapon_icon.texture = load(LootTable.ITEMS[weapon_id]["icon"]) if weapon_id != "" else null
+	var weapon_icon_path: String = LootTable.ITEMS.get(weapon_id, {}).get("icon", "")
+	weapon_icon.texture = load(weapon_icon_path) if weapon_icon_path != "" else null
 	armor_label.text = "Armor: %s" % (armor_id if armor_id != "" else "None")
-	armor_icon.texture = load(LootTable.ITEMS[armor_id]["icon"]) if armor_id != "" else null
+	var armor_icon_path: String = LootTable.ITEMS.get(armor_id, {}).get("icon", "")
+	armor_icon.texture = load(armor_icon_path) if armor_icon_path != "" else null
