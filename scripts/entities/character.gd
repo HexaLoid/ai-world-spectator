@@ -10,6 +10,8 @@ const RESPAWN_POSITION := Vector2(0, 0)
 const HP_REGEN_PER_SECOND := 3.0
 const TARGET_SPRITE_SIZE := 40.0
 const ATTACK_ANIM_DURATION_MS := 400.0
+# Inset from ThornfieldMeadow's 800x600 background rect
+# (scenes/world/ThornfieldMeadow.tscn) by 20px on each side.
 const MEADOW_MIN := Vector2(-380, -280)
 const MEADOW_MAX := Vector2(380, 280)
 
