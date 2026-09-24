@@ -1,5 +1,7 @@
 extends Control
 
+const DEFAULT_LABEL_COLOR := Color(0.2, 0.12, 0.05, 1.0)
+
 @onready var hp_bar: ProgressBar = $HPBar
 @onready var level_label: Label = $LevelLabel
 @onready var xp_bar: ProgressBar = $XPBar
@@ -8,6 +10,8 @@ extends Control
 @onready var weapon_label: Label = $WeaponLabel
 @onready var armor_icon: TextureRect = $ArmorIcon
 @onready var armor_label: Label = $ArmorLabel
+@onready var trinket_icon: TextureRect = $TrinketIcon
+@onready var trinket_label: Label = $TrinketLabel
 
 func _ready() -> void:
 	GameState.character_hp_changed.connect(_on_hp_changed)
@@ -20,7 +24,7 @@ func _ready() -> void:
 		_on_leveled_up(GameState.character.level)
 		_on_xp_changed(GameState.character.xp)
 		_on_resource_changed(GameState.character.resource_amount, GameState.character.max_resource)
-		_on_equipment_changed(GameState.character.equipped_weapon_id, GameState.character.equipped_armor_id)
+		_on_equipment_changed(GameState.character.equipped_weapon_id, GameState.character.equipped_armor_id, GameState.character.equipped_trinket_id)
 
 func _on_hp_changed(hp: int, max_hp: int) -> void:
 	hp_bar.max_value = max_hp
@@ -47,10 +51,17 @@ func _on_xp_changed(xp: int) -> void:
 func _on_leveled_up(level: int) -> void:
 	level_label.text = "Level %d" % level
 
-func _on_equipment_changed(weapon_id: String, armor_id: String) -> void:
-	weapon_label.text = "Weapon: %s" % (weapon_id if weapon_id != "" else "None")
-	var weapon_icon_path: String = LootTable.ITEMS.get(weapon_id, {}).get("icon", "")
-	weapon_icon.texture = load(weapon_icon_path) if weapon_icon_path != "" else null
-	armor_label.text = "Armor: %s" % (armor_id if armor_id != "" else "None")
-	var armor_icon_path: String = LootTable.ITEMS.get(armor_id, {}).get("icon", "")
-	armor_icon.texture = load(armor_icon_path) if armor_icon_path != "" else null
+func _on_equipment_changed(weapon_id: String, armor_id: String, trinket_id: String) -> void:
+	_update_equipment_slot(weapon_label, weapon_icon, "Weapon", weapon_id)
+	_update_equipment_slot(armor_label, armor_icon, "Armor", armor_id)
+	_update_equipment_slot(trinket_label, trinket_icon, "Trinket", trinket_id)
+
+## Shared by all three equipment slots: sets "<slot>: <item or None>" text
+## colored by the item's rarity (RARITY_COLORS), and loads its icon.
+func _update_equipment_slot(label: Label, icon: TextureRect, slot_name: String, item_id: String) -> void:
+	label.text = "%s: %s" % [slot_name, item_id if item_id != "" else "None"]
+	var item_def: Dictionary = LootTable.ITEMS.get(item_id, {})
+	var rarity: String = item_def.get("rarity", "")
+	label.add_theme_color_override("font_color", LootTable.RARITY_COLORS.get(rarity, DEFAULT_LABEL_COLOR))
+	var icon_path: String = item_def.get("icon", "")
+	icon.texture = load(icon_path) if icon_path != "" else null

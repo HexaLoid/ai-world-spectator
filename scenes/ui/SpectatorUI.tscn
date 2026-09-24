@@ -27,7 +27,7 @@ corner_radius_bottom_left = 4
 script = ExtResource("1_unitframe")
 theme = ExtResource("4_theme")
 position = Vector2(16, 16)
-size = Vector2(224, 150)
+size = Vector2(224, 174)
 
 [node name="HPBar" type="ProgressBar" parent="UnitFrame"]
 position = Vector2(8, 8)
@@ -69,6 +69,16 @@ stretch_mode = 5
 [node name="ArmorLabel" type="Label" parent="UnitFrame"]
 position = Vector2(34, 118)
 text = "Armor: None"
+
+[node name="TrinketIcon" type="TextureRect" parent="UnitFrame"]
+position = Vector2(8, 138)
+size = Vector2(20, 20)
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TrinketLabel" type="Label" parent="UnitFrame"]
+position = Vector2(34, 142)
+text = "Trinket: None"
 
 [node name="ActivityLog" type="Panel" parent="."]
 script = ExtResource("2_activitylog")

@@ -11,9 +11,6 @@ const HP_REGEN_PER_SECOND := 3.0
 const TARGET_SPRITE_SIZE := 40.0
 const ATTACK_ANIM_DURATION_MS := 400.0
 const RESPAWN_ZONE_ID := "thornfield_meadow"
-# How long the character stays in a zone, fighting/looting/wandering, before
-# the AI moves on to the next one in ZoneTable.TRAVEL_ORDER.
-const ZONE_STAY_DURATION_MS := 45000.0
 
 const STATE_DISPLAY_NAMES := {
 	"wander": "Wandering",
@@ -36,6 +33,8 @@ const STATE_DISPLAY_NAMES := {
 
 var equipped_weapon_id: String = ""
 var equipped_armor_id: String = ""
+var equipped_trinket_id: String = ""
+var crit_chance: float = 0.0
 var current_state: String = "wander"
 var last_attack_time_ms: int = 0
 var wander_target: Vector2 = Vector2.ZERO
@@ -124,14 +123,14 @@ func _build_context() -> Dictionary:
 	var nearest_hostile := _find_nearest_in_group("enemies")
 	var nearest_item := _find_nearest_in_group("items")
 	var quest_giver := _find_nearest_in_group("quest_givers")
-	var next_zone_id := ZoneTable.next_zone_id(current_zone_id)
+	var next_zone_id := ZoneTable.next_zone_id(current_zone_id, level)
 	var context := {
 		"hp_percent": float(hp) / float(max_hp),
 		"hostile_in_attack_range": false,
 		"hostile_in_aggro_range": false,
 		"hostile_name": "",
 		"item_nearby": false,
-		"ready_to_travel": (game_time_ms - zone_entered_time_ms) >= ZONE_STAY_DURATION_MS,
+		"ready_to_travel": (game_time_ms - zone_entered_time_ms) >= ZoneTable.stay_duration_ms(current_zone_id),
 		"next_zone_name": String(ZoneTable.ZONES[next_zone_id]["name"]),
 		"quest_giver_in_zone": quest_giver != null and _zone_id_for_position(quest_giver.global_position) == current_zone_id,
 		"quest_ready": _quest_has_something_to_do(),
@@ -236,7 +235,7 @@ func _move_toward(direction: Vector2, speed: float) -> void:
 	move_and_slide()
 
 func _do_travel() -> void:
-	var dest_center: Vector2 = ZoneTable.ZONES[ZoneTable.next_zone_id(current_zone_id)]["center"]
+	var dest_center: Vector2 = ZoneTable.ZONES[ZoneTable.next_zone_id(current_zone_id, level)]["center"]
 	_move_toward(dest_center - global_position, MOVE_SPEED)
 
 ## Which zone's bounds rectangle contains `pos`, or `current_zone_id` if
@@ -292,10 +291,24 @@ func _attack_nearest_hostile() -> void:
 	if hostile == null:
 		return
 	last_attack_time_ms = now
-	var damage := CombatSystem.roll_damage(attack_damage_min, attack_damage_max, rng)
-	hostile.take_damage(damage)
+	var roll := _roll_damage(attack_damage_min, attack_damage_max)
+	hostile.take_damage(roll["damage"])
 	attack_anim_until_ms = game_time_ms + ATTACK_ANIM_DURATION_MS
 	_gain_resource(float(class_def.get("rage_per_swing", 0.0)))
+	if roll["is_crit"]:
+		GameState.log_event("Critical hit on %s for %d!" % [hostile.enemy_name, roll["damage"]])
+
+## Rolls base weapon damage (optionally scaled by `multiplier`, e.g.
+## Heroic Strike's bonus) and then an independent crit roll against
+## crit_chance (from an equipped trinket); a crit doubles the final damage.
+## Centralizes the crit check so both the plain auto-attack and Heroic
+## Strike apply it the same way instead of each rolling it separately.
+func _roll_damage(min_damage: int, max_damage: int, multiplier: float = 1.0) -> Dictionary:
+	var damage := int(round(CombatSystem.roll_damage(min_damage, max_damage, rng) * multiplier))
+	var is_crit := rng.randf() < crit_chance
+	if is_crit:
+		damage *= 2
+	return {"damage": damage, "is_crit": is_crit}
 
 func take_damage(amount: int) -> void:
 	if is_dead:
@@ -392,11 +405,11 @@ func _use_rend(hostile: Node2D, def: Dictionary) -> void:
 func _use_heroic_strike(hostile: Node2D, def: Dictionary) -> void:
 	_spend_resource(float(def.get("resource_cost", 0.0)))
 	_start_cooldown("heroic_strike", int(def.get("cooldown_ms", 0)))
-	var base_damage := CombatSystem.roll_damage(attack_damage_min, attack_damage_max, rng)
-	var damage := int(round(base_damage * float(def.get("damage_multiplier", 1.0))))
-	hostile.take_damage(damage)
+	var roll := _roll_damage(attack_damage_min, attack_damage_max, float(def.get("damage_multiplier", 1.0)))
+	hostile.take_damage(roll["damage"])
 	attack_anim_until_ms = game_time_ms + ATTACK_ANIM_DURATION_MS
-	GameState.log_event("Heroic Strike hits %s for %d!" % [hostile.enemy_name, damage])
+	var crit_suffix := " (Critical!)" if roll["is_crit"] else ""
+	GameState.log_event("Heroic Strike hits %s for %d!%s" % [hostile.enemy_name, roll["damage"], crit_suffix])
 
 ## Checked at the start of the "flee"/"rest" states rather than folded into
 ## AIDecision, so the FSM's pure state-selection logic stays untouched — this
@@ -461,7 +474,7 @@ func _acquire_item(item_id: String) -> void:
 			attack_damage_max += delta
 			equipped_weapon_id = item_id
 			GameState.log_event("Equipped %s" % item_id)
-			GameState.emit_signal("character_equipment_changed", equipped_weapon_id, equipped_armor_id)
+			GameState.emit_signal("character_equipment_changed", equipped_weapon_id, equipped_armor_id, equipped_trinket_id)
 		else:
 			GameState.log_event("Found %s - current gear is better" % item_id)
 	elif item_type == "armor":
@@ -471,8 +484,18 @@ func _acquire_item(item_id: String) -> void:
 			max_hp += new_bonus - old_bonus
 			equipped_armor_id = item_id
 			GameState.log_event("Equipped %s" % item_id)
-			GameState.emit_signal("character_equipment_changed", equipped_weapon_id, equipped_armor_id)
+			GameState.emit_signal("character_equipment_changed", equipped_weapon_id, equipped_armor_id, equipped_trinket_id)
 			GameState.emit_signal("character_hp_changed", hp, max_hp)
+		else:
+			GameState.log_event("Found %s - current gear is better" % item_id)
+	elif item_type == "trinket":
+		if LootTable.should_equip(equipped_trinket_id, item_id):
+			var old_bonus: float = float(LootTable.ITEMS.get(equipped_trinket_id, {}).get("crit_chance", 0.0))
+			var new_bonus: float = float(item_def.get("crit_chance", 0.0))
+			crit_chance += new_bonus - old_bonus
+			equipped_trinket_id = item_id
+			GameState.log_event("Equipped %s" % item_id)
+			GameState.emit_signal("character_equipment_changed", equipped_weapon_id, equipped_armor_id, equipped_trinket_id)
 		else:
 			GameState.log_event("Found %s - current gear is better" % item_id)
 

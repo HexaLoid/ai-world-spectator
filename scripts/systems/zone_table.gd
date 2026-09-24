@@ -1,10 +1,16 @@
 class_name ZoneTable
 extends RefCounted
 
+const DEFAULT_STAY_DURATION_MS := 45000.0
+
 ## Each zone's world-space bounds (same 20px inset from its background rect
-## convention Thornfield Meadow already used) and its center, which is what
+## convention Thornfield Meadow established) and its center, which is what
 ## the "travel" AI state walks toward. `center` doubles as the arrival point
-## and the initial spawn/respawn point for its own zone.
+## and the initial spawn/respawn point for its own zone. `min_level`
+## (default 1) gates a zone out of the travel rotation until the character
+## is strong enough — see next_zone_id(). `stay_duration_ms` overrides
+## DEFAULT_STAY_DURATION_MS for zones that should feel shorter/longer to
+## dwell in (e.g. a one-boss dungeon room).
 const ZONES := {
 	"thornfield_meadow": {
 		"name": "Thornfield Meadow",
@@ -18,18 +24,44 @@ const ZONES := {
 		"bounds_min": Vector2(1820, -280),
 		"bounds_max": Vector2(2580, 280),
 	},
+	"sundered_crypt": {
+		"name": "Sundered Crypt",
+		"center": Vector2(4400, 0),
+		# A small, enclosed 360x360 room (20px inset from a 400x400
+		# background) rather than an open field like the other two zones —
+		# see SunderedCrypt.tscn's aggro_range_override comment for why.
+		"bounds_min": Vector2(4220, -180),
+		"bounds_max": Vector2(4580, 180),
+		"min_level": 3,
+		"stay_duration_ms": 20000.0,
+	},
 }
 
-## Visited in a fixed back-and-forth loop by the "travel" AI state — with
-## only two zones, "the other one" and "next in TRAVEL_ORDER" are the same
-## thing, but this makes a third zone a data change, not a logic change.
-const TRAVEL_ORDER := ["thornfield_meadow", "blackthorn_forest"]
+## Visited in a fixed rotation by the "travel" AI state, skipping any zone
+## whose min_level the character hasn't reached yet (see next_zone_id()).
+const TRAVEL_ORDER := ["thornfield_meadow", "blackthorn_forest", "sundered_crypt"]
 
-## Encompasses every zone's bounds plus the corridor between them, so the
-## character isn't clamped back into its origin zone mid-"travel".
+## Encompasses every zone's bounds plus the corridors between them, so the
+## character isn't clamped back into its origin zone mid-"travel". Y range
+## is driven by the two larger outdoor zones; Sundered Crypt's smaller room
+## fits within it.
 const WORLD_BOUNDS_MIN := Vector2(-380, -280)
-const WORLD_BOUNDS_MAX := Vector2(2580, 280)
+const WORLD_BOUNDS_MAX := Vector2(4580, 280)
 
-static func next_zone_id(current_zone_id: String) -> String:
+## Next zone in TRAVEL_ORDER after current_zone_id that the character's
+## `level` actually qualifies for (min_level defaults to 1, so both
+## starting zones are always eligible). Falls back to TRAVEL_ORDER[0] if
+## current_zone_id isn't recognized, and to the immediate next zone if
+## somehow nothing is eligible (shouldn't happen — Thornfield/Blackthorn
+## have no gate).
+static func next_zone_id(current_zone_id: String, level: int = 1) -> String:
 	var index := TRAVEL_ORDER.find(current_zone_id)
-	return TRAVEL_ORDER[(index + 1) % TRAVEL_ORDER.size()] if index >= 0 else TRAVEL_ORDER[0]
+	var start := index + 1 if index >= 0 else 0
+	for i in range(TRAVEL_ORDER.size()):
+		var candidate: String = TRAVEL_ORDER[(start + i) % TRAVEL_ORDER.size()]
+		if level >= int(ZONES[candidate].get("min_level", 1)):
+			return candidate
+	return TRAVEL_ORDER[(start) % TRAVEL_ORDER.size()]
+
+static func stay_duration_ms(zone_id: String) -> float:
+	return float(ZONES[zone_id].get("stay_duration_ms", DEFAULT_STAY_DURATION_MS))

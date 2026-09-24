@@ -1,0 +1,33 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/entities/SpawnPoint.tscn" id="1_spawnpoint"]
+[ext_resource type="PackedScene" path="res://scenes/entities/Enemy.tscn" id="2_enemy"]
+[ext_resource type="SpriteFrames" path="res://assets/sprites/bandit/bandit_frames.tres" id="3_bandit_frames"]
+
+[node name="SunderedCrypt" type="Node2D"]
+
+[node name="Background" type="ColorRect" parent="."]
+position = Vector2(-200, -200)
+size = Vector2(400, 400)
+color = Color(0.2, 0.18, 0.24, 1.0)
+
+[node name="SpawnPointCryptLord" parent="." instance=ExtResource("1_spawnpoint")]
+position = Vector2(0, 0)
+respawn_delay_s = 90.0
+enemy_scene = ExtResource("2_enemy")
+enemy_name_override = "Crypt Lord"
+max_hp_override = 150
+move_speed_override = 45.0
+attack_damage_min_override = 10
+attack_damage_max_override = 18
+xp_reward_override = 300
+# A small, enclosed dungeon room rather than an open field (bounds below
+# are a 360x360 square) — this aggro range comfortably exceeds the
+# worst-case corner-to-center distance (~255), so the boss reliably
+# notices the character on every visit instead of possibly never coming
+# into range during a short wander before the zone's dwell timer expires.
+aggro_range_override = 280.0
+sprite_frames_override = ExtResource("3_bandit_frames")
+sprite_size_override = 64.0
+sprite_tint_override = Color(0.2, 0.06, 0.1, 1.0)
+guaranteed_drop_id_override = "warlords_greatsword"

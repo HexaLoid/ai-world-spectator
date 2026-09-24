@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/world/ThornfieldMeadow.tscn" id="1_thornfield"]
 [ext_resource type="PackedScene" path="res://scenes/world/BlackthornForest.tscn" id="2_blackthorn"]
+[ext_resource type="PackedScene" path="res://scenes/world/SunderedCrypt.tscn" id="3_crypt"]
 
 [node name="World" type="Node2D"]
 
@@ -10,7 +11,15 @@
 [node name="BlackthornForest" parent="." instance=ExtResource("2_blackthorn")]
 position = Vector2(2200, 0)
 
+[node name="SunderedCrypt" parent="." instance=ExtResource("3_crypt")]
+position = Vector2(4400, 0)
+
 [node name="Corridor" type="ColorRect" parent="."]
 position = Vector2(380, -50)
 size = Vector2(1440, 100)
 color = Color(0.42, 0.34, 0.2, 1.0)
+
+[node name="Corridor2" type="ColorRect" parent="."]
+position = Vector2(2600, -50)
+size = Vector2(1600, 100)
+color = Color(0.3, 0.26, 0.24, 1.0)

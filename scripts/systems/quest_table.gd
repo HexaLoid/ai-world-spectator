@@ -28,4 +28,9 @@ const QUESTS := [
 		"target_name": "Bandit Captain", "count": 1,
 		"xp_reward": 120, "item_reward": "iron_sword", "min_level": 2,
 	},
+	{
+		"id": "the_crypt_lord", "name": "The Crypt Lord",
+		"target_name": "Crypt Lord", "count": 1,
+		"xp_reward": 200, "item_reward": "amulet_of_wrath", "min_level": 3,
+	},
 ]
