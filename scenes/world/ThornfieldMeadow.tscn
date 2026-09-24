@@ -1,10 +1,19 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/entities/SpawnPoint.tscn" id="1_spawnpoint"]
 [ext_resource type="PackedScene" path="res://scenes/entities/Enemy.tscn" id="2_enemy"]
 [ext_resource type="SpriteFrames" path="res://assets/sprites/wolf/wolf_frames.tres" id="3_wolf_frames"]
 [ext_resource type="SpriteFrames" path="res://assets/sprites/bandit/bandit_frames.tres" id="4_bandit_frames"]
 [ext_resource type="Texture2D" path="res://assets/tiles/tree_pine.png" id="5_tree_pine"]
+[ext_resource type="PackedScene" path="res://scenes/entities/QuestGiver.tscn" id="6_questgiver"]
+[ext_resource type="Texture2D" path="res://assets/tiles/terrain_grass.png" id="7_grass"]
+[ext_resource type="Script" path="res://scripts/world/decoration_scatter.gd" id="8_decor"]
+[ext_resource type="Texture2D" path="res://assets/tiles/decor_flowers.png" id="9_flowers"]
+[ext_resource type="Texture2D" path="res://assets/tiles/decor_grass_tuft.png" id="10_tuft"]
+[ext_resource type="Texture2D" path="res://assets/tiles/decor_rock.png" id="11_rock"]
+[ext_resource type="Texture2D" path="res://assets/tiles/decor_pond.png" id="12_pond"]
+[ext_resource type="Texture2D" path="res://assets/tiles/ruin_bridge.png" id="13_bridge"]
+[ext_resource type="PackedScene" path="res://scenes/entities/SimulatedPlayer.tscn" id="14_simplayer"]
 
 [node name="ThornfieldMeadow" type="Node2D"]
 
@@ -12,6 +21,52 @@
 position = Vector2(-400, -300)
 size = Vector2(800, 600)
 color = Color(0.35, 0.55, 0.25, 1.0)
+
+[node name="Ground" type="Sprite2D" parent="."]
+texture = ExtResource("7_grass")
+centered = false
+position = Vector2(-400, -300)
+region_enabled = true
+region_rect = Rect2(0, 0, 800, 600)
+texture_repeat = 2
+
+[node name="Decorations" type="Node2D" parent="."]
+script = ExtResource("8_decor")
+decoration_textures = Array[Texture2D]([ExtResource("9_flowers"), ExtResource("10_tuft"), ExtResource("11_rock")])
+count = 45
+area_min = Vector2(-370, -270)
+area_max = Vector2(370, 270)
+
+[node name="Pond" type="Sprite2D" parent="."]
+texture = ExtResource("12_pond")
+position = Vector2(250, -190)
+scale = Vector2(1.4, 1.4)
+
+[node name="Bridge" type="Sprite2D" parent="."]
+texture = ExtResource("13_bridge")
+position = Vector2(250, -185)
+scale = Vector2(1.1, 1.1)
+
+[node name="QuestGiver" parent="." instance=ExtResource("6_questgiver")]
+position = Vector2(-280, -160)
+
+[node name="SimulatedPlayerKaelen" parent="." instance=ExtResource("14_simplayer")]
+position = Vector2(-40, -230)
+player_name = "Kaelen"
+max_hp = 45
+attack_damage_min = 5
+attack_damage_max = 9
+sprite_tint = Color(1.0, 0.75, 0.6, 1.0)
+home_zone_id = "thornfield_meadow"
+
+[node name="SimulatedPlayerElowen" parent="." instance=ExtResource("14_simplayer")]
+position = Vector2(20, 230)
+player_name = "Elowen"
+max_hp = 40
+attack_damage_min = 4
+attack_damage_max = 7
+sprite_tint = Color(0.6, 0.7, 1.0, 1.0)
+home_zone_id = "thornfield_meadow"
 
 [node name="SpawnPointWolf1" parent="." instance=ExtResource("1_spawnpoint")]
 position = Vector2(150, -80)

@@ -10,10 +10,8 @@ const RESPAWN_POSITION := Vector2(0, 0)
 const HP_REGEN_PER_SECOND := 3.0
 const TARGET_SPRITE_SIZE := 40.0
 const ATTACK_ANIM_DURATION_MS := 400.0
-# Inset from ThornfieldMeadow's 800x600 background rect
-# (scenes/world/ThornfieldMeadow.tscn) by 20px on each side.
-const MEADOW_MIN := Vector2(-380, -280)
-const MEADOW_MAX := Vector2(380, 280)
+const RESPAWN_ZONE_ID := "thornfield_meadow"
+const MAX_PARTY_SIZE := 2
 
 const STATE_DISPLAY_NAMES := {
 	"wander": "Wandering",
@@ -22,6 +20,8 @@ const STATE_DISPLAY_NAMES := {
 	"flee": "Fleeing",
 	"loot": "Looting",
 	"rest": "Resting",
+	"travel": "Traveling",
+	"quest": "Questing",
 }
 
 @export var max_hp: int = 60
@@ -30,9 +30,16 @@ const STATE_DISPLAY_NAMES := {
 @export var xp: int = 0
 @export var attack_damage_min: int = 4
 @export var attack_damage_max: int = 8
+## "" means "roll a random class at spawn" (see _ready()) — the normal way
+## this ends up populated, since this is a single always-on spectator
+## character with no class-select UI. A scene can still force a specific
+## class by overriding this export directly, e.g. for testing.
+@export var character_class: String = ""
 
 var equipped_weapon_id: String = ""
 var equipped_armor_id: String = ""
+var equipped_trinket_id: String = ""
+var crit_chance: float = 0.0
 var current_state: String = "wander"
 var last_attack_time_ms: int = 0
 var wander_target: Vector2 = Vector2.ZERO
@@ -41,14 +48,48 @@ var is_dead: bool = false
 var game_time_ms: float = 0.0
 var hp_regen_accumulator: float = 0.0
 var last_combat_target: Node2D = null
+var current_zone_id: String = RESPAWN_ZONE_ID
+var zone_entered_time_ms: float = 0.0
+var party: Array = []
+
+# Quest state. Progress is tracked passively (see take_kill_credit) rather
+# than by directing combat toward the quest target — the character already
+# fights whatever it encounters, so this just watches kills go by.
+var active_quest_id: String = ""
+var quest_progress: int = 0
+var completed_quest_ids: Array = []
+var last_offered_quest_index: int = -1
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var action_label: Label = $ActionLabel
 var attack_anim_until_ms: float = 0.0
+
+# Class resource (Rage for the warrior) and per-ability cooldown tracking.
+# `class_def`/`ABILITIES` come from AbilityTable, keyed by `character_class`,
+# so a second class can be added there later without touching this script's
+# structure.
+var class_def: Dictionary = {}
+var resource_amount: float = 0.0
+var max_resource: float = 0.0
+var ability_cooldowns: Dictionary = {}
 
 func _ready() -> void:
 	rng.randomize()
 	wander_target = global_position
 	GameState.character = self
+	add_to_group("combat_targets")
+	if character_class == "":
+		var class_ids := AbilityTable.CLASSES.keys()
+		character_class = class_ids[rng.randi_range(0, class_ids.size() - 1)]
+	class_def = AbilityTable.CLASSES.get(character_class, {})
+	max_resource = float(class_def.get("max_resource", 0.0))
+	sprite.modulate = class_def.get("sprite_tint", Color(1.0, 1.0, 1.0, 1.0))
+	GameState.emit_signal("character_resource_changed", resource_amount, max_resource)
+	# _sync_current_zone() only recruits on a zone TRANSITION, but the
+	# character starts already inside its home zone rather than "arriving"
+	# there — so that zone's companions need recruiting once, up front, or
+	# they'd never get picked up unless the character later left and came
+	# back.
+	_recruit_companions_in_zone(current_zone_id)
 
 func _physics_process(delta: float) -> void:
 	game_time_ms += delta * 1000.0
@@ -98,12 +139,18 @@ func _play_animation(base_anim: String, facing: String) -> void:
 func _build_context() -> Dictionary:
 	var nearest_hostile := _find_nearest_in_group("enemies")
 	var nearest_item := _find_nearest_in_group("items")
+	var quest_giver := _find_nearest_in_group("quest_givers")
+	var next_zone_id := ZoneTable.next_zone_id(current_zone_id, level)
 	var context := {
 		"hp_percent": float(hp) / float(max_hp),
 		"hostile_in_attack_range": false,
 		"hostile_in_aggro_range": false,
 		"hostile_name": "",
 		"item_nearby": false,
+		"ready_to_travel": (game_time_ms - zone_entered_time_ms) >= ZoneTable.stay_duration_ms(current_zone_id),
+		"next_zone_name": String(ZoneTable.ZONES[next_zone_id]["name"]),
+		"quest_giver_in_zone": quest_giver != null and _zone_id_for_position(quest_giver.global_position) == current_zone_id,
+		"quest_ready": _quest_has_something_to_do(),
 	}
 	if nearest_hostile:
 		var dist := global_position.distance_to(nearest_hostile.global_position)
@@ -133,26 +180,27 @@ func _act(delta: float, context: Dictionary) -> void:
 	var combat_hostile: Node2D = null
 	match current_state:
 		"flee":
+			_try_self_heal()
 			var hostile := _find_nearest_in_group("enemies")
 			if hostile:
-				velocity = (global_position - hostile.global_position).normalized() * MOVE_SPEED
-				move_and_slide()
+				_move_toward(global_position - hostile.global_position, MOVE_SPEED)
 			base_anim = "run"
 		"rest":
+			_try_self_heal()
 			velocity = Vector2.ZERO
-			hp_regen_accumulator += HP_REGEN_PER_SECOND * delta
-			while hp_regen_accumulator >= 1.0 and hp < max_hp:
-				hp += 1
-				hp_regen_accumulator -= 1.0
+			_regen_hp(delta)
+			_tick_resource(delta)
 		"combat":
 			velocity = Vector2.ZERO
 			combat_hostile = _find_nearest_in_group("enemies")
 			_attack_nearest_hostile()
+			if combat_hostile:
+				_try_combat_abilities(combat_hostile)
 		"chase":
 			var hostile := _find_nearest_in_group("enemies")
 			if hostile:
-				velocity = (hostile.global_position - global_position).normalized() * MOVE_SPEED
-				move_and_slide()
+				if not _try_gap_closer(hostile):
+					_move_toward(hostile.global_position - global_position, MOVE_SPEED)
 			base_anim = "run"
 		"loot":
 			var item := _find_nearest_in_group("items")
@@ -161,26 +209,119 @@ func _act(delta: float, context: Dictionary) -> void:
 				if to_item.length() <= PICKUP_RANGE:
 					_pickup_item(item)
 				else:
-					velocity = to_item.normalized() * MOVE_SPEED
-					move_and_slide()
+					_move_toward(to_item, MOVE_SPEED)
 			base_anim = "walk"
+			_tick_resource(delta)
 		"wander":
+			var zone: Dictionary = ZoneTable.ZONES[current_zone_id]
 			if global_position.distance_to(wander_target) < 8.0:
-				wander_target = global_position + Vector2(rng.randf_range(-100, 100), rng.randf_range(-100, 100))
-				wander_target = wander_target.clamp(MEADOW_MIN, MEADOW_MAX)
-			velocity = (wander_target - global_position).normalized() * MOVE_SPEED * 0.5
-			move_and_slide()
+				wander_target = (global_position + Vector2(rng.randf_range(-100, 100), rng.randf_range(-100, 100))).clamp(zone["bounds_min"], zone["bounds_max"])
+			_move_toward(wander_target - global_position, MOVE_SPEED * 0.5)
 			base_anim = "walk"
+			_tick_resource(delta)
+		"quest":
+			var quest_giver := _find_nearest_in_group("quest_givers")
+			if quest_giver:
+				var to_giver := quest_giver.global_position - global_position
+				if to_giver.length() <= PICKUP_RANGE:
+					_interact_with_quest_giver()
+				else:
+					_move_toward(to_giver, MOVE_SPEED)
+			base_anim = "walk"
+		"travel":
+			_do_travel()
+			base_anim = "run"
 	var facing := _facing_from_velocity(velocity)
 	if combat_hostile:
 		facing = _facing_from_velocity(combat_hostile.global_position - global_position)
-	if combat_hostile != last_combat_target:
-		last_combat_target = combat_hostile
-		GameState.emit_signal("combat_target_changed", combat_hostile)
+	_update_combat_target(combat_hostile)
 	if game_time_ms < attack_anim_until_ms:
 		base_anim = "slash"
 	_play_animation(base_anim, facing)
-	global_position = global_position.clamp(MEADOW_MIN, MEADOW_MAX)
+	# A hard safety clamp against the WHOLE traversable world, not just the
+	# current zone: any state (a mid-corridor Charge onto a border enemy,
+	# a Flee shoved past a zone edge, ...) can legitimately put the
+	# character outside its "home" zone's own bounds without that meaning
+	# it left the world. Clamping to current_zone_id's bounds here instead
+	# would snap it straight back across the map the instant that happens.
+	global_position = global_position.clamp(ZoneTable.WORLD_BOUNDS_MIN, ZoneTable.WORLD_BOUNDS_MAX)
+	_sync_current_zone()
+
+func _move_toward(direction: Vector2, speed: float) -> void:
+	velocity = direction.normalized() * speed
+	move_and_slide()
+
+func _do_travel() -> void:
+	var dest_center: Vector2 = ZoneTable.ZONES[ZoneTable.next_zone_id(current_zone_id, level)]["center"]
+	_move_toward(dest_center - global_position, MOVE_SPEED)
+
+## Which zone's bounds rectangle contains `pos`, or `current_zone_id` if
+## `pos` isn't inside any zone (e.g. the corridor) — used both to detect the
+## character's own arrival and to check which zone a stationary landmark
+## (the Quest Giver) belongs to.
+func _zone_id_for_position(pos: Vector2) -> String:
+	for zone_id in ZoneTable.ZONES:
+		var zone: Dictionary = ZoneTable.ZONES[zone_id]
+		var bounds_min: Vector2 = zone["bounds_min"]
+		var bounds_max: Vector2 = zone["bounds_max"]
+		if pos.x < bounds_min.x or pos.x > bounds_max.x:
+			continue
+		if pos.y < bounds_min.y or pos.y > bounds_max.y:
+			continue
+		return zone_id
+	return current_zone_id
+
+## Detects "arrival" as actually crossing into a zone's bounds rectangle
+## (checked every frame, regardless of state) rather than the "travel" state
+## reaching that zone's exact center — so wandering/fighting across a border
+## (e.g. a Charge that lands inside the next zone) also correctly updates
+## which zone the character calls home, not just a deliberate full trip.
+func _sync_current_zone() -> void:
+	var zone_id := _zone_id_for_position(global_position)
+	if zone_id == current_zone_id:
+		return
+	current_zone_id = zone_id
+	zone_entered_time_ms = game_time_ms
+	# Otherwise the next "wander" tick chases whatever stale target was
+	# picked back in the old zone — clamped to THAT zone's bounds — and
+	# walks the character straight back out across the corridor instead
+	# of actually exploring the one it just arrived in.
+	wander_target = global_position
+	GameState.log_event("Arrives in %s" % ZoneTable.ZONES[zone_id]["name"])
+	GameState.emit_signal("zone_changed", zone_id)
+	_recruit_companions_in_zone(zone_id)
+
+## Recruits up to MAX_PARTY_SIZE ungrouped SimulatedPlayers whose home zone
+## is the one just entered — permanent for this slice (no leave condition),
+## which is why this only ever needs to run on arrival, not continuously.
+## A recruited companion switches its own behavior (following instead of
+## zone-bound wandering, world bounds instead of zone bounds — see
+## SimulatedPlayer) entirely on its own once `group_leader` is set; nothing
+## else here needs to manage that.
+func _recruit_companions_in_zone(zone_id: String) -> void:
+	if party.size() >= MAX_PARTY_SIZE:
+		return
+	for sp in get_tree().get_nodes_in_group("simulated_players"):
+		if party.size() >= MAX_PARTY_SIZE:
+			return
+		if not is_instance_valid(sp) or sp.group_leader != null:
+			continue
+		if sp.home_zone_id != zone_id:
+			continue
+		sp.group_leader = self
+		party.append(sp)
+		GameState.log_event("%s joins the group!" % sp.player_name)
+
+func _regen_hp(delta: float) -> void:
+	hp_regen_accumulator += HP_REGEN_PER_SECOND * delta
+	while hp_regen_accumulator >= 1.0 and hp < max_hp:
+		hp += 1
+		hp_regen_accumulator -= 1.0
+
+func _update_combat_target(combat_hostile: Node2D) -> void:
+	if combat_hostile != last_combat_target:
+		last_combat_target = combat_hostile
+		GameState.emit_signal("combat_target_changed", combat_hostile)
 
 func _attack_nearest_hostile() -> void:
 	var now := int(game_time_ms)
@@ -190,9 +331,24 @@ func _attack_nearest_hostile() -> void:
 	if hostile == null:
 		return
 	last_attack_time_ms = now
-	var damage := CombatSystem.roll_damage(attack_damage_min, attack_damage_max, rng)
-	hostile.take_damage(damage)
+	var roll := _roll_damage(attack_damage_min, attack_damage_max)
+	hostile.take_damage(roll["damage"], self)
 	attack_anim_until_ms = game_time_ms + ATTACK_ANIM_DURATION_MS
+	_gain_resource(float(class_def.get("rage_per_swing", 0.0)))
+	if roll["is_crit"]:
+		GameState.log_event("Critical hit on %s for %d!" % [hostile.enemy_name, roll["damage"]])
+
+## Rolls base weapon damage (optionally scaled by `multiplier`, e.g.
+## Heroic Strike's bonus) and then an independent crit roll against
+## crit_chance (from an equipped trinket); a crit doubles the final damage.
+## Centralizes the crit check so both the plain auto-attack and Heroic
+## Strike apply it the same way instead of each rolling it separately.
+func _roll_damage(min_damage: int, max_damage: int, multiplier: float = 1.0) -> Dictionary:
+	var damage := int(round(CombatSystem.roll_damage(min_damage, max_damage, rng) * multiplier))
+	var is_crit := rng.randf() < crit_chance
+	if is_crit:
+		damage *= 2
+	return {"damage": damage, "is_crit": is_crit}
 
 func take_damage(amount: int) -> void:
 	if is_dead:
@@ -200,6 +356,7 @@ func take_damage(amount: int) -> void:
 	hp = max(0, hp - amount)
 	GameState.emit_signal("character_hp_changed", hp, max_hp)
 	GameState.emit_signal("damage_dealt", global_position, amount, false)
+	_gain_resource(float(class_def.get("rage_per_hit_taken", 0.0)))
 	if hp <= 0:
 		_die()
 
@@ -212,10 +369,139 @@ func _die() -> void:
 	hp = max_hp
 	global_position = RESPAWN_POSITION
 	wander_target = RESPAWN_POSITION
+	current_zone_id = RESPAWN_ZONE_ID
+	zone_entered_time_ms = game_time_ms
 	visible = true
 	set_physics_process(true)
 	is_dead = false
+	ability_cooldowns.clear()
+	resource_amount = 0.0
 	GameState.emit_signal("character_hp_changed", hp, max_hp)
+	GameState.emit_signal("character_resource_changed", resource_amount, max_resource)
+
+## Returns seconds remaining before `ability_id` is off cooldown (0 if ready).
+## Polled directly by the HUD's ability bar each frame, the same way
+## CameraController polls GameState.character's position — cooldown sweeps
+## need continuous updates, not a discrete signal per tick.
+func get_ability_cooldown_remaining(ability_id: String) -> float:
+	var ready_at: float = ability_cooldowns.get(ability_id, 0.0)
+	return max(0.0, (ready_at - game_time_ms) / 1000.0)
+
+func _ability_ready(ability_id: String, cost: float) -> bool:
+	return get_ability_cooldown_remaining(ability_id) <= 0.0 and resource_amount >= cost
+
+func _start_cooldown(ability_id: String, cooldown_ms: int) -> void:
+	ability_cooldowns[ability_id] = game_time_ms + cooldown_ms
+
+func _gain_resource(amount: float) -> void:
+	if amount == 0.0 or max_resource <= 0.0:
+		return
+	resource_amount = clampf(resource_amount + amount, 0.0, max_resource)
+	GameState.emit_signal("character_resource_changed", resource_amount, max_resource)
+
+func _spend_resource(amount: float) -> void:
+	_gain_resource(-amount)
+
+## Passive resource change over time — decay for an aggressive resource like
+## Rage (warrior), regen for a patient one like Mana (mage). Both fields
+## default to 0.0 so a class only needs to set whichever one applies to it;
+## called from the same "downtime" states (rest/loot/wander) that always
+## drove Rage's decay, so warrior's balance is unchanged and mage's Mana
+## simply regenerates during those same states instead.
+func _tick_resource(delta: float) -> void:
+	var regen := float(class_def.get("resource_regen_per_second", 0.0))
+	var decay := float(class_def.get("resource_decay_per_second", 0.0))
+	_gain_resource((regen - decay) * delta)
+
+## Finds the id of the current class's ability (from class_def's own
+## "abilities" list, never the full global AbilityTable.ABILITIES) whose
+## "kind" matches, or "" if the class has none of that kind — e.g. the mage
+## has no "gap_closer", so _try_gap_closer() below just no-ops for it.
+func _find_class_ability_id(kind: String) -> String:
+	for ability_id in class_def.get("abilities", []):
+		if AbilityTable.ABILITIES.get(ability_id, {}).get("kind", "") == kind:
+			return ability_id
+	return ""
+
+## Gap closer used from the "chase" state instead of walking, when off
+## cooldown. Returns true if it fired (caller skips its normal move step).
+## Not every class has one (the mage doesn't), in which case this just
+## returns false immediately and the caller falls back to walking.
+func _try_gap_closer(hostile: Node2D) -> bool:
+	var ability_id := _find_class_ability_id("gap_closer")
+	if ability_id == "":
+		return false
+	var def: Dictionary = AbilityTable.ABILITIES.get(ability_id, {})
+	if not _ability_ready(ability_id, float(def.get("resource_cost", 0.0))):
+		return false
+	_start_cooldown(ability_id, int(def.get("cooldown_ms", 0)))
+	var to_hostile := hostile.global_position - global_position
+	# Land just outside melee range rather than exactly on top of the target.
+	global_position = hostile.global_position - to_hostile.normalized() * (ATTACK_RANGE * 0.9)
+	_gain_resource(float(def.get("resource_gain", 0.0)))
+	GameState.log_event("Uses %s on %s!" % [def.get("name", "an ability"), hostile.enemy_name])
+	return true
+
+## Layers the class's non-gap-closer/self-heal abilities (a bonus-damage hit
+## and a damage-over-time effect, for both classes so far) on top of the
+## normal auto-attack, one at a time in class ability-list order, while in
+## the "combat" state.
+func _try_combat_abilities(hostile: Node2D) -> void:
+	for ability_id in class_def.get("abilities", []):
+		var def: Dictionary = AbilityTable.ABILITIES.get(ability_id, {})
+		var kind: String = def.get("kind", "")
+		if kind != "bleed" and kind != "melee_hit":
+			continue
+		if not _ability_ready(ability_id, float(def.get("resource_cost", 0.0))):
+			continue
+		if kind == "bleed":
+			_use_bleed(hostile, ability_id, def)
+		else:
+			_use_melee_hit(hostile, ability_id, def)
+		return
+
+func _use_bleed(hostile: Node2D, ability_id: String, def: Dictionary) -> void:
+	_spend_resource(float(def.get("resource_cost", 0.0)))
+	_start_cooldown(ability_id, int(def.get("cooldown_ms", 0)))
+	hostile.apply_bleed(
+		int(def.get("tick_damage_min", 0)),
+		int(def.get("tick_damage_max", 0)),
+		int(def.get("tick_count", 0)),
+		int(def.get("tick_interval_ms", 0)),
+		self
+	)
+	attack_anim_until_ms = game_time_ms + ATTACK_ANIM_DURATION_MS
+	GameState.log_event("%s afflicts %s - taking damage over time!" % [def.get("name", "An ability"), hostile.enemy_name])
+
+func _use_melee_hit(hostile: Node2D, ability_id: String, def: Dictionary) -> void:
+	_spend_resource(float(def.get("resource_cost", 0.0)))
+	_start_cooldown(ability_id, int(def.get("cooldown_ms", 0)))
+	var roll := _roll_damage(attack_damage_min, attack_damage_max, float(def.get("damage_multiplier", 1.0)))
+	hostile.take_damage(roll["damage"], self)
+	attack_anim_until_ms = game_time_ms + ATTACK_ANIM_DURATION_MS
+	var crit_suffix := " (Critical!)" if roll["is_crit"] else ""
+	GameState.log_event("%s hits %s for %d!%s" % [def.get("name", "An ability"), hostile.enemy_name, roll["damage"], crit_suffix])
+
+## Checked at the start of the "flee"/"rest" states rather than folded into
+## AIDecision, so the FSM's pure state-selection logic stays untouched — this
+## only changes how much HP the character has by the time flee/rest run.
+func _try_self_heal() -> void:
+	var ability_id := _find_class_ability_id("self_heal")
+	if ability_id == "":
+		return
+	var def: Dictionary = AbilityTable.ABILITIES.get(ability_id, {})
+	if not _ability_ready(ability_id, float(def.get("resource_cost", 0.0))):
+		return
+	_spend_resource(float(def.get("resource_cost", 0.0)))
+	_start_cooldown(ability_id, int(def.get("cooldown_ms", 0)))
+	var old_hp := hp
+	hp = min(max_hp, hp + int(max_hp * float(def.get("heal_percent", 0.0))))
+	var healed := hp - old_hp
+	if healed <= 0:
+		return
+	GameState.emit_signal("character_hp_changed", hp, max_hp)
+	GameState.emit_signal("damage_dealt", global_position, healed, true)
+	GameState.log_event("Uses %s - recovers %d HP!" % [def.get("name", "an ability"), healed])
 
 func gain_xp(amount: int) -> void:
 	var result := LevelingSystem.apply_xp(level, xp, amount)
@@ -234,9 +520,16 @@ func gain_xp(amount: int) -> void:
 func take_kill_credit(enemy_name: String, xp_reward: int) -> void:
 	GameState.log_event("Defeated %s" % enemy_name)
 	gain_xp(xp_reward)
+	_advance_quest_progress(enemy_name)
 
 func _pickup_item(item: Node2D) -> void:
-	var item_id: String = item.item_id
+	_acquire_item(item.item_id)
+	item.queue_free()
+
+## Shared by picking an item up off the ground and turning in a quest's
+## item reward — both are "the character now owns this item", same
+## equip-or-discard-with-a-reason logic either way.
+func _acquire_item(item_id: String) -> void:
 	var item_def: Dictionary = LootTable.ITEMS.get(item_id, {})
 	var item_type: String = item_def.get("type", "")
 	if item_type == "consumable":
@@ -256,7 +549,7 @@ func _pickup_item(item: Node2D) -> void:
 			attack_damage_max += delta
 			equipped_weapon_id = item_id
 			GameState.log_event("Equipped %s" % item_id)
-			GameState.emit_signal("character_equipment_changed", equipped_weapon_id, equipped_armor_id)
+			GameState.emit_signal("character_equipment_changed", equipped_weapon_id, equipped_armor_id, equipped_trinket_id)
 		else:
 			GameState.log_event("Found %s - current gear is better" % item_id)
 	elif item_type == "armor":
@@ -266,8 +559,106 @@ func _pickup_item(item: Node2D) -> void:
 			max_hp += new_bonus - old_bonus
 			equipped_armor_id = item_id
 			GameState.log_event("Equipped %s" % item_id)
-			GameState.emit_signal("character_equipment_changed", equipped_weapon_id, equipped_armor_id)
+			GameState.emit_signal("character_equipment_changed", equipped_weapon_id, equipped_armor_id, equipped_trinket_id)
 			GameState.emit_signal("character_hp_changed", hp, max_hp)
 		else:
 			GameState.log_event("Found %s - current gear is better" % item_id)
-	item.queue_free()
+	elif item_type == "trinket":
+		if LootTable.should_equip(equipped_trinket_id, item_id):
+			var old_bonus: float = float(LootTable.ITEMS.get(equipped_trinket_id, {}).get("crit_chance", 0.0))
+			var new_bonus: float = float(item_def.get("crit_chance", 0.0))
+			crit_chance += new_bonus - old_bonus
+			equipped_trinket_id = item_id
+			GameState.log_event("Equipped %s" % item_id)
+			GameState.emit_signal("character_equipment_changed", equipped_weapon_id, equipped_armor_id, equipped_trinket_id)
+		else:
+			GameState.log_event("Found %s - current gear is better" % item_id)
+
+func _find_quest(quest_id: String) -> Dictionary:
+	for quest in QuestTable.QUESTS:
+		if quest.get("id", "") == quest_id:
+			return quest
+	return {}
+
+func _advance_quest_progress(enemy_name: String) -> void:
+	if active_quest_id == "":
+		return
+	var quest := _find_quest(active_quest_id)
+	if quest.is_empty() or quest.get("target_name", "") != enemy_name:
+		return
+	quest_progress += 1
+	var count: int = int(quest.get("count", 0))
+	GameState.emit_signal("quest_changed", quest.get("name", ""), quest_progress, count)
+	if quest_progress >= count:
+		GameState.log_event("Quest ready to turn in: %s" % quest.get("name", ""))
+
+## Finds the next QUESTS entry (in rotation order from the last one offered)
+## that isn't already completed, meets its min_level, and has every quest id
+## in its `requires` already in completed_quest_ids — this is what turns the
+## flat rotation into chains (e.g. dire_wolf_hunt requires cull_the_wolves).
+## Recycles completed_quest_ids once every quest has been done, so there's
+## always something to offer rather than the rotation running dry — the whole
+## chain then replays from its two unlocked intro quests. Read-only aside
+## from that recycle — accepting is a separate step (_accept_next_quest).
+func _find_next_eligible_quest_index() -> int:
+	var quests: Array = QuestTable.QUESTS
+	if quests.is_empty():
+		return -1
+	if completed_quest_ids.size() >= quests.size():
+		completed_quest_ids.clear()
+	for i in range(quests.size()):
+		var idx: int = (last_offered_quest_index + 1 + i) % quests.size()
+		var quest: Dictionary = quests[idx]
+		if completed_quest_ids.has(quest.get("id", "")):
+			continue
+		if level < int(quest.get("min_level", 1)):
+			continue
+		if not _quest_requirements_met(quest):
+			continue
+		return idx
+	return -1
+
+## True if every prerequisite quest id in `quest`'s `requires` array is
+## already in completed_quest_ids (vacuously true for an empty array).
+func _quest_requirements_met(quest: Dictionary) -> bool:
+	var requires: Array = quest.get("requires", [])
+	for prereq_id in requires:
+		if not completed_quest_ids.has(prereq_id):
+			return false
+	return true
+
+func _quest_has_something_to_do() -> bool:
+	if active_quest_id != "":
+		var quest := _find_quest(active_quest_id)
+		return not quest.is_empty() and quest_progress >= int(quest.get("count", 0))
+	return _find_next_eligible_quest_index() >= 0
+
+func _interact_with_quest_giver() -> void:
+	if active_quest_id != "":
+		var quest := _find_quest(active_quest_id)
+		if not quest.is_empty() and quest_progress >= int(quest.get("count", 0)):
+			_turn_in_quest(quest)
+	if active_quest_id == "":
+		_accept_next_quest()
+
+func _turn_in_quest(quest: Dictionary) -> void:
+	GameState.log_event("Turned in quest: %s" % quest.get("name", ""))
+	gain_xp(int(quest.get("xp_reward", 0)))
+	var item_reward: String = quest.get("item_reward", "")
+	if item_reward != "":
+		_acquire_item(item_reward)
+	completed_quest_ids.append(active_quest_id)
+	active_quest_id = ""
+	quest_progress = 0
+	GameState.emit_signal("quest_changed", "", 0, 0)
+
+func _accept_next_quest() -> void:
+	var idx := _find_next_eligible_quest_index()
+	if idx < 0:
+		return
+	var quest: Dictionary = QuestTable.QUESTS[idx]
+	last_offered_quest_index = idx
+	active_quest_id = quest.get("id", "")
+	quest_progress = 0
+	GameState.log_event("Accepted quest: %s (0/%d %s)" % [quest.get("name", ""), quest.get("count", 0), quest.get("target_name", "")])
+	GameState.emit_signal("quest_changed", quest.get("name", ""), 0, int(quest.get("count", 0)))

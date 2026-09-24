@@ -13,6 +13,9 @@ extends Node2D
 @export var xp_reward_override: int = 0
 @export var aggro_range_override: float = 0.0
 @export var sprite_frames_override: SpriteFrames = null
+@export var sprite_size_override: float = 0.0
+@export var sprite_tint_override: Color = Color(0, 0, 0, 0)
+@export var guaranteed_drop_id_override: String = ""
 
 var current_enemy: Node2D = null
 
@@ -41,6 +44,12 @@ func _spawn() -> void:
 		current_enemy.aggro_range = aggro_range_override
 	if sprite_frames_override != null:
 		current_enemy.get_node("AnimatedSprite2D").sprite_frames = sprite_frames_override
+	if sprite_size_override > 0.0:
+		current_enemy.sprite_size = sprite_size_override
+	if sprite_tint_override.a > 0.0:
+		current_enemy.sprite_tint = sprite_tint_override
+	if guaranteed_drop_id_override != "":
+		current_enemy.guaranteed_drop_id = guaranteed_drop_id_override
 	get_tree().current_scene.add_child.call_deferred(current_enemy)
 
 func on_enemy_died() -> void:

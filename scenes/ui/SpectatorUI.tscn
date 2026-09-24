@@ -1,12 +1,21 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/unit_frame.gd" id="1_unitframe"]
 [ext_resource type="Script" path="res://scripts/ui/activity_log.gd" id="2_activitylog"]
 [ext_resource type="Script" path="res://scripts/ui/speed_control.gd" id="3_speedcontrol"]
 [ext_resource type="Theme" path="res://assets/theme/spectator_theme.tres" id="4_theme"]
+[ext_resource type="Script" path="res://scripts/ui/quest_tracker.gd" id="6_questtracker"]
+[ext_resource type="Script" path="res://scripts/ui/ability_bar.gd" id="7_abilitybar"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xpfill"]
 bg_color = Color(0.82, 0.65, 0.15, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_resourcefill"]
+bg_color = Color(0.8, 0.35, 0.05, 1)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
@@ -18,7 +27,7 @@ corner_radius_bottom_left = 4
 script = ExtResource("1_unitframe")
 theme = ExtResource("4_theme")
 position = Vector2(16, 16)
-size = Vector2(224, 132)
+size = Vector2(224, 174)
 
 [node name="HPBar" type="ProgressBar" parent="UnitFrame"]
 position = Vector2(8, 8)
@@ -35,25 +44,41 @@ size = Vector2(200, 12)
 show_percentage = false
 theme_override_styles/fill = SubResource("StyleBoxFlat_xpfill")
 
-[node name="WeaponIcon" type="TextureRect" parent="UnitFrame"]
+[node name="ResourceBar" type="ProgressBar" parent="UnitFrame"]
 position = Vector2(8, 72)
+size = Vector2(200, 10)
+show_percentage = false
+theme_override_styles/fill = SubResource("StyleBoxFlat_resourcefill")
+
+[node name="WeaponIcon" type="TextureRect" parent="UnitFrame"]
+position = Vector2(8, 90)
 size = Vector2(20, 20)
 expand_mode = 1
 stretch_mode = 5
 
 [node name="WeaponLabel" type="Label" parent="UnitFrame"]
-position = Vector2(34, 76)
+position = Vector2(34, 94)
 text = "Weapon: None"
 
 [node name="ArmorIcon" type="TextureRect" parent="UnitFrame"]
-position = Vector2(8, 96)
+position = Vector2(8, 114)
 size = Vector2(20, 20)
 expand_mode = 1
 stretch_mode = 5
 
 [node name="ArmorLabel" type="Label" parent="UnitFrame"]
-position = Vector2(34, 100)
+position = Vector2(34, 118)
 text = "Armor: None"
+
+[node name="TrinketIcon" type="TextureRect" parent="UnitFrame"]
+position = Vector2(8, 138)
+size = Vector2(20, 20)
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TrinketLabel" type="Label" parent="UnitFrame"]
+position = Vector2(34, 142)
+text = "Trinket: None"
 
 [node name="ActivityLog" type="Panel" parent="."]
 script = ExtResource("2_activitylog")
@@ -64,6 +89,19 @@ size = Vector2(320, 160)
 [node name="LogList" type="ItemList" parent="ActivityLog"]
 position = Vector2(4, 4)
 size = Vector2(312, 152)
+
+[node name="QuestTracker" type="Panel" parent="."]
+script = ExtResource("6_questtracker")
+theme = ExtResource("4_theme")
+position = Vector2(500, 60)
+size = Vector2(280, 36)
+
+[node name="QuestLabel" type="Label" parent="QuestTracker"]
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 272.0
+offset_bottom = 28.0
+text = "Quest: None active"
 
 [node name="SpeedControl" type="HBoxContainer" parent="."]
 script = ExtResource("3_speedcontrol")
@@ -84,3 +122,8 @@ text = "4x"
 
 [node name="RecenterButton" type="Button" parent="SpeedControl"]
 text = "Recenter"
+
+[node name="AbilityBar" type="HBoxContainer" parent="."]
+position = Vector2(487, 592)
+theme = ExtResource("4_theme")
+script = ExtResource("7_abilitybar")

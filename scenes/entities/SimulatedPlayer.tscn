@@ -1,0 +1,23 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/entities/simulated_player.gd" id="1_simplayer"]
+[ext_resource type="SpriteFrames" path="res://assets/sprites/character/character_frames.tres" id="2_frames"]
+
+[node name="SimulatedPlayer" type="CharacterBody2D"]
+script = ExtResource("1_simplayer")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = ExtResource("2_frames")
+animation = &"idle_down"
+
+[node name="NameLabel" type="Label" parent="."]
+offset_left = -40.0
+offset_top = -46.0
+offset_right = 40.0
+offset_bottom = -30.0
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.85, 0.85, 0.7, 1)
+theme_override_colors/font_outline_color = Color(0.1, 0.1, 0.1, 1)
+theme_override_constants/outline_size = 3
+text = "Adventurer"
