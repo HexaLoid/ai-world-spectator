@@ -14,6 +14,7 @@ const SUITES := [
 	"res://tests/suite_name_table.gd",
 	"res://tests/suite_chat_lines.gd",
 	"res://tests/suite_chat_policy.gd",
+	"res://tests/suite_leveling_system.gd",
 ]
 
 var checks := 0
