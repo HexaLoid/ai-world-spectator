@@ -16,6 +16,7 @@ const SUITES := [
 	"res://tests/suite_chat_policy.gd",
 	"res://tests/suite_leveling_system.gd",
 	"res://tests/suite_enemy_table.gd",
+	"res://tests/suite_spawn_points.gd",
 ]
 
 var checks := 0

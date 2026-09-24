@@ -13,6 +13,8 @@ const ATTACK_ANIM_DURATION_MS := 400.0
 @export var xp_reward: int = 25
 @export var gold_min: int = 1
 @export var gold_max: int = 3
+## Random drops only pick items with level_req <= this (see LootTable.roll_drop).
+@export var loot_level: int = 1
 @export var sprite_size: float = 40.0
 @export var sprite_tint: Color = Color(1, 1, 1, 1)
 ## When set, always drops this item on death instead of a random LootTable
@@ -191,7 +193,7 @@ func _die() -> void:
 	queue_free()
 
 func _drop_loot() -> void:
-	var item_id := guaranteed_drop_id if guaranteed_drop_id != "" else LootTable.roll_drop(rng)
+	var item_id := guaranteed_drop_id if guaranteed_drop_id != "" else LootTable.roll_drop(rng, loot_level)
 	var item_scene: PackedScene = load("res://scenes/entities/ItemPickup.tscn")
 	var item := item_scene.instantiate()
 	item.item_id = item_id

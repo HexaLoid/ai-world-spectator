@@ -1,21 +1,10 @@
 extends Node2D
 
-## Sentinel-value overrides: 0 / "" all mean "don't override the enemy's
-## default for this field." There's currently no way to force an override TO
-## zero/empty — acceptable for v1's fixed 2-enemy-type scope.
+## Spawns one enemy described by EnemyTable[enemy_id] and respawns it
+## `respawn_delay_s` after it dies.
 @export var enemy_scene: PackedScene
+@export var enemy_id: String = ""
 @export var respawn_delay_s: float = 8.0
-@export var enemy_name_override: String = ""
-@export var max_hp_override: int = 0
-@export var move_speed_override: float = 0.0
-@export var attack_damage_min_override: int = 0
-@export var attack_damage_max_override: int = 0
-@export var xp_reward_override: int = 0
-@export var aggro_range_override: float = 0.0
-@export var sprite_frames_override: SpriteFrames = null
-@export var sprite_size_override: float = 0.0
-@export var sprite_tint_override: Color = Color(0, 0, 0, 0)
-@export var guaranteed_drop_id_override: String = ""
 
 var current_enemy: Node2D = null
 
@@ -25,31 +14,27 @@ func _ready() -> void:
 func _spawn() -> void:
 	if enemy_scene == null:
 		return
+	var def := EnemyTable.get_def(enemy_id)
+	if def.is_empty():
+		push_warning("SpawnPoint %s has unknown enemy_id '%s'" % [name, enemy_id])
+		return
 	current_enemy = enemy_scene.instantiate()
 	current_enemy.global_position = global_position
 	current_enemy.spawn_point = self
-	if enemy_name_override != "":
-		current_enemy.enemy_name = enemy_name_override
-	if max_hp_override > 0:
-		current_enemy.max_hp = max_hp_override
-	if move_speed_override > 0.0:
-		current_enemy.move_speed = move_speed_override
-	if attack_damage_min_override > 0:
-		current_enemy.attack_damage_min = attack_damage_min_override
-	if attack_damage_max_override > 0:
-		current_enemy.attack_damage_max = attack_damage_max_override
-	if xp_reward_override > 0:
-		current_enemy.xp_reward = xp_reward_override
-	if aggro_range_override > 0.0:
-		current_enemy.aggro_range = aggro_range_override
-	if sprite_frames_override != null:
-		current_enemy.get_node("AnimatedSprite2D").sprite_frames = sprite_frames_override
-	if sprite_size_override > 0.0:
-		current_enemy.sprite_size = sprite_size_override
-	if sprite_tint_override.a > 0.0:
-		current_enemy.sprite_tint = sprite_tint_override
-	if guaranteed_drop_id_override != "":
-		current_enemy.guaranteed_drop_id = guaranteed_drop_id_override
+	current_enemy.enemy_name = def["name"]
+	current_enemy.max_hp = def["max_hp"]
+	current_enemy.move_speed = def["move_speed"]
+	current_enemy.attack_damage_min = def["attack_min"]
+	current_enemy.attack_damage_max = def["attack_max"]
+	current_enemy.aggro_range = def["aggro_range"]
+	current_enemy.xp_reward = def["xp_reward"]
+	current_enemy.gold_min = def["gold_min"]
+	current_enemy.gold_max = def["gold_max"]
+	current_enemy.loot_level = def["loot_level"]
+	current_enemy.sprite_size = def["sprite_size"]
+	current_enemy.sprite_tint = def["tint"]
+	current_enemy.guaranteed_drop_id = def["guaranteed_drop"]
+	current_enemy.get_node("AnimatedSprite2D").sprite_frames = load(EnemyTable.SPRITE_FRAMES[def["sprite"]])
 	get_tree().current_scene.add_child.call_deferred(current_enemy)
 
 func on_enemy_died() -> void:

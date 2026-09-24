@@ -52,19 +52,4 @@ scale = Vector2(1.6, 1.6)
 position = Vector2(0, 0)
 respawn_delay_s = 90.0
 enemy_scene = ExtResource("2_enemy")
-enemy_name_override = "Crypt Lord"
-max_hp_override = 150
-move_speed_override = 45.0
-attack_damage_min_override = 10
-attack_damage_max_override = 18
-xp_reward_override = 300
-# A small, enclosed dungeon room rather than an open field (bounds below
-# are a 360x360 square) — this aggro range comfortably exceeds the
-# worst-case corner-to-center distance (~255), so the boss reliably
-# notices the character on every visit instead of possibly never coming
-# into range during a short wander before the zone's dwell timer expires.
-aggro_range_override = 280.0
-sprite_frames_override = ExtResource("3_bandit_frames")
-sprite_size_override = 64.0
-sprite_tint_override = Color(0.2, 0.06, 0.1, 1.0)
-guaranteed_drop_id_override = "warlords_greatsword"
+enemy_id = "crypt_lord"

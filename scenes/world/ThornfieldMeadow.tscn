@@ -71,35 +71,17 @@ home_zone_id = "thornfield_meadow"
 [node name="SpawnPointWolf1" parent="." instance=ExtResource("1_spawnpoint")]
 position = Vector2(150, -80)
 enemy_scene = ExtResource("2_enemy")
-enemy_name_override = "Wolf"
-max_hp_override = 18
-move_speed_override = 70.0
-attack_damage_min_override = 2
-attack_damage_max_override = 4
-xp_reward_override = 20
-sprite_frames_override = ExtResource("3_wolf_frames")
+enemy_id = "wolf"
 
 [node name="SpawnPointWolf2" parent="." instance=ExtResource("1_spawnpoint")]
 position = Vector2(-180, 100)
 enemy_scene = ExtResource("2_enemy")
-enemy_name_override = "Wolf"
-max_hp_override = 18
-move_speed_override = 70.0
-attack_damage_min_override = 2
-attack_damage_max_override = 4
-xp_reward_override = 20
-sprite_frames_override = ExtResource("3_wolf_frames")
+enemy_id = "wolf"
 
 [node name="SpawnPointBandit1" parent="." instance=ExtResource("1_spawnpoint")]
 position = Vector2(60, 150)
 enemy_scene = ExtResource("2_enemy")
-enemy_name_override = "Bandit"
-max_hp_override = 35
-move_speed_override = 45.0
-attack_damage_min_override = 4
-attack_damage_max_override = 8
-xp_reward_override = 35
-sprite_frames_override = ExtResource("4_bandit_frames")
+enemy_id = "bandit"
 
 [node name="Tree1" type="Sprite2D" parent="."]
 texture = ExtResource("5_tree_pine")
