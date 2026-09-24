@@ -35,18 +35,32 @@ const ZONES := {
 		"min_level": 3,
 		"stay_duration_ms": 20000.0,
 	},
+	"mirewater_swamp": {
+		"name": "Mirewater Swamp",
+		"center": Vector2(6600, 0),
+		"bounds_min": Vector2(6220, -280),
+		"bounds_max": Vector2(6980, 280),
+		"min_level": 4,
+	},
+	"frostpeak_pass": {
+		"name": "Frostpeak Pass",
+		"center": Vector2(8800, 0),
+		"bounds_min": Vector2(8420, -280),
+		"bounds_max": Vector2(9180, 280),
+		"min_level": 7,
+	},
 }
 
 ## Visited in a fixed rotation by the "travel" AI state, skipping any zone
 ## whose min_level the character hasn't reached yet (see next_zone_id()).
-const TRAVEL_ORDER := ["thornfield_meadow", "blackthorn_forest", "sundered_crypt"]
+const TRAVEL_ORDER := ["thornfield_meadow", "blackthorn_forest", "sundered_crypt", "mirewater_swamp", "frostpeak_pass"]
 
 ## Encompasses every zone's bounds plus the corridors between them, so the
 ## character isn't clamped back into its origin zone mid-"travel". Y range
 ## is driven by the two larger outdoor zones; Sundered Crypt's smaller room
 ## fits within it.
 const WORLD_BOUNDS_MIN := Vector2(-380, -280)
-const WORLD_BOUNDS_MAX := Vector2(4580, 280)
+const WORLD_BOUNDS_MAX := Vector2(9180, 280)
 
 ## Next zone in TRAVEL_ORDER after current_zone_id that the character's
 ## `level` actually qualifies for (min_level defaults to 1, so both

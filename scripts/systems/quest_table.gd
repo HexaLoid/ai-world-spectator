@@ -15,6 +15,10 @@ extends RefCounted
 ##   cull_the_wolves -> dire_wolf_hunt -\
 ##                                        -> the_crypt_lord -> hero_of_thornfield
 ##   bandit_trouble  -> captains_head  -/
+## A longer chain then continues past the capstone into the two later zones:
+##   the_crypt_lord -> drain_the_mire, bog_bandits (both) -> the_mire_tyrant
+##   the_mire_tyrant -> frozen_fangs, raiders_of_the_pass (both) -> raider_captain_bounty
+##   raider_captain_bounty + hero_of_thornfield -> the_frostpeak_warlord
 ## The two intro quests (no `requires`) are always available at level 1, so
 ## the rotation never stalls with nothing to offer.
 const QUESTS := [
@@ -51,5 +55,47 @@ const QUESTS := [
 		"target_name": "Crypt Lord", "count": 1,
 		"xp_reward": 150, "item_reward": "crown_of_thornfield", "min_level": 3,
 		"requires": ["the_crypt_lord"],
+	},
+	{
+		"id": "drain_the_mire", "name": "Drain the Mire",
+		"target_name": "Mire Wolf", "count": 4,
+		"xp_reward": 250, "item_reward": "greater_health_potion", "min_level": 4,
+		"requires": ["the_crypt_lord"],
+	},
+	{
+		"id": "bog_bandits", "name": "Bog Bandits",
+		"target_name": "Bog Bandit", "count": 3,
+		"xp_reward": 250, "item_reward": "", "min_level": 4,
+		"requires": ["the_crypt_lord"],
+	},
+	{
+		"id": "the_mire_tyrant", "name": "The Mire Tyrant",
+		"target_name": "Mire Tyrant", "count": 1,
+		"xp_reward": 500, "item_reward": "reinforced_mail", "min_level": 5,
+		"requires": ["drain_the_mire", "bog_bandits"],
+	},
+	{
+		"id": "frozen_fangs", "name": "Frozen Fangs",
+		"target_name": "Frost Wolf", "count": 4,
+		"xp_reward": 450, "item_reward": "swamp_charm", "min_level": 7,
+		"requires": ["the_mire_tyrant"],
+	},
+	{
+		"id": "raiders_of_the_pass", "name": "Raiders of the Pass",
+		"target_name": "Frost Raider", "count": 3,
+		"xp_reward": 450, "item_reward": "bog_bulwark", "min_level": 7,
+		"requires": ["the_mire_tyrant"],
+	},
+	{
+		"id": "raider_captain_bounty", "name": "The Raider Captain",
+		"target_name": "Raider Captain", "count": 1,
+		"xp_reward": 700, "item_reward": "frozen_band", "min_level": 8,
+		"requires": ["frozen_fangs", "raiders_of_the_pass"],
+	},
+	{
+		"id": "the_frostpeak_warlord", "name": "The Frostpeak Warlord",
+		"target_name": "Frostpeak Warlord", "count": 1,
+		"xp_reward": 1000, "item_reward": "rimewatch_amulet", "min_level": 9,
+		"requires": ["raider_captain_bounty", "hero_of_thornfield"],
 	},
 ]
