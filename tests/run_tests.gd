@@ -10,6 +10,7 @@ const SUITES := [
 	"res://tests/suite_loot_table.gd",
 	"res://tests/suite_item_scoring.gd",
 	"res://tests/suite_stat_calculator.gd",
+	"res://tests/suite_sheet_text.gd",
 ]
 
 var checks := 0
