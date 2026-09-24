@@ -20,6 +20,14 @@ func _ready() -> void:
 	GameState.character_leveled_up.connect(_on_leveled_up)
 	GameState.character_equipment_changed.connect(_on_equipment_changed)
 	if GameState.character:
+		# The resource bar's fill color is per-class (e.g. orange Rage vs.
+		# blue Mana) — recolored once here rather than per-update, since the
+		# class never changes after spawn. Duplicated so this doesn't mutate
+		# the shared StyleBoxFlat resource other instances might reference.
+		var resource_color: Color = GameState.character.class_def.get("resource_color", Color(0.8, 0.35, 0.05, 1.0))
+		var resource_style: StyleBox = resource_bar.get_theme_stylebox("fill").duplicate()
+		resource_style.bg_color = resource_color
+		resource_bar.add_theme_stylebox_override("fill", resource_style)
 		_on_hp_changed(GameState.character.hp, GameState.character.max_hp)
 		_on_leveled_up(GameState.character.level)
 		_on_xp_changed(GameState.character.xp)
@@ -49,7 +57,10 @@ func _on_xp_changed(xp: int) -> void:
 	xp_bar.value = xp - prev_threshold
 
 func _on_leveled_up(level: int) -> void:
-	level_label.text = "Level %d" % level
+	var class_name_display := ""
+	if GameState.character:
+		class_name_display = " %s" % GameState.character.character_class.capitalize()
+	level_label.text = "Level %d%s" % [level, class_name_display]
 
 func _on_equipment_changed(weapon_id: String, armor_id: String, trinket_id: String) -> void:
 	_update_equipment_slot(weapon_label, weapon_icon, "Weapon", weapon_id)

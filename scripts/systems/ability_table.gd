@@ -1,17 +1,35 @@
 class_name AbilityTable
 extends RefCounted
 
-## Per-class resource and ability-loadout definitions. Only "warrior" is
-## populated in this slice; the CLASSES/ABILITIES split exists so a second
-## class can be added later without restructuring Character or the HUD.
+## Per-class resource and ability-loadout definitions. "abilities" lists the
+## ids (into ABILITIES below) that belong to this class, in priority order —
+## Character never touches an ability id that isn't in its own class's list,
+## and dispatches purely by each ability's "kind" (see ABILITIES), so a
+## class needs no other code to plug in. "resource_regen_per_second" and
+## "resource_decay_per_second" both default to 0.0 if unset; a class sets
+## whichever fits its resource (an aggressive one that drains when idle, like
+## Rage, vs. a patient one that recovers over time, like Mana).
 const CLASSES := {
 	"warrior": {
 		"resource_name": "Rage",
+		"resource_color": Color(0.8, 0.35, 0.05, 1.0),
 		"max_resource": 100.0,
 		"resource_decay_per_second": 2.0,
 		"rage_per_swing": 5.0,
 		"rage_per_hit_taken": 3.0,
+		"sprite_tint": Color(1.0, 1.0, 1.0, 1.0),
 		"abilities": ["charge", "rend", "heroic_strike", "second_wind"],
+	},
+	"mage": {
+		"resource_name": "Mana",
+		"resource_color": Color(0.25, 0.45, 0.9, 1.0),
+		"max_resource": 100.0,
+		"resource_regen_per_second": 6.0,
+		"sprite_tint": Color(0.55, 0.65, 1.0, 1.0),
+		# No gap-closer — the mage has no Charge equivalent, so "chase" just
+		# walks. Mana comes back on its own between fights instead of being
+		# built by fighting, the opposite tradeoff from the warrior's Rage.
+		"abilities": ["frost_nova", "arcane_bolt", "mana_ward"],
 	},
 }
 
@@ -53,5 +71,32 @@ const ABILITIES := {
 		"cooldown_ms": 20000,
 		"kind": "self_heal",
 		"heal_percent": 0.25,
+	},
+	"arcane_bolt": {
+		"name": "Arcane Bolt",
+		"icon": "res://assets/icons/arcane_bolt_icon.png",
+		"resource_cost": 25.0,
+		"cooldown_ms": 4000,
+		"kind": "melee_hit",
+		"damage_multiplier": 2.2,
+	},
+	"frost_nova": {
+		"name": "Frost Nova",
+		"icon": "res://assets/icons/frost_nova_icon.png",
+		"resource_cost": 20.0,
+		"cooldown_ms": 8000,
+		"kind": "bleed",
+		"tick_damage_min": 3,
+		"tick_damage_max": 5,
+		"tick_count": 4,
+		"tick_interval_ms": 1200,
+	},
+	"mana_ward": {
+		"name": "Mana Ward",
+		"icon": "res://assets/icons/mana_ward_icon.png",
+		"resource_cost": 30.0,
+		"cooldown_ms": 18000,
+		"kind": "self_heal",
+		"heal_percent": 0.3,
 	},
 }

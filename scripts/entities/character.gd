@@ -29,7 +29,11 @@ const STATE_DISPLAY_NAMES := {
 @export var xp: int = 0
 @export var attack_damage_min: int = 4
 @export var attack_damage_max: int = 8
-@export var character_class: String = "warrior"
+## "" means "roll a random class at spawn" (see _ready()) — the normal way
+## this ends up populated, since this is a single always-on spectator
+## character with no class-select UI. A scene can still force a specific
+## class by overriding this export directly, e.g. for testing.
+@export var character_class: String = ""
 
 var equipped_weapon_id: String = ""
 var equipped_armor_id: String = ""
@@ -70,8 +74,12 @@ func _ready() -> void:
 	rng.randomize()
 	wander_target = global_position
 	GameState.character = self
+	if character_class == "":
+		var class_ids := AbilityTable.CLASSES.keys()
+		character_class = class_ids[rng.randi_range(0, class_ids.size() - 1)]
 	class_def = AbilityTable.CLASSES.get(character_class, {})
 	max_resource = float(class_def.get("max_resource", 0.0))
+	sprite.modulate = class_def.get("sprite_tint", Color(1.0, 1.0, 1.0, 1.0))
 	GameState.emit_signal("character_resource_changed", resource_amount, max_resource)
 
 func _physics_process(delta: float) -> void:
@@ -163,16 +171,16 @@ func _act(delta: float, context: Dictionary) -> void:
 	var combat_hostile: Node2D = null
 	match current_state:
 		"flee":
-			_try_second_wind()
+			_try_self_heal()
 			var hostile := _find_nearest_in_group("enemies")
 			if hostile:
 				_move_toward(global_position - hostile.global_position, MOVE_SPEED)
 			base_anim = "run"
 		"rest":
-			_try_second_wind()
+			_try_self_heal()
 			velocity = Vector2.ZERO
 			_regen_hp(delta)
-			_decay_resource(delta)
+			_tick_resource(delta)
 		"combat":
 			velocity = Vector2.ZERO
 			combat_hostile = _find_nearest_in_group("enemies")
@@ -182,7 +190,7 @@ func _act(delta: float, context: Dictionary) -> void:
 		"chase":
 			var hostile := _find_nearest_in_group("enemies")
 			if hostile:
-				if not _try_charge(hostile):
+				if not _try_gap_closer(hostile):
 					_move_toward(hostile.global_position - global_position, MOVE_SPEED)
 			base_anim = "run"
 		"loot":
@@ -194,14 +202,14 @@ func _act(delta: float, context: Dictionary) -> void:
 				else:
 					_move_toward(to_item, MOVE_SPEED)
 			base_anim = "walk"
-			_decay_resource(delta)
+			_tick_resource(delta)
 		"wander":
 			var zone: Dictionary = ZoneTable.ZONES[current_zone_id]
 			if global_position.distance_to(wander_target) < 8.0:
 				wander_target = (global_position + Vector2(rng.randf_range(-100, 100), rng.randf_range(-100, 100))).clamp(zone["bounds_min"], zone["bounds_max"])
 			_move_toward(wander_target - global_position, MOVE_SPEED * 0.5)
 			base_anim = "walk"
-			_decay_resource(delta)
+			_tick_resource(delta)
 		"quest":
 			var quest_giver := _find_nearest_in_group("quest_givers")
 			if quest_giver:
@@ -363,37 +371,67 @@ func _gain_resource(amount: float) -> void:
 func _spend_resource(amount: float) -> void:
 	_gain_resource(-amount)
 
-func _decay_resource(delta: float) -> void:
-	_gain_resource(-float(class_def.get("resource_decay_per_second", 0.0)) * delta)
+## Passive resource change over time — decay for an aggressive resource like
+## Rage (warrior), regen for a patient one like Mana (mage). Both fields
+## default to 0.0 so a class only needs to set whichever one applies to it;
+## called from the same "downtime" states (rest/loot/wander) that always
+## drove Rage's decay, so warrior's balance is unchanged and mage's Mana
+## simply regenerates during those same states instead.
+func _tick_resource(delta: float) -> void:
+	var regen := float(class_def.get("resource_regen_per_second", 0.0))
+	var decay := float(class_def.get("resource_decay_per_second", 0.0))
+	_gain_resource((regen - decay) * delta)
+
+## Finds the id of the current class's ability (from class_def's own
+## "abilities" list, never the full global AbilityTable.ABILITIES) whose
+## "kind" matches, or "" if the class has none of that kind — e.g. the mage
+## has no "gap_closer", so _try_gap_closer() below just no-ops for it.
+func _find_class_ability_id(kind: String) -> String:
+	for ability_id in class_def.get("abilities", []):
+		if AbilityTable.ABILITIES.get(ability_id, {}).get("kind", "") == kind:
+			return ability_id
+	return ""
 
 ## Gap closer used from the "chase" state instead of walking, when off
 ## cooldown. Returns true if it fired (caller skips its normal move step).
-func _try_charge(hostile: Node2D) -> bool:
-	var def: Dictionary = AbilityTable.ABILITIES.get("charge", {})
-	if not _ability_ready("charge", float(def.get("resource_cost", 0.0))):
+## Not every class has one (the mage doesn't), in which case this just
+## returns false immediately and the caller falls back to walking.
+func _try_gap_closer(hostile: Node2D) -> bool:
+	var ability_id := _find_class_ability_id("gap_closer")
+	if ability_id == "":
 		return false
-	_start_cooldown("charge", int(def.get("cooldown_ms", 0)))
+	var def: Dictionary = AbilityTable.ABILITIES.get(ability_id, {})
+	if not _ability_ready(ability_id, float(def.get("resource_cost", 0.0))):
+		return false
+	_start_cooldown(ability_id, int(def.get("cooldown_ms", 0)))
 	var to_hostile := hostile.global_position - global_position
 	# Land just outside melee range rather than exactly on top of the target.
 	global_position = hostile.global_position - to_hostile.normalized() * (ATTACK_RANGE * 0.9)
 	_gain_resource(float(def.get("resource_gain", 0.0)))
-	GameState.log_event("Charges at %s!" % hostile.enemy_name)
+	GameState.log_event("Uses %s on %s!" % [def.get("name", "an ability"), hostile.enemy_name])
 	return true
 
-## Layers Rend/Heroic Strike on top of the normal auto-attack, each on its
-## own independent cooldown, while in the "combat" state.
+## Layers the class's non-gap-closer/self-heal abilities (a bonus-damage hit
+## and a damage-over-time effect, for both classes so far) on top of the
+## normal auto-attack, one at a time in class ability-list order, while in
+## the "combat" state.
 func _try_combat_abilities(hostile: Node2D) -> void:
-	var rend: Dictionary = AbilityTable.ABILITIES.get("rend", {})
-	if _ability_ready("rend", float(rend.get("resource_cost", 0.0))):
-		_use_rend(hostile, rend)
+	for ability_id in class_def.get("abilities", []):
+		var def: Dictionary = AbilityTable.ABILITIES.get(ability_id, {})
+		var kind: String = def.get("kind", "")
+		if kind != "bleed" and kind != "melee_hit":
+			continue
+		if not _ability_ready(ability_id, float(def.get("resource_cost", 0.0))):
+			continue
+		if kind == "bleed":
+			_use_bleed(hostile, ability_id, def)
+		else:
+			_use_melee_hit(hostile, ability_id, def)
 		return
-	var heroic_strike: Dictionary = AbilityTable.ABILITIES.get("heroic_strike", {})
-	if _ability_ready("heroic_strike", float(heroic_strike.get("resource_cost", 0.0))):
-		_use_heroic_strike(hostile, heroic_strike)
 
-func _use_rend(hostile: Node2D, def: Dictionary) -> void:
+func _use_bleed(hostile: Node2D, ability_id: String, def: Dictionary) -> void:
 	_spend_resource(float(def.get("resource_cost", 0.0)))
-	_start_cooldown("rend", int(def.get("cooldown_ms", 0)))
+	_start_cooldown(ability_id, int(def.get("cooldown_ms", 0)))
 	hostile.apply_bleed(
 		int(def.get("tick_damage_min", 0)),
 		int(def.get("tick_damage_max", 0)),
@@ -401,25 +439,29 @@ func _use_rend(hostile: Node2D, def: Dictionary) -> void:
 		int(def.get("tick_interval_ms", 0))
 	)
 	attack_anim_until_ms = game_time_ms + ATTACK_ANIM_DURATION_MS
-	GameState.log_event("Rends %s - bleeding!" % hostile.enemy_name)
+	GameState.log_event("%s afflicts %s - taking damage over time!" % [def.get("name", "An ability"), hostile.enemy_name])
 
-func _use_heroic_strike(hostile: Node2D, def: Dictionary) -> void:
+func _use_melee_hit(hostile: Node2D, ability_id: String, def: Dictionary) -> void:
 	_spend_resource(float(def.get("resource_cost", 0.0)))
-	_start_cooldown("heroic_strike", int(def.get("cooldown_ms", 0)))
+	_start_cooldown(ability_id, int(def.get("cooldown_ms", 0)))
 	var roll := _roll_damage(attack_damage_min, attack_damage_max, float(def.get("damage_multiplier", 1.0)))
 	hostile.take_damage(roll["damage"])
 	attack_anim_until_ms = game_time_ms + ATTACK_ANIM_DURATION_MS
 	var crit_suffix := " (Critical!)" if roll["is_crit"] else ""
-	GameState.log_event("Heroic Strike hits %s for %d!%s" % [hostile.enemy_name, roll["damage"], crit_suffix])
+	GameState.log_event("%s hits %s for %d!%s" % [def.get("name", "An ability"), hostile.enemy_name, roll["damage"], crit_suffix])
 
 ## Checked at the start of the "flee"/"rest" states rather than folded into
 ## AIDecision, so the FSM's pure state-selection logic stays untouched — this
 ## only changes how much HP the character has by the time flee/rest run.
-func _try_second_wind() -> void:
-	var def: Dictionary = AbilityTable.ABILITIES.get("second_wind", {})
-	if not _ability_ready("second_wind", float(def.get("resource_cost", 0.0))):
+func _try_self_heal() -> void:
+	var ability_id := _find_class_ability_id("self_heal")
+	if ability_id == "":
 		return
-	_start_cooldown("second_wind", int(def.get("cooldown_ms", 0)))
+	var def: Dictionary = AbilityTable.ABILITIES.get(ability_id, {})
+	if not _ability_ready(ability_id, float(def.get("resource_cost", 0.0))):
+		return
+	_spend_resource(float(def.get("resource_cost", 0.0)))
+	_start_cooldown(ability_id, int(def.get("cooldown_ms", 0)))
 	var old_hp := hp
 	hp = min(max_hp, hp + int(max_hp * float(def.get("heal_percent", 0.0))))
 	var healed := hp - old_hp
@@ -427,7 +469,7 @@ func _try_second_wind() -> void:
 		return
 	GameState.emit_signal("character_hp_changed", hp, max_hp)
 	GameState.emit_signal("damage_dealt", global_position, healed, true)
-	GameState.log_event("Uses Second Wind - recovers %d HP!" % healed)
+	GameState.log_event("Uses %s - recovers %d HP!" % [def.get("name", "an ability"), healed])
 
 func gain_xp(amount: int) -> void:
 	var result := LevelingSystem.apply_xp(level, xp, amount)

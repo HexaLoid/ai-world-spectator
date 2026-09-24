@@ -4,8 +4,8 @@
 [ext_resource type="Script" path="res://scripts/ui/activity_log.gd" id="2_activitylog"]
 [ext_resource type="Script" path="res://scripts/ui/speed_control.gd" id="3_speedcontrol"]
 [ext_resource type="Theme" path="res://assets/theme/spectator_theme.tres" id="4_theme"]
-[ext_resource type="Script" path="res://scripts/ui/ability_slot.gd" id="5_abilityslot"]
 [ext_resource type="Script" path="res://scripts/ui/quest_tracker.gd" id="6_questtracker"]
+[ext_resource type="Script" path="res://scripts/ui/ability_bar.gd" id="7_abilitybar"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xpfill"]
 bg_color = Color(0.82, 0.65, 0.15, 1)
@@ -125,87 +125,5 @@ text = "Recenter"
 
 [node name="AbilityBar" type="HBoxContainer" parent="."]
 position = Vector2(487, 592)
-
-[node name="Charge" type="Panel" parent="AbilityBar"]
-custom_minimum_size = Vector2(40, 40)
 theme = ExtResource("4_theme")
-script = ExtResource("5_abilityslot")
-ability_id = "charge"
-
-[node name="Icon" type="TextureRect" parent="AbilityBar/Charge"]
-offset_left = 4.0
-offset_top = 4.0
-offset_right = 36.0
-offset_bottom = 36.0
-expand_mode = 1
-stretch_mode = 5
-
-[node name="CooldownBar" type="ProgressBar" parent="AbilityBar/Charge"]
-offset_left = 2.0
-offset_top = 32.0
-offset_right = 38.0
-offset_bottom = 38.0
-show_percentage = false
-
-[node name="Rend" type="Panel" parent="AbilityBar"]
-custom_minimum_size = Vector2(40, 40)
-theme = ExtResource("4_theme")
-script = ExtResource("5_abilityslot")
-ability_id = "rend"
-
-[node name="Icon" type="TextureRect" parent="AbilityBar/Rend"]
-offset_left = 4.0
-offset_top = 4.0
-offset_right = 36.0
-offset_bottom = 36.0
-expand_mode = 1
-stretch_mode = 5
-
-[node name="CooldownBar" type="ProgressBar" parent="AbilityBar/Rend"]
-offset_left = 2.0
-offset_top = 32.0
-offset_right = 38.0
-offset_bottom = 38.0
-show_percentage = false
-
-[node name="HeroicStrike" type="Panel" parent="AbilityBar"]
-custom_minimum_size = Vector2(40, 40)
-theme = ExtResource("4_theme")
-script = ExtResource("5_abilityslot")
-ability_id = "heroic_strike"
-
-[node name="Icon" type="TextureRect" parent="AbilityBar/HeroicStrike"]
-offset_left = 4.0
-offset_top = 4.0
-offset_right = 36.0
-offset_bottom = 36.0
-expand_mode = 1
-stretch_mode = 5
-
-[node name="CooldownBar" type="ProgressBar" parent="AbilityBar/HeroicStrike"]
-offset_left = 2.0
-offset_top = 32.0
-offset_right = 38.0
-offset_bottom = 38.0
-show_percentage = false
-
-[node name="SecondWind" type="Panel" parent="AbilityBar"]
-custom_minimum_size = Vector2(40, 40)
-theme = ExtResource("4_theme")
-script = ExtResource("5_abilityslot")
-ability_id = "second_wind"
-
-[node name="Icon" type="TextureRect" parent="AbilityBar/SecondWind"]
-offset_left = 4.0
-offset_top = 4.0
-offset_right = 36.0
-offset_bottom = 36.0
-expand_mode = 1
-stretch_mode = 5
-
-[node name="CooldownBar" type="ProgressBar" parent="AbilityBar/SecondWind"]
-offset_left = 2.0
-offset_top = 32.0
-offset_right = 38.0
-offset_bottom = 38.0
-show_percentage = false
+script = ExtResource("7_abilitybar")
