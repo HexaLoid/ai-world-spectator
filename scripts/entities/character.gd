@@ -42,6 +42,9 @@ const STATE_DISPLAY_NAMES := {
 ## never adjust them directly for gear or level-ups, change the base and recompute.
 var equipment: Dictionary = {}
 var gold: int = 0
+var character_name: String = ""
+# True once the "low HP" chat line fired; re-armed when HP climbs back above 60%.
+var low_hp_announced: bool = false
 # Session statistics (shown on the character sheet); reset only by relaunching.
 var kills_by_name: Dictionary = {}
 var deaths: int = 0
@@ -94,6 +97,7 @@ func _ready() -> void:
 		var class_ids := AbilityTable.CLASSES.keys()
 		character_class = class_ids[rng.randi_range(0, class_ids.size() - 1)]
 	class_def = AbilityTable.CLASSES.get(character_class, {})
+	character_name = NameTable.pick(rng)
 	max_resource = float(class_def.get("max_resource", 0.0))
 	sprite.modulate = class_def.get("sprite_tint", Color(1.0, 1.0, 1.0, 1.0))
 	base_max_hp = max_hp
@@ -330,6 +334,7 @@ func _sync_current_zone() -> void:
 	wander_target = global_position
 	GameState.log_event("Arrives in %s" % ZoneTable.ZONES[zone_id]["name"])
 	GameState.emit_signal("zone_changed", zone_id)
+	GameState.emit_signal("chat_event", "zone_arrive", {"zone": String(ZoneTable.ZONES[zone_id]["name"])})
 	_recruit_companions_in_zone(zone_id)
 
 ## Recruits up to MAX_PARTY_SIZE ungrouped SimulatedPlayers whose home zone
@@ -352,6 +357,8 @@ func _recruit_companions_in_zone(zone_id: String) -> void:
 		sp.group_leader = self
 		party.append(sp)
 		GameState.log_event("%s joins the group!" % sp.player_name)
+		GameState.emit_signal("party_changed")
+		GameState.emit_signal("chat_event", "ally_joined", {"ally": sp})
 
 func _regen_hp(delta: float) -> void:
 	hp_regen_accumulator += HP_REGEN_PER_SECOND * delta
@@ -400,6 +407,12 @@ func take_damage(amount: int) -> void:
 	hp = max(0, hp - amount)
 	GameState.emit_signal("character_hp_changed", hp, max_hp)
 	GameState.emit_signal("damage_dealt", global_position, amount, false)
+	var hp_fraction := float(hp) / float(max_hp)
+	if hp > 0 and hp_fraction < 0.3 and not low_hp_announced:
+		low_hp_announced = true
+		GameState.emit_signal("chat_event", "leader_low_hp", {})
+	elif hp_fraction > 0.6:
+		low_hp_announced = false
 	_gain_resource(float(class_def.get("rage_per_hit_taken", 0.0)))
 	if hp <= 0:
 		_die()
@@ -407,6 +420,7 @@ func take_damage(amount: int) -> void:
 func _die() -> void:
 	is_dead = true
 	deaths += 1
+	GameState.emit_signal("chat_event", "leader_died", {})
 	_update_combat_target(null)
 	GameState.log_event("Character died - respawning")
 	visible = false
@@ -582,6 +596,7 @@ func get_sheet_snapshot() -> Dictionary:
 	if not quest.is_empty():
 		quest_text = "%s %d/%d" % [quest.get("name", ""), quest_progress, int(quest.get("count", 0))]
 	return {
+		"character_name": character_name,
 		"level": level,
 		"class_name": character_class,
 		"zone_name": String(ZoneTable.ZONES[current_zone_id]["name"]),
@@ -620,6 +635,7 @@ func gain_xp(amount: int) -> void:
 		hp += result["hp_bonus"]
 		GameState.log_event("Leveled up to %d!" % level)
 		GameState.emit_signal("character_leveled_up", level)
+		GameState.emit_signal("chat_event", "leader_level_up", {"level": level})
 		GameState.emit_signal("character_hp_changed", hp, max_hp)
 	GameState.emit_signal("character_xp_changed", xp)
 
@@ -668,6 +684,8 @@ func _acquire_item(item_id: String) -> void:
 	_recompute_stats()
 	GameState.log_event("Equipped %s (%s)" % [display_name, ItemScoring.describe_stats(item_id)])
 	GameState.emit_signal("character_equipment_changed", equipment.duplicate())
+	if item_def.get("rarity", "") in ["rare", "epic"]:
+		GameState.emit_signal("chat_event", "leader_loot", {"item": display_name})
 	GameState.emit_signal("character_hp_changed", hp, max_hp)
 
 func _find_quest(quest_id: String) -> Dictionary:

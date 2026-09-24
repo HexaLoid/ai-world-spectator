@@ -177,6 +177,8 @@ func take_damage(amount: int, attacker: Node2D = null) -> void:
 
 func _die() -> void:
 	is_dead = true
+	if guaranteed_drop_id != "":
+		GameState.emit_signal("chat_event", "elite_kill", {"enemy": enemy_name})
 	if last_attacker != null and is_instance_valid(last_attacker):
 		if last_attacker == GameState.character:
 			last_attacker.take_kill_credit(enemy_name, xp_reward)

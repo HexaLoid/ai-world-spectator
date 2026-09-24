@@ -212,6 +212,7 @@ func take_damage(amount: int) -> void:
 
 func _die() -> void:
 	is_dead = true
+	GameState.emit_signal("chat_event", "ally_died", {"ally": self})
 	GameState.log_event("[Ally] %s has fallen - respawning" % player_name)
 	visible = false
 	set_physics_process(false)
@@ -241,6 +242,7 @@ func take_kill_credit(_enemy_name: String, xp_reward: int) -> void:
 		attack_damage_min += result["damage_bonus"]
 		attack_damage_max += result["damage_bonus"]
 		GameState.log_event("[Ally] %s levels up to %d!" % [player_name, level])
+		GameState.emit_signal("chat_event", "ally_level_up", {"ally": self, "level": level})
 
 func _facing_from_velocity(vel: Vector2) -> String:
 	if vel.length() < 1.0:

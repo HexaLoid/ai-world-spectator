@@ -46,6 +46,17 @@ signal quest_changed(quest_name: String, progress: int, count: int)
 ## switch ambient audio, and generally useful for anything else that cares
 ## which zone the character is currently in.
 signal zone_changed(zone_id: String)
+## Emitted by gameplay code at chat-worthy moments (an ally joins or levels up,
+## the character levels up, an elite dies, ...). `event` is a key of
+## ChatLines.TEMPLATES; `context` carries what the templates need (`ally`
+## node, `enemy`, `item`, `zone`, `level`). The ChatDirector decides whether
+## anyone actually speaks.
+signal chat_event(event: String, context: Dictionary)
+## Emitted by the ChatDirector when an ally says something; the chat panel
+## renders it. `channel` is "party" or "zone".
+signal chat_message(channel: String, speaker: String, text: String)
+## Emitted when the character's party membership changes.
+signal party_changed()
 
 var character: Node2D = null
 var camera: Camera2D = null
