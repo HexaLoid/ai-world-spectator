@@ -87,7 +87,7 @@ sub('**Slots:** `weapon`, `head`, `chest`, `legs`, `boots`, `trinket`.',
     '**Slots:** `weapon`, `offhand`, `head`, `chest`, `neck`, `ring`. (Amended during planning: the project\'s icon pack has no leg or boot icons, so `legs`/`boots` became `offhand` (shields) and `neck`, and `trinket` became `ring`.)')
 sub('(weapon); `leather_armor`, `chainmail_armor`,\n`champions_plate` (chest); `lucky_charm`, `ring_of_fortune`, `amulet_of_wrath`,\n`crown_of_thornfield` (trinket). New head/legs/boots items are added',
     '(weapon); `leather_armor`, `chainmail_armor`,\n`champions_plate` (chest); `lucky_charm`, `amulet_of_wrath` (neck); `ring_of_fortune` (ring);\n`crown_of_thornfield` (head). New offhand/head/neck/ring items are added')
-sub('the three equipment\n  rows become six slot icons', 'the three equipment\n  rows become six slot icons')
+sub('(about 30-40 items total)', '(about 27 items to start)')
 open(p, 'w', newline='').write(s)
 ```
 
@@ -248,10 +248,12 @@ cp "$SRC/staff_02b.png" $DST/oak_staff_icon.png
 cp "$SRC/staff_03d.png" $DST/arcane_staff_icon.png
 cp "$SRC/potion_02c.png" $DST/greater_health_potion_icon.png
 cp "$SRC/coin_01a.png" $DST/gold_icon.png
-ls $DST | grep -c "_icon.png$"
+for n in wooden_shield iron_shield tower_shield leather_cap iron_helm steel_helm silver_necklace sage_pendant copper_ring ring_of_vigor signet_of_power apprentice_staff oak_staff arcane_staff greater_health_potion gold; do
+  [ -f "$DST/${n}_icon.png" ] && echo "ok $n" || echo "MISSING $n"
+done
 ```
 
-Expected: 36 (20 existing icon PNGs incl. `quest_board.png`? — the exact count is not important; the sixteen new files must exist).
+Expected: sixteen `ok` lines and no `MISSING`.
 
 - [ ] **Step 2: Import and eyeball**
 
@@ -474,9 +476,9 @@ func run(t) -> void:
 	t.check(not ItemScoring.is_upgrade("iron_sword", "iron_sword", warrior, 5), "an equal item is not an upgrade (strict >)")
 	t.check(not ItemScoring.is_upgrade("", "health_potion", warrior, 5), "consumables are never equipped")
 	t.check(not ItemScoring.is_upgrade("", "no_such_item", warrior, 5), "unknown items are never equipped")
-	t.check(not ItemScoring.is_upgrade("", "tower_shield", mage, 5) == false, "a mage still values a shield's armor over nothing")
+	t.check(ItemScoring.is_upgrade("", "tower_shield", mage, 5), "a mage still values a shield's armor over nothing")
 	t.check(ItemScoring.is_upgrade("rusty_sword", "arcane_staff", mage, 3), "mage prefers the staff")
-	t.check(not ItemScoring.is_upgrade("", "champions_plate", {}, 5) == false or true, "empty class_def does not crash")
+	t.check(not ItemScoring.is_upgrade("", "champions_plate", {}, 5), "an empty class_def scores everything 0, so nothing is an upgrade")
 
 	# describe_stats()
 	t.check_eq(ItemScoring.describe_stats("iron_helm"), "+2 armor, +10 HP", "describe iron_helm")
@@ -486,13 +488,6 @@ func run(t) -> void:
 ```
 
 Add `"res://tests/suite_item_scoring.gd"` to `SUITES` in `tests/run_tests.gd`.
-
-**Note for the implementer:** the two awkward `t.check(not ... == false ...)` lines above are wrong as written — replace them with these clear versions before running:
-
-```gdscript
-	t.check(ItemScoring.is_upgrade("", "tower_shield", mage, 5), "a mage still values a shield's armor over nothing")
-	t.check(not ItemScoring.is_upgrade("", "champions_plate", {}, 5), "an empty class_def scores everything 0, so nothing is an upgrade")
-```
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
@@ -877,15 +872,15 @@ open(p, 'w', newline='').write(s)
 
 `item.gold_amount` is added to `ItemPickup` in Task 8; the game must not run until then.
 
-- [ ] **Step 8: Verify the tests still pass and the script parses**
+- [ ] **Step 8: Verify**
 
-Run the import pass, then the tests. Expected: `0 failures`. Then confirm `Character` parses:
+Run the import pass and the tests. Expected: `0 failures`. Then confirm no stale references to the removed names remain anywhere except the HUD script (fixed in Task 9):
 
 ```bash
-"$GODOT" --headless --path . --check-only --script res://scripts/entities/character.gd
+grep -rn "equipped_weapon_id\|equipped_armor_id\|equipped_trinket_id\|should_equip" scripts scenes
 ```
 
-Expected: no `SCRIPT ERROR`/`Parse Error` lines (warnings are fine).
+Expected: matches only in `scripts/ui/unit_frame.gd`. (A live smoke run is not meaningful yet: the HUD still reads the old fields until Task 9.)
 
 - [ ] **Step 9: Commit**
 
@@ -1010,7 +1005,14 @@ open(p, 'w', newline='').write(s)
 
 - [ ] **Step 4: Verify**
 
-Import pass, tests (expect `0 failures`), and the parse check from Task 7 Step 8 for both `character.gd` and `enemy.gd`.
+Import pass, then the tests (expect `0 failures`). Then confirm both lookups were replaced and gold is wired through:
+
+```bash
+grep -n '_find_nearest_in_group("items")' scripts/entities/character.gd
+grep -n "gold_amount" scripts/entities/character.gd scripts/entities/enemy.gd scripts/entities/item_pickup.gd
+```
+
+Expected: the first command prints nothing; the second prints matches in all three files.
 
 - [ ] **Step 5: Commit**
 
