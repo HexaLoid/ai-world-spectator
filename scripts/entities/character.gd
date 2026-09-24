@@ -135,15 +135,11 @@ func _act(delta: float, context: Dictionary) -> void:
 		"flee":
 			var hostile := _find_nearest_in_group("enemies")
 			if hostile:
-				velocity = (global_position - hostile.global_position).normalized() * MOVE_SPEED
-				move_and_slide()
+				_move_toward(global_position - hostile.global_position, MOVE_SPEED)
 			base_anim = "run"
 		"rest":
 			velocity = Vector2.ZERO
-			hp_regen_accumulator += HP_REGEN_PER_SECOND * delta
-			while hp_regen_accumulator >= 1.0 and hp < max_hp:
-				hp += 1
-				hp_regen_accumulator -= 1.0
+			_regen_hp(delta)
 		"combat":
 			velocity = Vector2.ZERO
 			combat_hostile = _find_nearest_in_group("enemies")
@@ -151,8 +147,7 @@ func _act(delta: float, context: Dictionary) -> void:
 		"chase":
 			var hostile := _find_nearest_in_group("enemies")
 			if hostile:
-				velocity = (hostile.global_position - global_position).normalized() * MOVE_SPEED
-				move_and_slide()
+				_move_toward(hostile.global_position - global_position, MOVE_SPEED)
 			base_anim = "run"
 		"loot":
 			var item := _find_nearest_in_group("items")
@@ -161,26 +156,36 @@ func _act(delta: float, context: Dictionary) -> void:
 				if to_item.length() <= PICKUP_RANGE:
 					_pickup_item(item)
 				else:
-					velocity = to_item.normalized() * MOVE_SPEED
-					move_and_slide()
+					_move_toward(to_item, MOVE_SPEED)
 			base_anim = "walk"
 		"wander":
 			if global_position.distance_to(wander_target) < 8.0:
-				wander_target = global_position + Vector2(rng.randf_range(-100, 100), rng.randf_range(-100, 100))
-				wander_target = wander_target.clamp(MEADOW_MIN, MEADOW_MAX)
-			velocity = (wander_target - global_position).normalized() * MOVE_SPEED * 0.5
-			move_and_slide()
+				wander_target = (global_position + Vector2(rng.randf_range(-100, 100), rng.randf_range(-100, 100))).clamp(MEADOW_MIN, MEADOW_MAX)
+			_move_toward(wander_target - global_position, MOVE_SPEED * 0.5)
 			base_anim = "walk"
 	var facing := _facing_from_velocity(velocity)
 	if combat_hostile:
 		facing = _facing_from_velocity(combat_hostile.global_position - global_position)
-	if combat_hostile != last_combat_target:
-		last_combat_target = combat_hostile
-		GameState.emit_signal("combat_target_changed", combat_hostile)
+	_update_combat_target(combat_hostile)
 	if game_time_ms < attack_anim_until_ms:
 		base_anim = "slash"
 	_play_animation(base_anim, facing)
 	global_position = global_position.clamp(MEADOW_MIN, MEADOW_MAX)
+
+func _move_toward(direction: Vector2, speed: float) -> void:
+	velocity = direction.normalized() * speed
+	move_and_slide()
+
+func _regen_hp(delta: float) -> void:
+	hp_regen_accumulator += HP_REGEN_PER_SECOND * delta
+	while hp_regen_accumulator >= 1.0 and hp < max_hp:
+		hp += 1
+		hp_regen_accumulator -= 1.0
+
+func _update_combat_target(combat_hostile: Node2D) -> void:
+	if combat_hostile != last_combat_target:
+		last_combat_target = combat_hostile
+		GameState.emit_signal("combat_target_changed", combat_hostile)
 
 func _attack_nearest_hostile() -> void:
 	var now := int(game_time_ms)
