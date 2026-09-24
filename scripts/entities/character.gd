@@ -407,6 +407,7 @@ func take_damage(amount: int) -> void:
 func _die() -> void:
 	is_dead = true
 	deaths += 1
+	_update_combat_target(null)
 	GameState.log_event("Character died - respawning")
 	visible = false
 	set_physics_process(false)
