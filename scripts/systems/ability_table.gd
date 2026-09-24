@@ -19,7 +19,7 @@ const CLASSES := {
 		"rage_per_hit_taken": 3.0,
 		"primary_stat": "strength",
 		"stat_weights": {
-			"damage": 3.0, "strength": 2.0, "armor": 2.0, "max_hp": 0.5, "crit_chance": 20.0,
+			"damage": 3.0, "strength": 2.0, "armor": 2.0, "max_hp": 0.5, "crit_chance": 100.0,
 		},
 		"sprite_tint": Color(1.0, 1.0, 1.0, 1.0),
 		"abilities": ["charge", "rend", "heroic_strike", "second_wind"],
@@ -31,7 +31,7 @@ const CLASSES := {
 		"resource_regen_per_second": 6.0,
 		"primary_stat": "intellect",
 		"stat_weights": {
-			"damage": 3.0, "intellect": 2.0, "armor": 0.5, "max_hp": 0.3, "crit_chance": 20.0,
+			"damage": 3.0, "intellect": 2.0, "armor": 0.5, "max_hp": 0.3, "crit_chance": 100.0,
 		},
 		"sprite_tint": Color(0.55, 0.65, 1.0, 1.0),
 		# No gap-closer — the mage has no Charge equivalent, so "chase" just

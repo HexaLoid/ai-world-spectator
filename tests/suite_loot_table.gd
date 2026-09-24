@@ -33,6 +33,8 @@ func run(t) -> void:
 		var reward: String = quest.get("item_reward", "")
 		if reward != "":
 			t.check(LootTable.ITEMS.has(reward), "quest %s reward %s exists" % [quest["id"], reward])
+			if LootTable.ITEMS.has(reward):
+				t.check(int(LootTable.ITEMS[reward]["level_req"]) <= int(quest["min_level"]), "quest %s reward %s is equippable at the quest's min_level" % [quest["id"], reward])
 	for boss_drop in ["iron_sword", "warlords_greatsword"]:
 		t.check(LootTable.ITEMS.has(boss_drop), "guaranteed drop %s exists" % boss_drop)
 	var rng := RandomNumberGenerator.new()
@@ -41,4 +43,7 @@ func run(t) -> void:
 		var rolled := LootTable.roll_drop(rng)
 		t.check(LootTable.ITEMS.has(rolled), "rolled item exists")
 		t.check(LootTable.ITEMS[rolled]["rarity"] != "epic", "epic items never roll randomly")
+	t.check_eq(LootTable.STAT_ORDER.size(), LootTable.STAT_LABELS.size(), "STAT_ORDER and STAT_LABELS have the same number of stats")
+	for stat in LootTable.STAT_ORDER:
+		t.check(LootTable.STAT_LABELS.has(stat), "STAT_ORDER key %s has a label" % stat)
 	t.check_eq(LootTable.display_name("iron_helm"), "Iron Helm", "display_name capitalizes")

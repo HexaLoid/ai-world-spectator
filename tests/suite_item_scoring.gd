@@ -13,6 +13,14 @@ func run(t) -> void:
 	t.check_near(ItemScoring.score("", warrior), 0.0, "empty slot scores 0")
 	t.check_near(ItemScoring.score("no_such_item", warrior), 0.0, "unknown item scores 0")
 
+	# crit is a 0-1 fraction; its weight must make crit gear competitive
+	t.check_near(ItemScoring.score("lucky_charm", warrior), 5.0, "lucky_charm (+5% crit) scores 5")
+	t.check_near(ItemScoring.score("amulet_of_wrath", warrior), 32.0, "amulet_of_wrath scores 2x3 + 3x2 + 20")
+	for cls in [warrior, mage]:
+		t.check(ItemScoring.score("ring_of_fortune", cls) > ItemScoring.score("ring_of_vigor", cls), "ring_of_fortune outscores ring_of_vigor")
+		t.check(ItemScoring.score("ring_of_fortune", cls) > ItemScoring.score("copper_ring", cls), "ring_of_fortune outscores copper_ring")
+	t.check(ItemScoring.is_upgrade("ring_of_vigor", "ring_of_fortune", warrior, 3), "ring_of_fortune is an upgrade over ring_of_vigor")
+
 	# meets_level()
 	t.check(ItemScoring.meets_level("steel_sword", 3), "level 3 meets steel_sword's requirement")
 	t.check(not ItemScoring.meets_level("steel_sword", 2), "level 2 does not meet steel_sword's requirement")
