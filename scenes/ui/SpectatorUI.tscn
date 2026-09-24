@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/unit_frame.gd" id="1_unitframe"]
 [ext_resource type="Script" path="res://scripts/ui/activity_log.gd" id="2_activitylog"]
@@ -6,6 +6,7 @@
 [ext_resource type="Theme" path="res://assets/theme/spectator_theme.tres" id="4_theme"]
 [ext_resource type="Script" path="res://scripts/ui/quest_tracker.gd" id="6_questtracker"]
 [ext_resource type="Script" path="res://scripts/ui/ability_bar.gd" id="7_abilitybar"]
+[ext_resource type="Script" path="res://scripts/ui/character_sheet.gd" id="8_charsheet"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xpfill"]
 bg_color = Color(0.82, 0.65, 0.15, 1)
@@ -149,7 +150,35 @@ text = "4x"
 [node name="RecenterButton" type="Button" parent="SpeedControl"]
 text = "Recenter"
 
+[node name="SheetButton" type="Button" parent="SpeedControl"]
+text = "Sheet (C)"
+
 [node name="AbilityBar" type="HBoxContainer" parent="."]
 position = Vector2(487, 592)
 theme = ExtResource("4_theme")
 script = ExtResource("7_abilitybar")
+
+[node name="CharacterSheet" type="Panel" parent="."]
+visible = false
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -364.0
+offset_top = 48.0
+offset_right = -16.0
+offset_bottom = 640.0
+grow_horizontal = 0
+theme = ExtResource("4_theme")
+script = ExtResource("8_charsheet")
+
+[node name="Body" type="RichTextLabel" parent="CharacterSheet"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = -12.0
+bbcode_enabled = true
+theme_override_font_sizes/normal_font_size = 12
+theme_override_font_sizes/bold_font_size = 12
