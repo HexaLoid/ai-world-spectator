@@ -18,7 +18,7 @@ to every drop and logs "current gear is better" for most of them.
 
 ## Goals
 
-- Six equipment slots with multi-stat items (about 30-40 items total).
+- Six equipment slots (weapon, offhand, head, chest, neck, ring) with multi-stat items (about 27 items to start).
 - The AI equips items by a class-weighted score, and explains each decision.
 - The AI ignores ground items that cannot be upgrades.
 - Enemies drop gold; the HUD shows a gold counter.
@@ -34,7 +34,7 @@ to every drop and logs "current gear is better" for most of them.
 
 ## Data model
 
-**Slots:** `weapon`, `head`, `chest`, `legs`, `boots`, `trinket`.
+**Slots:** `weapon`, `offhand`, `head`, `chest`, `neck`, `ring`. (Amended during planning: the project's icon pack has no leg or boot icons, so `legs`/`boots` became `offhand` (shields) and `neck`, and `trinket` became `ring`.)
 
 **Item definition** (in `LootTable.ITEMS`, keyed by item id):
 
@@ -61,8 +61,8 @@ from class and level; everything else is derived.
 
 Existing item ids are migrated: `rusty_sword`, `iron_sword`, `steel_sword`,
 `warlords_greatsword` (weapon); `leather_armor`, `chainmail_armor`,
-`champions_plate` (chest); `lucky_charm`, `ring_of_fortune`, `amulet_of_wrath`,
-`crown_of_thornfield` (trinket). New head/legs/boots items are added, reusing
+`champions_plate` (chest); `lucky_charm`, `amulet_of_wrath` (neck); `ring_of_fortune` (ring);
+`crown_of_thornfield` (head). New offhand/head/neck/ring items are added, reusing
 existing icon art where suitable and adding icons where needed (credited in
 `assets/CREDITS.txt`).
 
