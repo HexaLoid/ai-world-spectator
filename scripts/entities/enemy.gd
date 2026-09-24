@@ -164,6 +164,11 @@ func take_damage(amount: int, attacker: Node2D = null) -> void:
 		return
 	if attacker != null:
 		last_attacker = attacker
+	# Only damage that actually lands counts (no overkill), and only the
+	# spectated character's own hits: auto-attacks, ability hits and bleed
+	# ticks all pass the attacker through here.
+	if attacker != null and attacker == GameState.character:
+		attacker.damage_dealt_total += mini(amount, hp)
 	hp = max(0, hp - amount)
 	health_bar.value = hp
 	GameState.emit_signal("damage_dealt", global_position, amount, false)

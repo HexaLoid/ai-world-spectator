@@ -42,6 +42,12 @@ const STATE_DISPLAY_NAMES := {
 ## never adjust them directly for gear or level-ups, change the base and recompute.
 var equipment: Dictionary = {}
 var gold: int = 0
+# Session statistics (shown on the character sheet); reset only by relaunching.
+var kills_by_name: Dictionary = {}
+var deaths: int = 0
+var damage_dealt_total: int = 0
+var damage_taken_total: int = 0
+var gold_earned: int = 0
 var armor: int = 0
 var base_max_hp: int = 0
 var base_damage_min: int = 0
@@ -390,6 +396,7 @@ func take_damage(amount: int) -> void:
 	if is_dead:
 		return
 	amount = StatCalculator.mitigate(amount, armor)
+	damage_taken_total += mini(amount, hp)
 	hp = max(0, hp - amount)
 	GameState.emit_signal("character_hp_changed", hp, max_hp)
 	GameState.emit_signal("damage_dealt", global_position, amount, false)
@@ -399,6 +406,7 @@ func take_damage(amount: int) -> void:
 
 func _die() -> void:
 	is_dead = true
+	deaths += 1
 	GameState.log_event("Character died - respawning")
 	visible = false
 	set_physics_process(false)
@@ -556,7 +564,48 @@ func _recompute_stats() -> void:
 
 func _gain_gold(amount: int) -> void:
 	gold += amount
+	gold_earned += amount
 	GameState.emit_signal("gold_changed", gold)
+
+## Everything the character sheet displays, as a plain dictionary (see
+## SheetText.build). `xp` is XP earned within the current level and `xp_next`
+## the XP span of this level (0 at max level), matching the unit frame's bar.
+func get_sheet_snapshot() -> Dictionary:
+	var primary: String = class_def.get("primary_stat", "")
+	var gear := StatCalculator.gear_totals(equipment)
+	var primary_value := float(gear.get(primary, 0.0)) if primary != "" else 0.0
+	var next_threshold := LevelingSystem.get_next_threshold(level)
+	var prev_threshold: int = LevelingSystem.XP_THRESHOLDS[level - 2] if level > 1 else 0
+	var quest: Dictionary = _find_quest(active_quest_id) if active_quest_id != "" else {}
+	var quest_text := "none active"
+	if not quest.is_empty():
+		quest_text = "%s %d/%d" % [quest.get("name", ""), quest_progress, int(quest.get("count", 0))]
+	return {
+		"level": level,
+		"class_name": character_class,
+		"zone_name": String(ZoneTable.ZONES[current_zone_id]["name"]),
+		"xp": xp - prev_threshold,
+		"xp_next": 0 if next_threshold <= 0 else next_threshold - prev_threshold,
+		"hp": hp,
+		"max_hp": max_hp,
+		"damage_min": attack_damage_min,
+		"damage_max": attack_damage_max,
+		"armor": armor,
+		"crit_chance": crit_chance,
+		"primary_stat": primary,
+		"primary_value": primary_value,
+		"primary_bonus_percent": primary_value * StatCalculator.PRIMARY_STAT_DAMAGE_PER_POINT * 100.0,
+		"equipment": equipment.duplicate(),
+		"gold": gold,
+		"quest_text": quest_text,
+		"quests_completed": completed_quest_ids.size(),
+		"kills_by_name": kills_by_name.duplicate(),
+		"deaths": deaths,
+		"damage_dealt": damage_dealt_total,
+		"damage_taken": damage_taken_total,
+		"gold_earned": gold_earned,
+		"time_played_ms": game_time_ms,
+	}
 
 func gain_xp(amount: int) -> void:
 	var result := LevelingSystem.apply_xp(level, xp, amount)
@@ -574,6 +623,7 @@ func gain_xp(amount: int) -> void:
 	GameState.emit_signal("character_xp_changed", xp)
 
 func take_kill_credit(enemy_name: String, xp_reward: int) -> void:
+	kills_by_name[enemy_name] = int(kills_by_name.get(enemy_name, 0)) + 1
 	GameState.log_event("Defeated %s" % enemy_name)
 	gain_xp(xp_reward)
 	_advance_quest_progress(enemy_name)
