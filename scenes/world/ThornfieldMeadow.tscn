@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/entities/SpawnPoint.tscn" id="1_spawnpoint"]
 [ext_resource type="PackedScene" path="res://scenes/entities/Enemy.tscn" id="2_enemy"]
@@ -6,6 +6,11 @@
 [ext_resource type="SpriteFrames" path="res://assets/sprites/bandit/bandit_frames.tres" id="4_bandit_frames"]
 [ext_resource type="Texture2D" path="res://assets/tiles/tree_pine.png" id="5_tree_pine"]
 [ext_resource type="PackedScene" path="res://scenes/entities/QuestGiver.tscn" id="6_questgiver"]
+[ext_resource type="Texture2D" path="res://assets/tiles/terrain_grass.png" id="7_grass"]
+[ext_resource type="Script" path="res://scripts/world/decoration_scatter.gd" id="8_decor"]
+[ext_resource type="Texture2D" path="res://assets/tiles/decor_flowers.png" id="9_flowers"]
+[ext_resource type="Texture2D" path="res://assets/tiles/decor_grass_tuft.png" id="10_tuft"]
+[ext_resource type="Texture2D" path="res://assets/tiles/decor_rock.png" id="11_rock"]
 
 [node name="ThornfieldMeadow" type="Node2D"]
 
@@ -13,6 +18,21 @@
 position = Vector2(-400, -300)
 size = Vector2(800, 600)
 color = Color(0.35, 0.55, 0.25, 1.0)
+
+[node name="Ground" type="Sprite2D" parent="."]
+texture = ExtResource("7_grass")
+centered = false
+position = Vector2(-400, -300)
+region_enabled = true
+region_rect = Rect2(0, 0, 800, 600)
+texture_repeat = 2
+
+[node name="Decorations" type="Node2D" parent="."]
+script = ExtResource("8_decor")
+decoration_textures = Array[Texture2D]([ExtResource("9_flowers"), ExtResource("10_tuft"), ExtResource("11_rock")])
+count = 45
+area_min = Vector2(-370, -270)
+area_max = Vector2(370, 270)
 
 [node name="QuestGiver" parent="." instance=ExtResource("6_questgiver")]
 position = Vector2(-280, -160)

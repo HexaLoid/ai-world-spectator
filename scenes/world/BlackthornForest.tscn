@@ -1,10 +1,14 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/entities/SpawnPoint.tscn" id="1_spawnpoint"]
 [ext_resource type="PackedScene" path="res://scenes/entities/Enemy.tscn" id="2_enemy"]
 [ext_resource type="SpriteFrames" path="res://assets/sprites/wolf/wolf_frames.tres" id="3_wolf_frames"]
 [ext_resource type="SpriteFrames" path="res://assets/sprites/bandit/bandit_frames.tres" id="4_bandit_frames"]
 [ext_resource type="Texture2D" path="res://assets/tiles/tree_pine.png" id="5_tree_pine"]
+[ext_resource type="Texture2D" path="res://assets/tiles/terrain_grass.png" id="6_grass"]
+[ext_resource type="Script" path="res://scripts/world/decoration_scatter.gd" id="7_decor"]
+[ext_resource type="Texture2D" path="res://assets/tiles/decor_grass_tuft.png" id="8_tuft"]
+[ext_resource type="Texture2D" path="res://assets/tiles/decor_rock.png" id="9_rock"]
 
 [node name="BlackthornForest" type="Node2D"]
 
@@ -12,6 +16,22 @@
 position = Vector2(-400, -300)
 size = Vector2(800, 600)
 color = Color(0.16, 0.24, 0.13, 1.0)
+
+[node name="Ground" type="Sprite2D" parent="."]
+modulate = Color(0.4, 0.48, 0.36, 1.0)
+texture = ExtResource("6_grass")
+centered = false
+position = Vector2(-400, -300)
+region_enabled = true
+region_rect = Rect2(0, 0, 800, 600)
+texture_repeat = 2
+
+[node name="Decorations" type="Node2D" parent="."]
+script = ExtResource("7_decor")
+decoration_textures = Array[Texture2D]([ExtResource("8_tuft"), ExtResource("9_rock")])
+count = 30
+area_min = Vector2(-370, -270)
+area_max = Vector2(370, 270)
 
 [node name="SpawnPointWolf1" parent="." instance=ExtResource("1_spawnpoint")]
 position = Vector2(150, -80)
