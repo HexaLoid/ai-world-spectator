@@ -110,9 +110,7 @@ func _slot_tooltip(slot: String, item_id: String) -> String:
 	if item_id == "":
 		return "%s: empty" % slot_label
 	var item_def: Dictionary = LootTable.ITEMS.get(item_id, {})
-	return "%s
-%s
-%s - level %d %s" % [
+	return "%s\n%s\n%s - level %d %s" % [
 		LootTable.display_name(item_id),
 		ItemScoring.describe_stats(item_id),
 		slot_label,

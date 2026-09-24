@@ -376,7 +376,7 @@ func _attack_nearest_hostile() -> void:
 
 ## Rolls base weapon damage (optionally scaled by `multiplier`, e.g.
 ## Heroic Strike's bonus) and then an independent crit roll against
-## crit_chance (from an equipped trinket); a crit doubles the final damage.
+## crit_chance (from equipped gear); a crit doubles the final damage.
 ## Centralizes the crit check so both the plain auto-attack and Heroic
 ## Strike apply it the same way instead of each rolling it separately.
 func _roll_damage(min_damage: int, max_damage: int, multiplier: float = 1.0) -> Dictionary:
