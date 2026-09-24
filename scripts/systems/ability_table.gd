@@ -17,6 +17,10 @@ const CLASSES := {
 		"resource_decay_per_second": 2.0,
 		"rage_per_swing": 5.0,
 		"rage_per_hit_taken": 3.0,
+		"primary_stat": "strength",
+		"stat_weights": {
+			"damage": 3.0, "strength": 2.0, "armor": 2.0, "max_hp": 0.5, "crit_chance": 20.0,
+		},
 		"sprite_tint": Color(1.0, 1.0, 1.0, 1.0),
 		"abilities": ["charge", "rend", "heroic_strike", "second_wind"],
 	},
@@ -25,6 +29,10 @@ const CLASSES := {
 		"resource_color": Color(0.25, 0.45, 0.9, 1.0),
 		"max_resource": 100.0,
 		"resource_regen_per_second": 6.0,
+		"primary_stat": "intellect",
+		"stat_weights": {
+			"damage": 3.0, "intellect": 2.0, "armor": 0.5, "max_hp": 0.3, "crit_chance": 20.0,
+		},
 		"sprite_tint": Color(0.55, 0.65, 1.0, 1.0),
 		# No gap-closer — the mage has no Charge equivalent, so "chase" just
 		# walks. Mana comes back on its own between fights instead of being
