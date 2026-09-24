@@ -17,6 +17,7 @@ Built with **Godot 4.7** (GDScript, 2D top-down).
 - **An autonomous character** that cycles through wandering, chasing, fighting,
   fleeing, resting, and looting, choosing each action from simple priority rules
   (for example: flee or rest when HP is low, fight when an enemy is in range).
+  The character has a name, and simulated players talk to it in chat.
 - **Loot, gear and leveling** — enemies drop gear across six slots (weapon,
   off-hand, head, chest, neck, ring) with multiple stats each, plus gold and
   potions. The character equips only real upgrades for its class and level and
@@ -30,6 +31,8 @@ Built with **Godot 4.7** (GDScript, 2D top-down).
   - A health bar over whichever enemy is currently being fought
   - A character sheet (stats, gear, quest, kills/deaths/damage/gold statistics)
   - A target frame showing the enemy being fought
+  - Party frames for the character's grouped allies (name, level, HP)
+  - An ally chat panel: allies greet, congratulate, warn and chat in `[Party]` and `[Zone]` channels
   - Pause / 1x / 2x / 4x speed controls
 
 ## Running it
