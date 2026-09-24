@@ -35,6 +35,11 @@ signal combat_target_changed(target: Node2D)
 ## progress/count are 0/0 in that case too. The Quest Giver's marker and
 ## the HUD's quest tracker both listen to this.
 signal quest_changed(quest_name: String, progress: int, count: int)
+## Emitted whenever the character enters a new zone (see
+## Character._sync_current_zone()); zone_id is the zone just entered. Used to
+## switch ambient audio, and generally useful for anything else that cares
+## which zone the character is currently in.
+signal zone_changed(zone_id: String)
 
 var character: Node2D = null
 var camera: Camera2D = null

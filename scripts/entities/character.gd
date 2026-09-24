@@ -271,6 +271,7 @@ func _sync_current_zone() -> void:
 	# of actually exploring the one it just arrived in.
 	wander_target = global_position
 	GameState.log_event("Arrives in %s" % ZoneTable.ZONES[zone_id]["name"])
+	GameState.emit_signal("zone_changed", zone_id)
 
 func _regen_hp(delta: float) -> void:
 	hp_regen_accumulator += HP_REGEN_PER_SECOND * delta
