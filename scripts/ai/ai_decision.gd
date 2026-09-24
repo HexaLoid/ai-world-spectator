@@ -28,12 +28,18 @@ static func resolve_state(context: Dictionary) -> Dictionary:
 		return {"state": "rest", "reason": "HP low (%d%%) - resting to recover" % round(hp_percent * 100)}
 	if hostile_in_attack_range:
 		return {"state": "combat", "reason": "%s in range - engaging" % hostile_name}
+	# Ranked above "chase" (but still below finishing a fight already in
+	# attack range) so a completed/acceptable quest doesn't get stranded
+	# forever behind an endless string of freshly-respawned wolves near
+	# their spawn point — found live: without this, the character kept
+	# re-engaging new Wolves in Thornfield well past "ready to turn in" and
+	# never actually walked back to the board.
+	if quest_giver_in_zone and quest_ready:
+		return {"state": "quest", "reason": "Heading to the quest board"}
 	if hostile_in_aggro_range:
 		return {"state": "chase", "reason": "%s spotted - closing in" % hostile_name}
 	if item_nearby:
 		return {"state": "loot", "reason": "Item nearby - moving to pick it up"}
-	if quest_giver_in_zone and quest_ready:
-		return {"state": "quest", "reason": "Heading to the quest board"}
 	if ready_to_travel:
 		return {"state": "travel", "reason": "Time to move on - heading to %s" % next_zone_name}
 	return {"state": "wander", "reason": "Nothing pressing - wandering"}

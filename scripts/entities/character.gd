@@ -518,9 +518,12 @@ func _advance_quest_progress(enemy_name: String) -> void:
 		GameState.log_event("Quest ready to turn in: %s" % quest.get("name", ""))
 
 ## Finds the next QUESTS entry (in rotation order from the last one offered)
-## that isn't already completed and meets its min_level. Recycles
-## completed_quest_ids once every quest has been done, so there's always
-## something to offer rather than the rotation running dry. Read-only aside
+## that isn't already completed, meets its min_level, and has every quest id
+## in its `requires` already in completed_quest_ids — this is what turns the
+## flat rotation into chains (e.g. dire_wolf_hunt requires cull_the_wolves).
+## Recycles completed_quest_ids once every quest has been done, so there's
+## always something to offer rather than the rotation running dry — the whole
+## chain then replays from its two unlocked intro quests. Read-only aside
 ## from that recycle — accepting is a separate step (_accept_next_quest).
 func _find_next_eligible_quest_index() -> int:
 	var quests: Array = QuestTable.QUESTS
@@ -535,8 +538,19 @@ func _find_next_eligible_quest_index() -> int:
 			continue
 		if level < int(quest.get("min_level", 1)):
 			continue
+		if not _quest_requirements_met(quest):
+			continue
 		return idx
 	return -1
+
+## True if every prerequisite quest id in `quest`'s `requires` array is
+## already in completed_quest_ids (vacuously true for an empty array).
+func _quest_requirements_met(quest: Dictionary) -> bool:
+	var requires: Array = quest.get("requires", [])
+	for prereq_id in requires:
+		if not completed_quest_ids.has(prereq_id):
+			return false
+	return true
 
 func _quest_has_something_to_do() -> bool:
 	if active_quest_id != "":

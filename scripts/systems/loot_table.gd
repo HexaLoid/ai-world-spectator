@@ -19,6 +19,7 @@ const ITEMS := {
 	"lucky_charm": {"type": "trinket", "crit_chance": 0.05, "rarity": "common", "icon": "res://assets/icons/lucky_charm_icon.png"},
 	"ring_of_fortune": {"type": "trinket", "crit_chance": 0.12, "rarity": "rare", "icon": "res://assets/icons/ring_of_fortune_icon.png"},
 	"amulet_of_wrath": {"type": "trinket", "crit_chance": 0.20, "rarity": "epic", "icon": "res://assets/icons/amulet_of_wrath_icon.png"},
+	"crown_of_thornfield": {"type": "trinket", "crit_chance": 0.25, "rarity": "epic", "icon": "res://assets/icons/crown_of_thornfield_icon.png"},
 	"health_potion": {"type": "consumable", "heal": 20, "rarity": "common", "icon": "res://assets/icons/potion_icon.png"},
 }
 
