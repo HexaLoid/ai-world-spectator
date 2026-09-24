@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/entities/SpawnPoint.tscn" id="1_spawnpoint"]
 [ext_resource type="PackedScene" path="res://scenes/entities/Enemy.tscn" id="2_enemy"]
@@ -12,6 +12,7 @@
 [ext_resource type="Texture2D" path="res://assets/tiles/decor_grass_tuft.png" id="10_tuft"]
 [ext_resource type="Texture2D" path="res://assets/tiles/decor_rock.png" id="11_rock"]
 [ext_resource type="Texture2D" path="res://assets/tiles/decor_pond.png" id="12_pond"]
+[ext_resource type="Texture2D" path="res://assets/tiles/ruin_bridge.png" id="13_bridge"]
 
 [node name="ThornfieldMeadow" type="Node2D"]
 
@@ -39,6 +40,11 @@ area_max = Vector2(370, 270)
 texture = ExtResource("12_pond")
 position = Vector2(250, -190)
 scale = Vector2(1.4, 1.4)
+
+[node name="Bridge" type="Sprite2D" parent="."]
+texture = ExtResource("13_bridge")
+position = Vector2(250, -185)
+scale = Vector2(1.1, 1.1)
 
 [node name="QuestGiver" parent="." instance=ExtResource("6_questgiver")]
 position = Vector2(-280, -160)
