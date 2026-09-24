@@ -27,7 +27,7 @@ corner_radius_bottom_left = 4
 script = ExtResource("1_unitframe")
 theme = ExtResource("4_theme")
 position = Vector2(16, 16)
-size = Vector2(224, 174)
+size = Vector2(224, 154)
 
 [node name="HPBar" type="ProgressBar" parent="UnitFrame"]
 position = Vector2(8, 8)
@@ -92,35 +92,19 @@ horizontal_alignment = 1
 vertical_alignment = 1
 mouse_filter = 2
 
-[node name="WeaponIcon" type="TextureRect" parent="UnitFrame"]
-position = Vector2(8, 90)
-size = Vector2(20, 20)
-expand_mode = 1
-stretch_mode = 5
+[node name="EquipRow" type="HBoxContainer" parent="UnitFrame"]
+offset_left = 8.0
+offset_top = 92.0
+offset_right = 208.0
+offset_bottom = 122.0
+theme_override_constants/separation = 6
 
-[node name="WeaponLabel" type="Label" parent="UnitFrame"]
-position = Vector2(34, 94)
-text = "Weapon: None"
-
-[node name="ArmorIcon" type="TextureRect" parent="UnitFrame"]
-position = Vector2(8, 114)
-size = Vector2(20, 20)
-expand_mode = 1
-stretch_mode = 5
-
-[node name="ArmorLabel" type="Label" parent="UnitFrame"]
-position = Vector2(34, 118)
-text = "Armor: None"
-
-[node name="TrinketIcon" type="TextureRect" parent="UnitFrame"]
-position = Vector2(8, 138)
-size = Vector2(20, 20)
-expand_mode = 1
-stretch_mode = 5
-
-[node name="TrinketLabel" type="Label" parent="UnitFrame"]
-position = Vector2(34, 142)
-text = "Trinket: None"
+[node name="GoldLabel" type="Label" parent="UnitFrame"]
+offset_left = 8.0
+offset_top = 126.0
+offset_right = 208.0
+offset_bottom = 148.0
+text = "Gold: 0"
 
 [node name="ActivityLog" type="Panel" parent="."]
 script = ExtResource("2_activitylog")
