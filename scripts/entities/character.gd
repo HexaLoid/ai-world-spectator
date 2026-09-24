@@ -36,9 +36,16 @@ const STATE_DISPLAY_NAMES := {
 ## class by overriding this export directly, e.g. for testing.
 @export var character_class: String = ""
 
-var equipped_weapon_id: String = ""
-var equipped_armor_id: String = ""
-var equipped_trinket_id: String = ""
+## Slot name -> equipped item id (see LootTable.SLOTS); a missing key means
+## the slot is empty. max_hp, attack_damage_min/max, crit_chance and armor are
+## DERIVED from the base_* values plus equipment by _recompute_stats() —
+## never adjust them directly for gear or level-ups, change the base and recompute.
+var equipment: Dictionary = {}
+var gold: int = 0
+var armor: int = 0
+var base_max_hp: int = 0
+var base_damage_min: int = 0
+var base_damage_max: int = 0
 var crit_chance: float = 0.0
 var current_state: String = "wander"
 var last_attack_time_ms: int = 0
@@ -83,6 +90,10 @@ func _ready() -> void:
 	class_def = AbilityTable.CLASSES.get(character_class, {})
 	max_resource = float(class_def.get("max_resource", 0.0))
 	sprite.modulate = class_def.get("sprite_tint", Color(1.0, 1.0, 1.0, 1.0))
+	base_max_hp = max_hp
+	base_damage_min = attack_damage_min
+	base_damage_max = attack_damage_max
+	_recompute_stats()
 	GameState.emit_signal("character_resource_changed", resource_amount, max_resource)
 	# _sync_current_zone() only recruits on a zone TRANSITION, but the
 	# character starts already inside its home zone rather than "arriving"
@@ -354,6 +365,7 @@ func _roll_damage(min_damage: int, max_damage: int, multiplier: float = 1.0) -> 
 func take_damage(amount: int) -> void:
 	if is_dead:
 		return
+	amount = StatCalculator.mitigate(amount, armor)
 	hp = max(0, hp - amount)
 	GameState.emit_signal("character_hp_changed", hp, max_hp)
 	GameState.emit_signal("damage_dealt", global_position, amount, false)
@@ -504,15 +516,34 @@ func _try_self_heal() -> void:
 	GameState.emit_signal("damage_dealt", global_position, healed, true)
 	GameState.log_event("Uses %s - recovers %d HP!" % [def.get("name", "an ability"), healed])
 
+## Recomputes every gear-dependent stat from the base_* values and the
+## current equipment. Current HP is only ever clamped down to the new max
+## (equipping HP gear raises the ceiling, it does not heal).
+func _recompute_stats() -> void:
+	var derived := StatCalculator.derive(
+		{"max_hp": base_max_hp, "damage_min": base_damage_min, "damage_max": base_damage_max, "crit_chance": 0.0},
+		equipment, class_def)
+	max_hp = derived["max_hp"]
+	attack_damage_min = derived["damage_min"]
+	attack_damage_max = derived["damage_max"]
+	crit_chance = derived["crit_chance"]
+	armor = derived["armor"]
+	hp = mini(hp, max_hp)
+
+func _gain_gold(amount: int) -> void:
+	gold += amount
+	GameState.emit_signal("gold_changed", gold)
+
 func gain_xp(amount: int) -> void:
 	var result := LevelingSystem.apply_xp(level, xp, amount)
 	level = result["level"]
 	xp = result["xp"]
 	if result["leveled_up"]:
-		max_hp += result["hp_bonus"]
+		base_max_hp += result["hp_bonus"]
+		base_damage_min += result["damage_bonus"]
+		base_damage_max += result["damage_bonus"]
+		_recompute_stats()
 		hp += result["hp_bonus"]
-		attack_damage_min += result["damage_bonus"]
-		attack_damage_max += result["damage_bonus"]
 		GameState.log_event("Leveled up to %d!" % level)
 		GameState.emit_signal("character_leveled_up", level)
 		GameState.emit_signal("character_hp_changed", hp, max_hp)
@@ -524,56 +555,45 @@ func take_kill_credit(enemy_name: String, xp_reward: int) -> void:
 	_advance_quest_progress(enemy_name)
 
 func _pickup_item(item: Node2D) -> void:
-	_acquire_item(item.item_id)
+	if item.gold_amount > 0:
+		_gain_gold(item.gold_amount)
+	else:
+		_acquire_item(item.item_id)
 	item.queue_free()
 
 ## Shared by picking an item up off the ground and turning in a quest's
-## item reward — both are "the character now owns this item", same
-## equip-or-discard-with-a-reason logic either way.
+## item reward — both are "the character now owns this item". Consumables
+## are used immediately; gear is equipped only if ItemScoring says it is an
+## upgrade for this class and level, and the log says why either way.
 func _acquire_item(item_id: String) -> void:
 	var item_def: Dictionary = LootTable.ITEMS.get(item_id, {})
-	var item_type: String = item_def.get("type", "")
-	if item_type == "consumable":
+	if item_def.is_empty():
+		return
+	var display_name := LootTable.display_name(item_id)
+	if item_def.get("type", "") == "consumable":
 		var old_hp := hp
 		hp = min(max_hp, hp + int(item_def.get("heal", 0)))
 		var healed := hp - old_hp
-		GameState.log_event("Used %s" % LootTable.display_name(item_id))
+		GameState.log_event("Used %s" % display_name)
 		GameState.emit_signal("character_hp_changed", hp, max_hp)
 		if healed > 0:
 			GameState.emit_signal("damage_dealt", global_position, healed, true)
-	elif item_type == "weapon":
-		if LootTable.should_equip(equipped_weapon_id, item_id):
-			var old_bonus: int = int(LootTable.ITEMS.get(equipped_weapon_id, {}).get("damage", 0))
-			var new_bonus: int = int(item_def.get("damage", 0))
-			var delta: int = new_bonus - old_bonus
-			attack_damage_min += delta
-			attack_damage_max += delta
-			equipped_weapon_id = item_id
-			GameState.log_event("Equipped %s" % LootTable.display_name(item_id))
-			GameState.emit_signal("character_equipment_changed", equipped_weapon_id, equipped_armor_id, equipped_trinket_id)
-		else:
-			GameState.log_event("Found %s - current gear is better" % LootTable.display_name(item_id))
-	elif item_type == "armor":
-		if LootTable.should_equip(equipped_armor_id, item_id):
-			var old_bonus: int = int(LootTable.ITEMS.get(equipped_armor_id, {}).get("max_hp", 0))
-			var new_bonus: int = int(item_def.get("max_hp", 0))
-			max_hp += new_bonus - old_bonus
-			equipped_armor_id = item_id
-			GameState.log_event("Equipped %s" % LootTable.display_name(item_id))
-			GameState.emit_signal("character_equipment_changed", equipped_weapon_id, equipped_armor_id, equipped_trinket_id)
-			GameState.emit_signal("character_hp_changed", hp, max_hp)
-		else:
-			GameState.log_event("Found %s - current gear is better" % LootTable.display_name(item_id))
-	elif item_type == "trinket":
-		if LootTable.should_equip(equipped_trinket_id, item_id):
-			var old_bonus: float = float(LootTable.ITEMS.get(equipped_trinket_id, {}).get("crit_chance", 0.0))
-			var new_bonus: float = float(item_def.get("crit_chance", 0.0))
-			crit_chance += new_bonus - old_bonus
-			equipped_trinket_id = item_id
-			GameState.log_event("Equipped %s" % LootTable.display_name(item_id))
-			GameState.emit_signal("character_equipment_changed", equipped_weapon_id, equipped_armor_id, equipped_trinket_id)
-		else:
-			GameState.log_event("Found %s - current gear is better" % LootTable.display_name(item_id))
+		return
+	var slot: String = item_def.get("slot", "")
+	if not LootTable.SLOTS.has(slot):
+		push_warning("Item %s has no valid slot" % item_id)
+		return
+	if not ItemScoring.meets_level(item_id, level):
+		GameState.log_event("Received %s - needs level %d" % [display_name, int(item_def.get("level_req", 1))])
+		return
+	if not ItemScoring.is_upgrade(equipment.get(slot, ""), item_id, class_def, level):
+		GameState.log_event("Found %s - current gear is better" % display_name)
+		return
+	equipment[slot] = item_id
+	_recompute_stats()
+	GameState.log_event("Equipped %s (%s)" % [display_name, ItemScoring.describe_stats(item_id)])
+	GameState.emit_signal("character_equipment_changed", equipment.duplicate())
+	GameState.emit_signal("character_hp_changed", hp, max_hp)
 
 func _find_quest(quest_id: String) -> Dictionary:
 	for quest in QuestTable.QUESTS:

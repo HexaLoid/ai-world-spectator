@@ -17,10 +17,12 @@ signal character_xp_changed(xp: int)
 signal character_resource_changed(resource_amount: float, max_resource: float)
 ## Emitted when the character gains a level; level is the new level reached.
 signal character_leveled_up(level: int)
-## Emitted whenever the character's equipped weapon, armor, or trinket
-## changes; weapon_id/armor_id/trinket_id identify the currently equipped
-## items (each "" if that slot is empty).
-signal character_equipment_changed(weapon_id: String, armor_id: String, trinket_id: String)
+## Emitted whenever the character's equipment changes; `equipment` maps each
+## slot name (see LootTable.SLOTS) to the equipped item id — a slot with no
+## item is absent or "". Always a copy, safe for listeners to keep.
+signal character_equipment_changed(equipment: Dictionary)
+## Emitted whenever the character's gold total changes; amount is the new total.
+signal gold_changed(amount: int)
 ## Emitted for every logged activity event; message is the human-readable
 ## text describing what happened, for the spectator UI's activity feed.
 signal activity_logged(message: String)
