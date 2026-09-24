@@ -332,11 +332,12 @@ func _attack_nearest_hostile() -> void:
 		return
 	last_attack_time_ms = now
 	var roll := _roll_damage(attack_damage_min, attack_damage_max)
+	# Logged before the hit lands so a killing blow reads "hit ... Defeated ...".
+	if roll["is_crit"]:
+		GameState.log_event("Critical hit on %s for %d!" % [hostile.enemy_name, roll["damage"]])
 	hostile.take_damage(roll["damage"], self)
 	attack_anim_until_ms = game_time_ms + ATTACK_ANIM_DURATION_MS
 	_gain_resource(float(class_def.get("rage_per_swing", 0.0)))
-	if roll["is_crit"]:
-		GameState.log_event("Critical hit on %s for %d!" % [hostile.enemy_name, roll["damage"]])
 
 ## Rolls base weapon damage (optionally scaled by `multiplier`, e.g.
 ## Heroic Strike's bonus) and then an independent crit roll against
@@ -477,10 +478,10 @@ func _use_melee_hit(hostile: Node2D, ability_id: String, def: Dictionary) -> voi
 	_spend_resource(float(def.get("resource_cost", 0.0)))
 	_start_cooldown(ability_id, int(def.get("cooldown_ms", 0)))
 	var roll := _roll_damage(attack_damage_min, attack_damage_max, float(def.get("damage_multiplier", 1.0)))
-	hostile.take_damage(roll["damage"], self)
-	attack_anim_until_ms = game_time_ms + ATTACK_ANIM_DURATION_MS
 	var crit_suffix := " (Critical!)" if roll["is_crit"] else ""
 	GameState.log_event("%s hits %s for %d!%s" % [def.get("name", "An ability"), hostile.enemy_name, roll["damage"], crit_suffix])
+	hostile.take_damage(roll["damage"], self)
+	attack_anim_until_ms = game_time_ms + ATTACK_ANIM_DURATION_MS
 
 ## Checked at the start of the "flee"/"rest" states rather than folded into
 ## AIDecision, so the FSM's pure state-selection logic stays untouched — this

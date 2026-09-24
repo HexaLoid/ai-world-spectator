@@ -7,6 +7,7 @@ const DEFAULT_LABEL_COLOR := Color(0.2, 0.12, 0.05, 1.0)
 @onready var xp_bar: ProgressBar = $XPBar
 @onready var hp_text: Label = $HPText
 @onready var xp_text: Label = $XPText
+@onready var resource_text: Label = $ResourceText
 @onready var resource_bar: ProgressBar = $ResourceBar
 @onready var weapon_icon: TextureRect = $WeaponIcon
 @onready var weapon_label: Label = $WeaponLabel
@@ -48,6 +49,9 @@ func _on_hp_changed(hp: int, max_hp: int) -> void:
 
 func _on_resource_changed(resource_amount: float, max_resource: float) -> void:
 	resource_bar.visible = max_resource > 0.0
+	resource_text.visible = resource_bar.visible
+	var resource_name: String = GameState.character.class_def.get("resource_name", "") if GameState.character else ""
+	resource_text.text = "%s %d / %d" % [resource_name, int(resource_amount), int(max_resource)]
 	resource_bar.max_value = max_resource
 	resource_bar.value = resource_amount
 

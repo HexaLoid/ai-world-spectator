@@ -65,6 +65,9 @@ func _ready() -> void:
 	hp = max_hp
 	sprite.modulate = sprite_tint
 	name_label.text = player_name
+	# Stagger label height per player so two allies standing together don't
+	# draw their names on top of each other.
+	name_label.position.y -= 12.0 * float(hash(player_name) % 2)
 	add_to_group("combat_targets")
 	add_to_group("simulated_players")
 
@@ -209,7 +212,7 @@ func take_damage(amount: int) -> void:
 
 func _die() -> void:
 	is_dead = true
-	GameState.log_event("%s has fallen - respawning" % player_name)
+	GameState.log_event("[Ally] %s has fallen - respawning" % player_name)
 	visible = false
 	set_physics_process(false)
 	await get_tree().create_timer(RESPAWN_DELAY_S).timeout
@@ -237,7 +240,7 @@ func take_kill_credit(_enemy_name: String, xp_reward: int) -> void:
 		hp += result["hp_bonus"]
 		attack_damage_min += result["damage_bonus"]
 		attack_damage_max += result["damage_bonus"]
-		GameState.log_event("%s levels up to %d!" % [player_name, level])
+		GameState.log_event("[Ally] %s levels up to %d!" % [player_name, level])
 
 func _facing_from_velocity(vel: Vector2) -> String:
 	if vel.length() < 1.0:
