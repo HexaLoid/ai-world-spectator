@@ -149,7 +149,7 @@ func _play_animation(base_anim: String, facing: String) -> void:
 
 func _build_context() -> Dictionary:
 	var nearest_hostile := _find_nearest_in_group("enemies")
-	var nearest_item := _find_nearest_in_group("items")
+	var nearest_item := _find_nearest_wanted_item()
 	var quest_giver := _find_nearest_in_group("quest_givers")
 	var next_zone_id := ZoneTable.next_zone_id(current_zone_id, level)
 	var context := {
@@ -186,6 +186,30 @@ func _find_nearest_in_group(group_name: String) -> Node2D:
 			nearest = node
 	return nearest
 
+## True if this ground pickup is worth walking to right now: gold, a potion
+## while hurt, or gear ItemScoring says would actually be equipped. Junk
+## (non-upgrades, gear above the character's level) is ignored entirely.
+func _wants_item(item: Node2D) -> bool:
+	if item.gold_amount > 0:
+		return true
+	var item_def: Dictionary = LootTable.ITEMS.get(item.item_id, {})
+	if item_def.get("type", "") == "consumable":
+		return hp < max_hp
+	var slot: String = item_def.get("slot", "")
+	return ItemScoring.is_upgrade(equipment.get(slot, ""), item.item_id, class_def, level)
+
+func _find_nearest_wanted_item() -> Node2D:
+	var nearest: Node2D = null
+	var nearest_dist := INF
+	for node in get_tree().get_nodes_in_group("items"):
+		if not is_instance_valid(node) or not _wants_item(node):
+			continue
+		var d := global_position.distance_to(node.global_position)
+		if d < nearest_dist:
+			nearest_dist = d
+			nearest = node
+	return nearest
+
 func _act(delta: float, _context: Dictionary) -> void:
 	var base_anim := "idle"
 	var combat_hostile: Node2D = null
@@ -214,7 +238,7 @@ func _act(delta: float, _context: Dictionary) -> void:
 					_move_toward(hostile.global_position - global_position, MOVE_SPEED)
 			base_anim = "run"
 		"loot":
-			var item := _find_nearest_in_group("items")
+			var item := _find_nearest_wanted_item()
 			if item:
 				var to_item := item.global_position - global_position
 				if to_item.length() <= PICKUP_RANGE:

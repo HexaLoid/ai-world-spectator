@@ -11,6 +11,8 @@ const ATTACK_ANIM_DURATION_MS := 400.0
 @export var aggro_range: float = 120.0
 @export var attack_cooldown_ms: int = 1200
 @export var xp_reward: int = 25
+@export var gold_min: int = 1
+@export var gold_max: int = 3
 @export var sprite_size: float = 40.0
 @export var sprite_tint: Color = Color(1, 1, 1, 1)
 ## When set, always drops this item on death instead of a random LootTable
@@ -188,3 +190,10 @@ func _drop_loot() -> void:
 	item.item_id = item_id
 	item.global_position = global_position
 	get_tree().current_scene.add_child.call_deferred(item)
+	# Elites/bosses (the ones with a guaranteed drop) pay out five times more gold.
+	var gold_multiplier := 5 if guaranteed_drop_id != "" else 1
+	var gold := item_scene.instantiate()
+	gold.item_id = ""
+	gold.gold_amount = rng.randi_range(gold_min, gold_max) * gold_multiplier
+	gold.global_position = global_position + Vector2(rng.randf_range(-12.0, 12.0), rng.randf_range(-12.0, 12.0))
+	get_tree().current_scene.add_child.call_deferred(gold)
