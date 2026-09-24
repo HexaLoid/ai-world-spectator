@@ -7,6 +7,7 @@ extends SceneTree
 
 const SUITES := [
 	"res://tests/suite_ability_table.gd",
+	"res://tests/suite_loot_table.gd",
 ]
 
 var checks := 0

@@ -1,26 +1,64 @@
 class_name LootTable
 extends RefCounted
 
-## Static item definitions. Each entry's "type" is "weapon", "armor",
-## "trinket", or "consumable"; weapons carry a "damage" stat, armor carries
-## a "max_hp" stat, trinkets carry a "crit_chance" stat (0.0-1.0, chance an
-## attack doubles its damage), consumables carry a "heal" amount. "rarity"
-## (common/uncommon/rare/epic) drives RARITY_COLORS for HUD display and
-## RARITY_WEIGHTS for how often roll_drop() picks it. Callers read these
-## fields directly (see Character._acquire_item).
+## Equipment slots, in HUD display order.
+const SLOTS := ["weapon", "offhand", "head", "chest", "neck", "ring"]
+
+## Display names for each slot (HUD tooltips).
+const SLOT_LABELS := {
+	"weapon": "Weapon", "offhand": "Off-hand", "head": "Head",
+	"chest": "Chest", "neck": "Neck", "ring": "Ring",
+}
+
+## Stat keys an item's "stats" dictionary may use, in the order they are
+## listed in text ("+7 damage, +2 STR"), with their short display labels.
+const STAT_ORDER := ["damage", "armor", "max_hp", "crit_chance", "strength", "intellect"]
+const STAT_LABELS := {
+	"damage": "damage", "armor": "armor", "max_hp": "HP",
+	"crit_chance": "crit", "strength": "STR", "intellect": "INT",
+}
+
+## Static item definitions. Gear entries have "slot" (one of SLOTS), "rarity"
+## (common/uncommon/rare/epic — drives RARITY_COLORS and RARITY_WEIGHTS),
+## "level_req", "icon", and a "stats" dictionary using STAT_LABELS keys
+## ("crit_chance" is a 0.0-1.0 fraction). Consumables have "type":
+## "consumable" and a "heal" amount, and no slot. Equip decisions live in
+## ItemScoring; derived-stat math lives in StatCalculator.
 const ITEMS := {
-	"rusty_sword": {"type": "weapon", "damage": 4, "rarity": "common", "icon": "res://assets/icons/sword_rusty_icon.png"},
-	"iron_sword": {"type": "weapon", "damage": 7, "rarity": "uncommon", "icon": "res://assets/icons/sword_iron_icon.png"},
-	"steel_sword": {"type": "weapon", "damage": 11, "rarity": "rare", "icon": "res://assets/icons/steel_sword_icon.png"},
-	"warlords_greatsword": {"type": "weapon", "damage": 18, "rarity": "epic", "icon": "res://assets/icons/warlords_greatsword_icon.png"},
-	"leather_armor": {"type": "armor", "max_hp": 15, "rarity": "common", "icon": "res://assets/icons/armor_icon.png"},
-	"chainmail_armor": {"type": "armor", "max_hp": 25, "rarity": "rare", "icon": "res://assets/icons/chainmail_armor_icon.png"},
-	"champions_plate": {"type": "armor", "max_hp": 40, "rarity": "epic", "icon": "res://assets/icons/champions_plate_icon.png"},
-	"lucky_charm": {"type": "trinket", "crit_chance": 0.05, "rarity": "common", "icon": "res://assets/icons/lucky_charm_icon.png"},
-	"ring_of_fortune": {"type": "trinket", "crit_chance": 0.12, "rarity": "rare", "icon": "res://assets/icons/ring_of_fortune_icon.png"},
-	"amulet_of_wrath": {"type": "trinket", "crit_chance": 0.20, "rarity": "epic", "icon": "res://assets/icons/amulet_of_wrath_icon.png"},
-	"crown_of_thornfield": {"type": "trinket", "crit_chance": 0.25, "rarity": "epic", "icon": "res://assets/icons/crown_of_thornfield_icon.png"},
+	# Weapons
+	"rusty_sword": {"slot": "weapon", "rarity": "common", "level_req": 1, "icon": "res://assets/icons/sword_rusty_icon.png", "stats": {"damage": 4}},
+	"iron_sword": {"slot": "weapon", "rarity": "uncommon", "level_req": 1, "icon": "res://assets/icons/sword_iron_icon.png", "stats": {"damage": 7}},
+	"steel_sword": {"slot": "weapon", "rarity": "rare", "level_req": 3, "icon": "res://assets/icons/steel_sword_icon.png", "stats": {"damage": 11, "strength": 2}},
+	"warlords_greatsword": {"slot": "weapon", "rarity": "epic", "level_req": 3, "icon": "res://assets/icons/warlords_greatsword_icon.png", "stats": {"damage": 18, "strength": 4}},
+	"apprentice_staff": {"slot": "weapon", "rarity": "common", "level_req": 1, "icon": "res://assets/icons/apprentice_staff_icon.png", "stats": {"damage": 3, "intellect": 2}},
+	"oak_staff": {"slot": "weapon", "rarity": "uncommon", "level_req": 2, "icon": "res://assets/icons/oak_staff_icon.png", "stats": {"damage": 5, "intellect": 4}},
+	"arcane_staff": {"slot": "weapon", "rarity": "rare", "level_req": 3, "icon": "res://assets/icons/arcane_staff_icon.png", "stats": {"damage": 8, "intellect": 7}},
+	# Off-hand
+	"wooden_shield": {"slot": "offhand", "rarity": "common", "level_req": 1, "icon": "res://assets/icons/wooden_shield_icon.png", "stats": {"armor": 3}},
+	"iron_shield": {"slot": "offhand", "rarity": "uncommon", "level_req": 2, "icon": "res://assets/icons/iron_shield_icon.png", "stats": {"armor": 5, "max_hp": 8}},
+	"tower_shield": {"slot": "offhand", "rarity": "rare", "level_req": 3, "icon": "res://assets/icons/tower_shield_icon.png", "stats": {"armor": 8, "max_hp": 15, "strength": 1}},
+	# Head
+	"leather_cap": {"slot": "head", "rarity": "common", "level_req": 1, "icon": "res://assets/icons/leather_cap_icon.png", "stats": {"armor": 1, "max_hp": 5}},
+	"iron_helm": {"slot": "head", "rarity": "uncommon", "level_req": 2, "icon": "res://assets/icons/iron_helm_icon.png", "stats": {"armor": 2, "max_hp": 10}},
+	"steel_helm": {"slot": "head", "rarity": "rare", "level_req": 3, "icon": "res://assets/icons/steel_helm_icon.png", "stats": {"armor": 4, "max_hp": 15, "strength": 2}},
+	"crown_of_thornfield": {"slot": "head", "rarity": "epic", "level_req": 3, "icon": "res://assets/icons/crown_of_thornfield_icon.png", "stats": {"armor": 3, "max_hp": 15, "crit_chance": 0.10, "strength": 3, "intellect": 3}},
+	# Chest
+	"leather_armor": {"slot": "chest", "rarity": "common", "level_req": 1, "icon": "res://assets/icons/armor_icon.png", "stats": {"armor": 2, "max_hp": 15}},
+	"chainmail_armor": {"slot": "chest", "rarity": "rare", "level_req": 3, "icon": "res://assets/icons/chainmail_armor_icon.png", "stats": {"armor": 5, "max_hp": 25}},
+	"champions_plate": {"slot": "chest", "rarity": "epic", "level_req": 3, "icon": "res://assets/icons/champions_plate_icon.png", "stats": {"armor": 9, "max_hp": 40, "strength": 3}},
+	# Neck
+	"lucky_charm": {"slot": "neck", "rarity": "common", "level_req": 1, "icon": "res://assets/icons/lucky_charm_icon.png", "stats": {"crit_chance": 0.05}},
+	"silver_necklace": {"slot": "neck", "rarity": "uncommon", "level_req": 2, "icon": "res://assets/icons/silver_necklace_icon.png", "stats": {"max_hp": 10, "crit_chance": 0.06}},
+	"sage_pendant": {"slot": "neck", "rarity": "rare", "level_req": 3, "icon": "res://assets/icons/sage_pendant_icon.png", "stats": {"intellect": 5, "crit_chance": 0.08}},
+	"amulet_of_wrath": {"slot": "neck", "rarity": "epic", "level_req": 3, "icon": "res://assets/icons/amulet_of_wrath_icon.png", "stats": {"damage": 2, "strength": 3, "crit_chance": 0.20}},
+	# Ring
+	"copper_ring": {"slot": "ring", "rarity": "common", "level_req": 1, "icon": "res://assets/icons/copper_ring_icon.png", "stats": {"crit_chance": 0.03, "max_hp": 5}},
+	"ring_of_vigor": {"slot": "ring", "rarity": "uncommon", "level_req": 2, "icon": "res://assets/icons/ring_of_vigor_icon.png", "stats": {"max_hp": 20}},
+	"ring_of_fortune": {"slot": "ring", "rarity": "rare", "level_req": 3, "icon": "res://assets/icons/ring_of_fortune_icon.png", "stats": {"crit_chance": 0.12}},
+	"signet_of_power": {"slot": "ring", "rarity": "rare", "level_req": 3, "icon": "res://assets/icons/signet_of_power_icon.png", "stats": {"damage": 3, "strength": 2, "intellect": 2}},
+	# Consumables
 	"health_potion": {"type": "consumable", "heal": 20, "rarity": "common", "icon": "res://assets/icons/potion_icon.png"},
+	"greater_health_potion": {"type": "consumable", "heal": 45, "rarity": "uncommon", "icon": "res://assets/icons/greater_health_potion_icon.png"},
 }
 
 ## Human-readable item name for the HUD and activity log ("iron_sword" ->
@@ -60,35 +98,3 @@ static func roll_drop(rng: RandomNumberGenerator) -> String:
 		if roll <= cumulative:
 			return item_id
 	return ITEMS.keys()[0]
-
-## Returns true if candidate_item_id should replace whatever is currently in
-## equipped_item_id's slot. IMPORTANT: callers must only compare items within the
-## SAME equipment slot (weapon vs weapon, armor vs armor, trinket vs trinket) —
-## this function assumes that and never mixes slots itself. Consumables never
-## "equip" (always false). An empty equipped_item_id (empty slot) always accepts
-## a valid non-consumable candidate. Unknown/malformed item ids fail closed
-## (return false) rather than erroring — every lookup here goes through
-## Dictionary.get() with a safe default.
-static func should_equip(equipped_item_id: String, candidate_item_id: String) -> bool:
-	var candidate: Dictionary = ITEMS.get(candidate_item_id, {})
-	if candidate.is_empty():
-		return false
-	var candidate_type: String = candidate.get("type", "")
-	if candidate_type == "consumable":
-		return false
-	if equipped_item_id == "":
-		return true
-	var equipped: Dictionary = ITEMS.get(equipped_item_id, {})
-	if equipped.get("type", "") != candidate_type:
-		return false
-	var stat_key := _stat_key_for_type(candidate_type)
-	return candidate.get(stat_key, 0) > equipped.get(stat_key, 0)
-
-static func _stat_key_for_type(item_type: String) -> String:
-	match item_type:
-		"weapon":
-			return "damage"
-		"trinket":
-			return "crit_chance"
-		_:
-			return "max_hp"
