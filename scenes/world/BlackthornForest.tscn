@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/entities/SpawnPoint.tscn" id="1_spawnpoint"]
 [ext_resource type="PackedScene" path="res://scenes/entities/Enemy.tscn" id="2_enemy"]
@@ -11,6 +11,7 @@
 [ext_resource type="Texture2D" path="res://assets/tiles/decor_rock.png" id="9_rock"]
 [ext_resource type="Texture2D" path="res://assets/tiles/decor_pond.png" id="10_pond"]
 [ext_resource type="Texture2D" path="res://assets/tiles/ruin_archway.png" id="11_archway"]
+[ext_resource type="PackedScene" path="res://scenes/entities/SimulatedPlayer.tscn" id="12_simplayer"]
 
 [node name="BlackthornForest" type="Node2D"]
 
@@ -46,6 +47,24 @@ modulate = Color(0.72, 0.78, 0.7, 1.0)
 texture = ExtResource("11_archway")
 position = Vector2(220, -170)
 scale = Vector2(1.5, 1.5)
+
+[node name="SimulatedPlayerBrynhild" parent="." instance=ExtResource("12_simplayer")]
+position = Vector2(-20, -230)
+player_name = "Brynhild"
+max_hp = 50
+attack_damage_min = 6
+attack_damage_max = 10
+sprite_tint = Color(0.85, 0.65, 0.85, 1.0)
+home_zone_id = "blackthorn_forest"
+
+[node name="SimulatedPlayerGorrim" parent="." instance=ExtResource("12_simplayer")]
+position = Vector2(0, 230)
+player_name = "Gorrim"
+max_hp = 48
+attack_damage_min = 6
+attack_damage_max = 9
+sprite_tint = Color(0.65, 0.85, 0.7, 1.0)
+home_zone_id = "blackthorn_forest"
 
 [node name="SpawnPointWolf1" parent="." instance=ExtResource("1_spawnpoint")]
 position = Vector2(150, -80)

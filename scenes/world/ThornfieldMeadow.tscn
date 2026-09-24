@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/entities/SpawnPoint.tscn" id="1_spawnpoint"]
 [ext_resource type="PackedScene" path="res://scenes/entities/Enemy.tscn" id="2_enemy"]
@@ -13,6 +13,7 @@
 [ext_resource type="Texture2D" path="res://assets/tiles/decor_rock.png" id="11_rock"]
 [ext_resource type="Texture2D" path="res://assets/tiles/decor_pond.png" id="12_pond"]
 [ext_resource type="Texture2D" path="res://assets/tiles/ruin_bridge.png" id="13_bridge"]
+[ext_resource type="PackedScene" path="res://scenes/entities/SimulatedPlayer.tscn" id="14_simplayer"]
 
 [node name="ThornfieldMeadow" type="Node2D"]
 
@@ -48,6 +49,24 @@ scale = Vector2(1.1, 1.1)
 
 [node name="QuestGiver" parent="." instance=ExtResource("6_questgiver")]
 position = Vector2(-280, -160)
+
+[node name="SimulatedPlayerKaelen" parent="." instance=ExtResource("14_simplayer")]
+position = Vector2(-40, -230)
+player_name = "Kaelen"
+max_hp = 45
+attack_damage_min = 5
+attack_damage_max = 9
+sprite_tint = Color(1.0, 0.75, 0.6, 1.0)
+home_zone_id = "thornfield_meadow"
+
+[node name="SimulatedPlayerElowen" parent="." instance=ExtResource("14_simplayer")]
+position = Vector2(20, 230)
+player_name = "Elowen"
+max_hp = 40
+attack_damage_min = 4
+attack_damage_max = 7
+sprite_tint = Color(0.6, 0.7, 1.0, 1.0)
+home_zone_id = "thornfield_meadow"
 
 [node name="SpawnPointWolf1" parent="." instance=ExtResource("1_spawnpoint")]
 position = Vector2(150, -80)

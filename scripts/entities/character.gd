@@ -74,6 +74,7 @@ func _ready() -> void:
 	rng.randomize()
 	wander_target = global_position
 	GameState.character = self
+	add_to_group("combat_targets")
 	if character_class == "":
 		var class_ids := AbilityTable.CLASSES.keys()
 		character_class = class_ids[rng.randi_range(0, class_ids.size() - 1)]
@@ -301,7 +302,7 @@ func _attack_nearest_hostile() -> void:
 		return
 	last_attack_time_ms = now
 	var roll := _roll_damage(attack_damage_min, attack_damage_max)
-	hostile.take_damage(roll["damage"])
+	hostile.take_damage(roll["damage"], self)
 	attack_anim_until_ms = game_time_ms + ATTACK_ANIM_DURATION_MS
 	_gain_resource(float(class_def.get("rage_per_swing", 0.0)))
 	if roll["is_crit"]:
@@ -436,7 +437,8 @@ func _use_bleed(hostile: Node2D, ability_id: String, def: Dictionary) -> void:
 		int(def.get("tick_damage_min", 0)),
 		int(def.get("tick_damage_max", 0)),
 		int(def.get("tick_count", 0)),
-		int(def.get("tick_interval_ms", 0))
+		int(def.get("tick_interval_ms", 0)),
+		self
 	)
 	attack_anim_until_ms = game_time_ms + ATTACK_ANIM_DURATION_MS
 	GameState.log_event("%s afflicts %s - taking damage over time!" % [def.get("name", "An ability"), hostile.enemy_name])
@@ -445,7 +447,7 @@ func _use_melee_hit(hostile: Node2D, ability_id: String, def: Dictionary) -> voi
 	_spend_resource(float(def.get("resource_cost", 0.0)))
 	_start_cooldown(ability_id, int(def.get("cooldown_ms", 0)))
 	var roll := _roll_damage(attack_damage_min, attack_damage_max, float(def.get("damage_multiplier", 1.0)))
-	hostile.take_damage(roll["damage"])
+	hostile.take_damage(roll["damage"], self)
 	attack_anim_until_ms = game_time_ms + ATTACK_ANIM_DURATION_MS
 	var crit_suffix := " (Critical!)" if roll["is_crit"] else ""
 	GameState.log_event("%s hits %s for %d!%s" % [def.get("name", "An ability"), hostile.enemy_name, roll["damage"], crit_suffix])

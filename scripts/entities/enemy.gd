@@ -24,6 +24,13 @@ var spawn_point: Node2D = null
 var is_dead: bool = false
 var game_time_ms: float = 0.0
 
+# Whoever last landed a hit (direct or via a bleed tick — see apply_bleed) —
+# either the spectated Character or a SimulatedPlayer, the only two things
+# that ever call take_damage() on an Enemy. Used in _die() to decide who
+# gets quest/XP kill credit (only the spectated Character ever does) versus
+# just a flavor log line (a SimulatedPlayer's kill).
+var last_attacker: Node2D = null
+
 # Rend's bleed: a per-instance DoT applied by Character, ticked here rather
 # than in a shared status-effect system since Enemy is the only entity type
 # that ever receives one in this slice.
@@ -32,6 +39,7 @@ var bleed_damage_max: int = 0
 var bleed_ticks_remaining: int = 0
 var bleed_tick_interval_ms: float = 0.0
 var bleed_next_tick_ms: float = 0.0
+var bleed_source: Node2D = null
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var health_bar: ProgressBar = $EnemyHealthBar
@@ -46,13 +54,15 @@ func _ready() -> void:
 	sprite.modulate = sprite_tint
 
 ## Applies (or refreshes) a bleed DoT: `tick_count` hits of
-## [damage_min, damage_max] damage, one every `tick_interval_ms`.
-func apply_bleed(damage_min: int, damage_max: int, tick_count: int, tick_interval_ms: int) -> void:
+## [damage_min, damage_max] damage, one every `tick_interval_ms`. `source`
+## is who applied it (for kill-credit purposes if a tick lands the kill).
+func apply_bleed(damage_min: int, damage_max: int, tick_count: int, tick_interval_ms: int, source: Node2D = null) -> void:
 	bleed_damage_min = damage_min
 	bleed_damage_max = damage_max
 	bleed_ticks_remaining = tick_count
 	bleed_tick_interval_ms = tick_interval_ms
 	bleed_next_tick_ms = game_time_ms + tick_interval_ms
+	bleed_source = source
 
 func _physics_process(delta: float) -> void:
 	game_time_ms += delta * 1000.0
@@ -61,26 +71,26 @@ func _physics_process(delta: float) -> void:
 	if bleed_ticks_remaining > 0 and game_time_ms >= bleed_next_tick_ms:
 		bleed_ticks_remaining -= 1
 		bleed_next_tick_ms = game_time_ms + bleed_tick_interval_ms
-		take_damage(rng.randi_range(bleed_damage_min, bleed_damage_max))
+		take_damage(rng.randi_range(bleed_damage_min, bleed_damage_max), bleed_source)
 		if hp <= 0:
 			return
-	var character := GameState.character
-	if character == null or not is_instance_valid(character):
+	var target := _find_nearest_target()
+	if target == null:
 		velocity = Vector2.ZERO
 		_play_animation("idle", "down")
 		return
-	var dist := global_position.distance_to(character.global_position)
+	var dist := global_position.distance_to(target.global_position)
 	if dist <= attack_range:
 		velocity = Vector2.ZERO
-		_attack(character)
+		_attack(target)
 	elif dist <= aggro_range:
-		velocity = (character.global_position - global_position).normalized() * move_speed
+		velocity = (target.global_position - global_position).normalized() * move_speed
 		move_and_slide()
 	else:
 		velocity = Vector2.ZERO
 	var facing := _facing_from_velocity(velocity)
 	if dist <= attack_range:
-		facing = _facing_from_velocity(character.global_position - global_position)
+		facing = _facing_from_velocity(target.global_position - global_position)
 	var base_anim := "idle" if velocity.length() < 1.0 else "walk"
 	if game_time_ms < attack_anim_until_ms:
 		base_anim = "slash"
@@ -122,18 +132,36 @@ func _play_animation(base_anim: String, facing: String) -> void:
 			var s: float = sprite_size / max(native_size.x, native_size.y)
 			sprite.scale = Vector2(s, s)
 
-func _attack(character: Node2D) -> void:
+## Nearest node in the "combat_targets" group (the spectated Character and
+## every SimulatedPlayer both register into it) — lets an Enemy fight
+## whichever adventurer is closest rather than only ever the spectated one,
+## the same "populated world" illusion Erenshor's simulated players give.
+func _find_nearest_target() -> Node2D:
+	var nearest: Node2D = null
+	var nearest_dist := INF
+	for node in get_tree().get_nodes_in_group("combat_targets"):
+		if not is_instance_valid(node) or node.is_dead:
+			continue
+		var d := global_position.distance_to(node.global_position)
+		if d < nearest_dist:
+			nearest_dist = d
+			nearest = node
+	return nearest
+
+func _attack(target: Node2D) -> void:
 	var now := int(game_time_ms)
 	if not CombatSystem.is_off_cooldown(last_attack_time_ms, attack_cooldown_ms, now):
 		return
 	last_attack_time_ms = now
 	var damage := CombatSystem.roll_damage(attack_damage_min, attack_damage_max, rng)
-	character.take_damage(damage)
+	target.take_damage(damage)
 	attack_anim_until_ms = game_time_ms + ATTACK_ANIM_DURATION_MS
 
-func take_damage(amount: int) -> void:
+func take_damage(amount: int, attacker: Node2D = null) -> void:
 	if is_dead:
 		return
+	if attacker != null:
+		last_attacker = attacker
 	hp = max(0, hp - amount)
 	health_bar.value = hp
 	GameState.emit_signal("damage_dealt", global_position, amount, false)
@@ -142,9 +170,11 @@ func take_damage(amount: int) -> void:
 
 func _die() -> void:
 	is_dead = true
-	var character := GameState.character
-	if character and is_instance_valid(character):
-		character.take_kill_credit(enemy_name, xp_reward)
+	if last_attacker != null and is_instance_valid(last_attacker):
+		if last_attacker == GameState.character:
+			last_attacker.take_kill_credit(enemy_name, xp_reward)
+		elif "player_name" in last_attacker:
+			GameState.log_event("%s defeats %s!" % [last_attacker.player_name, enemy_name])
 	_drop_loot()
 	if spawn_point and is_instance_valid(spawn_point):
 		spawn_point.on_enemy_died()
