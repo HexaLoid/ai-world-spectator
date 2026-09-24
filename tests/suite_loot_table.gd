@@ -21,8 +21,6 @@ func run(t) -> void:
 			t.check(LootTable.STAT_LABELS.has(stat), "%s stat %s is known" % [item_id, stat])
 		var level_req := int(item.get("level_req", 0))
 		t.check(level_req >= 1 and level_req <= LevelingSystem.MAX_LEVEL, "%s level_req in range" % item_id)
-		if item.get("rarity", "") == "epic":
-			t.check(level_req <= 3, "%s (epic) is equippable by the level a boss/quest hands it out" % item_id)
 		items_per_slot[slot] = int(items_per_slot.get(slot, 0)) + 1
 		if item.get("rarity", "") == "common" and level_req == 1:
 			has_level_one_common[slot] = true
@@ -47,3 +45,19 @@ func run(t) -> void:
 	for stat in LootTable.STAT_ORDER:
 		t.check(LootTable.STAT_LABELS.has(stat), "STAT_ORDER key %s has a label" % stat)
 	t.check_eq(LootTable.display_name("iron_helm"), "Iron Helm", "display_name capitalizes")
+	# level-aware drops
+	var drop_rng := RandomNumberGenerator.new()
+	drop_rng.seed = 99
+	for loot_level in [1, 2, 3, 5, 6, 9, 10]:
+		for i in 300:
+			var rolled := LootTable.roll_drop(drop_rng, loot_level)
+			t.check(LootTable.ITEMS.has(rolled), "level-%d roll returns a real item" % loot_level)
+			var rolled_def: Dictionary = LootTable.ITEMS[rolled]
+			t.check(int(rolled_def.get("level_req", 1)) <= loot_level, "level-%d roll never returns %s (level_req %d)" % [loot_level, rolled, int(rolled_def.get("level_req", 1))])
+			t.check(rolled_def["rarity"] != "epic", "level-%d roll never returns an epic" % loot_level)
+	t.check(LootTable.roll_drop(drop_rng, 1) != "", "a level-1 roll always finds something")
+	# new content sanity
+	for item_id in ["tempered_sword", "mirewood_staff", "tyrants_maul", "frostbrand", "glacier_staff", "bog_bulwark",
+			"frostguard_shield", "marsh_helm", "rimewatch_helm", "reinforced_mail", "glacier_plate", "swamp_charm",
+			"rimewatch_amulet", "ring_of_the_mire", "frozen_band"]:
+		t.check(LootTable.ITEMS.has(item_id), "new item %s exists" % item_id)

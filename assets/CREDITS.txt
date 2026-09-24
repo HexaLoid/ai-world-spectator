@@ -122,6 +122,11 @@ iron_helm_icon.png, steel_helm_icon.png, silver_necklace_icon.png,
 sage_pendant_icon.png, copper_ring_icon.png, ring_of_vigor_icon.png,
 signet_of_power_icon.png, apprentice_staff_icon.png, oak_staff_icon.png,
 arcane_staff_icon.png, greater_health_potion_icon.png, gold_icon.png.
+Also from the same pack (32x32 variant): tempered_sword_icon.png,
+mirewood_staff_icon.png, tyrants_maul_icon.png, frostbrand_icon.png,
+glacier_staff_icon.png, bog_bulwark_icon.png, frostguard_shield_icon.png,
+marsh_helm_icon.png, rimewatch_helm_icon.png, swamp_charm_icon.png,
+rimewatch_amulet_icon.png, ring_of_the_mire_icon.png, frozen_band_icon.png.
 Source: "Kyrise's Free 16x16 RPG Icon Pack" on OpenGameArt.org
         https://opengameart.org/content/kyrises-free-16x16-rpg-icon-pack
 Author: Kyrise (https://kyrise.itch.io/)
