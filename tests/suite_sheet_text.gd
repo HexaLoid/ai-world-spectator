@@ -69,3 +69,9 @@ func run(t) -> void:
 	for slot_label in LootTable.SLOT_LABELS.values():
 		t.check(empty_text.contains("%s: [color=#%s]empty[/color]" % [slot_label, SheetText.EMPTY_COLOR]),
 			"empty snapshot: %s slot is empty" % slot_label)
+	# character name line
+	var named := _full_snapshot()
+	named["character_name"] = "Aldric"
+	t.check(SheetText.build(named).begins_with("[b]Aldric[/b]"), "sheet starts with the character's name")
+	t.check(not SheetText.build(_full_snapshot()).contains("[b]Aldric[/b]"), "no name line without a name")
+	t.check(SheetText.build({}).begins_with("[b]Level 1 Adventurer[/b]"), "empty snapshot still starts with the level line")

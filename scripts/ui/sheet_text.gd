@@ -16,6 +16,9 @@ static func format_time(ms: float) -> String:
 
 static func build(snap: Dictionary) -> String:
 	var lines: Array[String] = []
+	var character_name := String(snap.get("character_name", ""))
+	if character_name != "":
+		lines.append("[b]%s[/b]" % character_name)
 
 	var class_text := String(snap.get("class_name", "")).capitalize()
 	if class_text == "":

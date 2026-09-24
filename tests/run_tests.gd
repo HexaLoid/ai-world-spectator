@@ -11,6 +11,7 @@ const SUITES := [
 	"res://tests/suite_item_scoring.gd",
 	"res://tests/suite_stat_calculator.gd",
 	"res://tests/suite_sheet_text.gd",
+	"res://tests/suite_name_table.gd",
 ]
 
 var checks := 0
