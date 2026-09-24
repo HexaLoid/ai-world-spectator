@@ -12,7 +12,7 @@ var drag_start_camera := Vector2.ZERO
 func _ready() -> void:
 	GameState.camera = self
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	if following and GameState.character and is_instance_valid(GameState.character):
 		global_position = GameState.character.global_position
 

@@ -5,6 +5,8 @@ const DEFAULT_LABEL_COLOR := Color(0.2, 0.12, 0.05, 1.0)
 @onready var hp_bar: ProgressBar = $HPBar
 @onready var level_label: Label = $LevelLabel
 @onready var xp_bar: ProgressBar = $XPBar
+@onready var hp_text: Label = $HPText
+@onready var xp_text: Label = $XPText
 @onready var resource_bar: ProgressBar = $ResourceBar
 @onready var weapon_icon: TextureRect = $WeaponIcon
 @onready var weapon_label: Label = $WeaponLabel
@@ -14,6 +16,11 @@ const DEFAULT_LABEL_COLOR := Color(0.2, 0.12, 0.05, 1.0)
 @onready var trinket_label: Label = $TrinketLabel
 
 func _ready() -> void:
+	# Godot resets a ProgressBar's scene-declared size during its internal
+	# setup, inflating the bars — reassign after that (see enemy_health_bar.gd).
+	hp_bar.size = Vector2(200, 20)
+	xp_bar.size = Vector2(200, 12)
+	resource_bar.size = Vector2(200, 10)
 	GameState.character_hp_changed.connect(_on_hp_changed)
 	GameState.character_xp_changed.connect(_on_xp_changed)
 	GameState.character_resource_changed.connect(_on_resource_changed)
@@ -37,6 +44,7 @@ func _ready() -> void:
 func _on_hp_changed(hp: int, max_hp: int) -> void:
 	hp_bar.max_value = max_hp
 	hp_bar.value = hp
+	hp_text.text = "%d / %d" % [hp, max_hp]
 
 func _on_resource_changed(resource_amount: float, max_resource: float) -> void:
 	resource_bar.visible = max_resource > 0.0
@@ -51,10 +59,12 @@ func _on_xp_changed(xp: int) -> void:
 		# further (now purely cosmetic) XP gains.
 		xp_bar.max_value = 1
 		xp_bar.value = 1
+		xp_text.text = "MAX"
 		return
 	var prev_threshold: int = LevelingSystem.XP_THRESHOLDS[level - 2] if level > 1 else 0
 	xp_bar.max_value = next_threshold - prev_threshold
 	xp_bar.value = xp - prev_threshold
+	xp_text.text = "XP %d / %d" % [xp - prev_threshold, next_threshold - prev_threshold]
 
 func _on_leveled_up(level: int) -> void:
 	var class_name_display := ""

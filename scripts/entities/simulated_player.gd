@@ -128,7 +128,7 @@ func _find_nearest_in_group(group_name: String) -> Node2D:
 			nearest = node
 	return nearest
 
-func _act(delta: float, context: Dictionary, preferred_hostile: Node2D) -> void:
+func _act(delta: float, _context: Dictionary, preferred_hostile: Node2D) -> void:
 	var base_anim := "idle"
 	var combat_hostile: Node2D = null
 	match current_state:
@@ -228,7 +228,7 @@ func _die() -> void:
 
 ## Mirrors Character.gain_xp/take_kill_credit — companions "get stronger"
 ## from their own kills too (same LevelingSystem, same hp/damage bonuses).
-func take_kill_credit(enemy_name: String, xp_reward: int) -> void:
+func take_kill_credit(_enemy_name: String, xp_reward: int) -> void:
 	var result := LevelingSystem.apply_xp(level, xp, xp_reward)
 	level = result["level"]
 	xp = result["xp"]

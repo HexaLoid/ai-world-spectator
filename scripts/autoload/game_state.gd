@@ -1,5 +1,9 @@
 extends Node
 
+# Signals here are emitted from other scripts via GameState.emit_signal(...), so
+# the analyzer cannot see the emits within this class.
+@warning_ignore_start("unused_signal")
+
 ## Emitted whenever the AI-controlled character transitions to a new behavior
 ## state (e.g. "idle", "attacking", "fleeing"); new_state is the state name.
 signal character_state_changed(new_state: String)

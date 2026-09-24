@@ -175,7 +175,7 @@ func _find_nearest_in_group(group_name: String) -> Node2D:
 			nearest = node
 	return nearest
 
-func _act(delta: float, context: Dictionary) -> void:
+func _act(delta: float, _context: Dictionary) -> void:
 	var base_anim := "idle"
 	var combat_hostile: Node2D = null
 	match current_state:
