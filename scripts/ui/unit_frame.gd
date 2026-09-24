@@ -3,6 +3,7 @@ extends Control
 @onready var hp_bar: ProgressBar = $HPBar
 @onready var level_label: Label = $LevelLabel
 @onready var xp_bar: ProgressBar = $XPBar
+@onready var resource_bar: ProgressBar = $ResourceBar
 @onready var weapon_icon: TextureRect = $WeaponIcon
 @onready var weapon_label: Label = $WeaponLabel
 @onready var armor_icon: TextureRect = $ArmorIcon
@@ -11,17 +12,24 @@ extends Control
 func _ready() -> void:
 	GameState.character_hp_changed.connect(_on_hp_changed)
 	GameState.character_xp_changed.connect(_on_xp_changed)
+	GameState.character_resource_changed.connect(_on_resource_changed)
 	GameState.character_leveled_up.connect(_on_leveled_up)
 	GameState.character_equipment_changed.connect(_on_equipment_changed)
 	if GameState.character:
 		_on_hp_changed(GameState.character.hp, GameState.character.max_hp)
 		_on_leveled_up(GameState.character.level)
 		_on_xp_changed(GameState.character.xp)
+		_on_resource_changed(GameState.character.resource_amount, GameState.character.max_resource)
 		_on_equipment_changed(GameState.character.equipped_weapon_id, GameState.character.equipped_armor_id)
 
 func _on_hp_changed(hp: int, max_hp: int) -> void:
 	hp_bar.max_value = max_hp
 	hp_bar.value = hp
+
+func _on_resource_changed(resource_amount: float, max_resource: float) -> void:
+	resource_bar.visible = max_resource > 0.0
+	resource_bar.max_value = max_resource
+	resource_bar.value = resource_amount
 
 func _on_xp_changed(xp: int) -> void:
 	var level: int = GameState.character.level if GameState.character else 1

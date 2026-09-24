@@ -1,12 +1,20 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/unit_frame.gd" id="1_unitframe"]
 [ext_resource type="Script" path="res://scripts/ui/activity_log.gd" id="2_activitylog"]
 [ext_resource type="Script" path="res://scripts/ui/speed_control.gd" id="3_speedcontrol"]
 [ext_resource type="Theme" path="res://assets/theme/spectator_theme.tres" id="4_theme"]
+[ext_resource type="Script" path="res://scripts/ui/ability_slot.gd" id="5_abilityslot"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xpfill"]
 bg_color = Color(0.82, 0.65, 0.15, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_resourcefill"]
+bg_color = Color(0.8, 0.35, 0.05, 1)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
@@ -18,7 +26,7 @@ corner_radius_bottom_left = 4
 script = ExtResource("1_unitframe")
 theme = ExtResource("4_theme")
 position = Vector2(16, 16)
-size = Vector2(224, 132)
+size = Vector2(224, 150)
 
 [node name="HPBar" type="ProgressBar" parent="UnitFrame"]
 position = Vector2(8, 8)
@@ -35,24 +43,30 @@ size = Vector2(200, 12)
 show_percentage = false
 theme_override_styles/fill = SubResource("StyleBoxFlat_xpfill")
 
-[node name="WeaponIcon" type="TextureRect" parent="UnitFrame"]
+[node name="ResourceBar" type="ProgressBar" parent="UnitFrame"]
 position = Vector2(8, 72)
+size = Vector2(200, 10)
+show_percentage = false
+theme_override_styles/fill = SubResource("StyleBoxFlat_resourcefill")
+
+[node name="WeaponIcon" type="TextureRect" parent="UnitFrame"]
+position = Vector2(8, 90)
 size = Vector2(20, 20)
 expand_mode = 1
 stretch_mode = 5
 
 [node name="WeaponLabel" type="Label" parent="UnitFrame"]
-position = Vector2(34, 76)
+position = Vector2(34, 94)
 text = "Weapon: None"
 
 [node name="ArmorIcon" type="TextureRect" parent="UnitFrame"]
-position = Vector2(8, 96)
+position = Vector2(8, 114)
 size = Vector2(20, 20)
 expand_mode = 1
 stretch_mode = 5
 
 [node name="ArmorLabel" type="Label" parent="UnitFrame"]
-position = Vector2(34, 100)
+position = Vector2(34, 118)
 text = "Armor: None"
 
 [node name="ActivityLog" type="Panel" parent="."]
@@ -84,3 +98,90 @@ text = "4x"
 
 [node name="RecenterButton" type="Button" parent="SpeedControl"]
 text = "Recenter"
+
+[node name="AbilityBar" type="HBoxContainer" parent="."]
+position = Vector2(487, 592)
+
+[node name="Charge" type="Panel" parent="AbilityBar"]
+custom_minimum_size = Vector2(40, 40)
+theme = ExtResource("4_theme")
+script = ExtResource("5_abilityslot")
+ability_id = "charge"
+
+[node name="Icon" type="TextureRect" parent="AbilityBar/Charge"]
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 36.0
+offset_bottom = 36.0
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CooldownBar" type="ProgressBar" parent="AbilityBar/Charge"]
+offset_left = 2.0
+offset_top = 32.0
+offset_right = 38.0
+offset_bottom = 38.0
+show_percentage = false
+
+[node name="Rend" type="Panel" parent="AbilityBar"]
+custom_minimum_size = Vector2(40, 40)
+theme = ExtResource("4_theme")
+script = ExtResource("5_abilityslot")
+ability_id = "rend"
+
+[node name="Icon" type="TextureRect" parent="AbilityBar/Rend"]
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 36.0
+offset_bottom = 36.0
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CooldownBar" type="ProgressBar" parent="AbilityBar/Rend"]
+offset_left = 2.0
+offset_top = 32.0
+offset_right = 38.0
+offset_bottom = 38.0
+show_percentage = false
+
+[node name="HeroicStrike" type="Panel" parent="AbilityBar"]
+custom_minimum_size = Vector2(40, 40)
+theme = ExtResource("4_theme")
+script = ExtResource("5_abilityslot")
+ability_id = "heroic_strike"
+
+[node name="Icon" type="TextureRect" parent="AbilityBar/HeroicStrike"]
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 36.0
+offset_bottom = 36.0
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CooldownBar" type="ProgressBar" parent="AbilityBar/HeroicStrike"]
+offset_left = 2.0
+offset_top = 32.0
+offset_right = 38.0
+offset_bottom = 38.0
+show_percentage = false
+
+[node name="SecondWind" type="Panel" parent="AbilityBar"]
+custom_minimum_size = Vector2(40, 40)
+theme = ExtResource("4_theme")
+script = ExtResource("5_abilityslot")
+ability_id = "second_wind"
+
+[node name="Icon" type="TextureRect" parent="AbilityBar/SecondWind"]
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 36.0
+offset_bottom = 36.0
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CooldownBar" type="ProgressBar" parent="AbilityBar/SecondWind"]
+offset_left = 2.0
+offset_top = 32.0
+offset_right = 38.0
+offset_bottom = 38.0
+show_percentage = false

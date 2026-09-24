@@ -30,6 +30,7 @@ const STATE_DISPLAY_NAMES := {
 @export var xp: int = 0
 @export var attack_damage_min: int = 4
 @export var attack_damage_max: int = 8
+@export var character_class: String = "warrior"
 
 var equipped_weapon_id: String = ""
 var equipped_armor_id: String = ""
@@ -45,10 +46,22 @@ var last_combat_target: Node2D = null
 @onready var action_label: Label = $ActionLabel
 var attack_anim_until_ms: float = 0.0
 
+# Class resource (Rage for the warrior) and per-ability cooldown tracking.
+# `class_def`/`ABILITIES` come from AbilityTable, keyed by `character_class`,
+# so a second class can be added there later without touching this script's
+# structure.
+var class_def: Dictionary = {}
+var resource_amount: float = 0.0
+var max_resource: float = 0.0
+var ability_cooldowns: Dictionary = {}
+
 func _ready() -> void:
 	rng.randomize()
 	wander_target = global_position
 	GameState.character = self
+	class_def = AbilityTable.CLASSES.get(character_class, {})
+	max_resource = float(class_def.get("max_resource", 0.0))
+	GameState.emit_signal("character_resource_changed", resource_amount, max_resource)
 
 func _physics_process(delta: float) -> void:
 	game_time_ms += delta * 1000.0
@@ -133,21 +146,27 @@ func _act(delta: float, context: Dictionary) -> void:
 	var combat_hostile: Node2D = null
 	match current_state:
 		"flee":
+			_try_second_wind()
 			var hostile := _find_nearest_in_group("enemies")
 			if hostile:
 				_move_toward(global_position - hostile.global_position, MOVE_SPEED)
 			base_anim = "run"
 		"rest":
+			_try_second_wind()
 			velocity = Vector2.ZERO
 			_regen_hp(delta)
+			_decay_resource(delta)
 		"combat":
 			velocity = Vector2.ZERO
 			combat_hostile = _find_nearest_in_group("enemies")
 			_attack_nearest_hostile()
+			if combat_hostile:
+				_try_combat_abilities(combat_hostile)
 		"chase":
 			var hostile := _find_nearest_in_group("enemies")
 			if hostile:
-				_move_toward(hostile.global_position - global_position, MOVE_SPEED)
+				if not _try_charge(hostile):
+					_move_toward(hostile.global_position - global_position, MOVE_SPEED)
 			base_anim = "run"
 		"loot":
 			var item := _find_nearest_in_group("items")
@@ -158,11 +177,13 @@ func _act(delta: float, context: Dictionary) -> void:
 				else:
 					_move_toward(to_item, MOVE_SPEED)
 			base_anim = "walk"
+			_decay_resource(delta)
 		"wander":
 			if global_position.distance_to(wander_target) < 8.0:
 				wander_target = (global_position + Vector2(rng.randf_range(-100, 100), rng.randf_range(-100, 100))).clamp(MEADOW_MIN, MEADOW_MAX)
 			_move_toward(wander_target - global_position, MOVE_SPEED * 0.5)
 			base_anim = "walk"
+			_decay_resource(delta)
 	var facing := _facing_from_velocity(velocity)
 	if combat_hostile:
 		facing = _facing_from_velocity(combat_hostile.global_position - global_position)
@@ -198,6 +219,7 @@ func _attack_nearest_hostile() -> void:
 	var damage := CombatSystem.roll_damage(attack_damage_min, attack_damage_max, rng)
 	hostile.take_damage(damage)
 	attack_anim_until_ms = game_time_ms + ATTACK_ANIM_DURATION_MS
+	_gain_resource(float(class_def.get("rage_per_swing", 0.0)))
 
 func take_damage(amount: int) -> void:
 	if is_dead:
@@ -205,6 +227,7 @@ func take_damage(amount: int) -> void:
 	hp = max(0, hp - amount)
 	GameState.emit_signal("character_hp_changed", hp, max_hp)
 	GameState.emit_signal("damage_dealt", global_position, amount, false)
+	_gain_resource(float(class_def.get("rage_per_hit_taken", 0.0)))
 	if hp <= 0:
 		_die()
 
@@ -220,7 +243,99 @@ func _die() -> void:
 	visible = true
 	set_physics_process(true)
 	is_dead = false
+	ability_cooldowns.clear()
+	resource_amount = 0.0
 	GameState.emit_signal("character_hp_changed", hp, max_hp)
+	GameState.emit_signal("character_resource_changed", resource_amount, max_resource)
+
+## Returns seconds remaining before `ability_id` is off cooldown (0 if ready).
+## Polled directly by the HUD's ability bar each frame, the same way
+## CameraController polls GameState.character's position — cooldown sweeps
+## need continuous updates, not a discrete signal per tick.
+func get_ability_cooldown_remaining(ability_id: String) -> float:
+	var ready_at: float = ability_cooldowns.get(ability_id, 0.0)
+	return max(0.0, (ready_at - game_time_ms) / 1000.0)
+
+func _ability_ready(ability_id: String, cost: float) -> bool:
+	return get_ability_cooldown_remaining(ability_id) <= 0.0 and resource_amount >= cost
+
+func _start_cooldown(ability_id: String, cooldown_ms: int) -> void:
+	ability_cooldowns[ability_id] = game_time_ms + cooldown_ms
+
+func _gain_resource(amount: float) -> void:
+	if amount == 0.0 or max_resource <= 0.0:
+		return
+	resource_amount = clampf(resource_amount + amount, 0.0, max_resource)
+	GameState.emit_signal("character_resource_changed", resource_amount, max_resource)
+
+func _spend_resource(amount: float) -> void:
+	_gain_resource(-amount)
+
+func _decay_resource(delta: float) -> void:
+	_gain_resource(-float(class_def.get("resource_decay_per_second", 0.0)) * delta)
+
+## Gap closer used from the "chase" state instead of walking, when off
+## cooldown. Returns true if it fired (caller skips its normal move step).
+func _try_charge(hostile: Node2D) -> bool:
+	var def: Dictionary = AbilityTable.ABILITIES.get("charge", {})
+	if not _ability_ready("charge", float(def.get("resource_cost", 0.0))):
+		return false
+	_start_cooldown("charge", int(def.get("cooldown_ms", 0)))
+	var to_hostile := hostile.global_position - global_position
+	# Land just outside melee range rather than exactly on top of the target.
+	global_position = hostile.global_position - to_hostile.normalized() * (ATTACK_RANGE * 0.9)
+	_gain_resource(float(def.get("resource_gain", 0.0)))
+	GameState.log_event("Charges at %s!" % hostile.enemy_name)
+	return true
+
+## Layers Rend/Heroic Strike on top of the normal auto-attack, each on its
+## own independent cooldown, while in the "combat" state.
+func _try_combat_abilities(hostile: Node2D) -> void:
+	var rend: Dictionary = AbilityTable.ABILITIES.get("rend", {})
+	if _ability_ready("rend", float(rend.get("resource_cost", 0.0))):
+		_use_rend(hostile, rend)
+		return
+	var heroic_strike: Dictionary = AbilityTable.ABILITIES.get("heroic_strike", {})
+	if _ability_ready("heroic_strike", float(heroic_strike.get("resource_cost", 0.0))):
+		_use_heroic_strike(hostile, heroic_strike)
+
+func _use_rend(hostile: Node2D, def: Dictionary) -> void:
+	_spend_resource(float(def.get("resource_cost", 0.0)))
+	_start_cooldown("rend", int(def.get("cooldown_ms", 0)))
+	hostile.apply_bleed(
+		int(def.get("tick_damage_min", 0)),
+		int(def.get("tick_damage_max", 0)),
+		int(def.get("tick_count", 0)),
+		int(def.get("tick_interval_ms", 0))
+	)
+	attack_anim_until_ms = game_time_ms + ATTACK_ANIM_DURATION_MS
+	GameState.log_event("Rends %s - bleeding!" % hostile.enemy_name)
+
+func _use_heroic_strike(hostile: Node2D, def: Dictionary) -> void:
+	_spend_resource(float(def.get("resource_cost", 0.0)))
+	_start_cooldown("heroic_strike", int(def.get("cooldown_ms", 0)))
+	var base_damage := CombatSystem.roll_damage(attack_damage_min, attack_damage_max, rng)
+	var damage := int(round(base_damage * float(def.get("damage_multiplier", 1.0))))
+	hostile.take_damage(damage)
+	attack_anim_until_ms = game_time_ms + ATTACK_ANIM_DURATION_MS
+	GameState.log_event("Heroic Strike hits %s for %d!" % [hostile.enemy_name, damage])
+
+## Checked at the start of the "flee"/"rest" states rather than folded into
+## AIDecision, so the FSM's pure state-selection logic stays untouched — this
+## only changes how much HP the character has by the time flee/rest run.
+func _try_second_wind() -> void:
+	var def: Dictionary = AbilityTable.ABILITIES.get("second_wind", {})
+	if not _ability_ready("second_wind", float(def.get("resource_cost", 0.0))):
+		return
+	_start_cooldown("second_wind", int(def.get("cooldown_ms", 0)))
+	var old_hp := hp
+	hp = min(max_hp, hp + int(max_hp * float(def.get("heal_percent", 0.0))))
+	var healed := hp - old_hp
+	if healed <= 0:
+		return
+	GameState.emit_signal("character_hp_changed", hp, max_hp)
+	GameState.emit_signal("damage_dealt", global_position, healed, true)
+	GameState.log_event("Uses Second Wind - recovers %d HP!" % healed)
 
 func gain_xp(amount: int) -> void:
 	var result := LevelingSystem.apply_xp(level, xp, amount)

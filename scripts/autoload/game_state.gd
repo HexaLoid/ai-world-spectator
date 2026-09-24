@@ -8,6 +8,9 @@ signal character_state_changed(new_state: String)
 signal character_hp_changed(hp: int, max_hp: int)
 ## Emitted whenever the character's XP total changes; xp is the new total.
 signal character_xp_changed(xp: int)
+## Emitted whenever the character's class resource (e.g. Rage) changes;
+## resource_amount and max_resource are its current and maximum values.
+signal character_resource_changed(resource_amount: float, max_resource: float)
 ## Emitted when the character gains a level; level is the new level reached.
 signal character_leveled_up(level: int)
 ## Emitted whenever the character's equipped weapon or armor changes;

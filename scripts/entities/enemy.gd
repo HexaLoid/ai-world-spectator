@@ -20,6 +20,15 @@ var spawn_point: Node2D = null
 var is_dead: bool = false
 var game_time_ms: float = 0.0
 
+# Rend's bleed: a per-instance DoT applied by Character, ticked here rather
+# than in a shared status-effect system since Enemy is the only entity type
+# that ever receives one in this slice.
+var bleed_damage_min: int = 0
+var bleed_damage_max: int = 0
+var bleed_ticks_remaining: int = 0
+var bleed_tick_interval_ms: float = 0.0
+var bleed_next_tick_ms: float = 0.0
+
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var health_bar: ProgressBar = $EnemyHealthBar
 var attack_anim_until_ms: float = 0.0
@@ -31,10 +40,25 @@ func _ready() -> void:
 	health_bar.max_value = max_hp
 	health_bar.value = hp
 
+## Applies (or refreshes) a bleed DoT: `tick_count` hits of
+## [damage_min, damage_max] damage, one every `tick_interval_ms`.
+func apply_bleed(damage_min: int, damage_max: int, tick_count: int, tick_interval_ms: int) -> void:
+	bleed_damage_min = damage_min
+	bleed_damage_max = damage_max
+	bleed_ticks_remaining = tick_count
+	bleed_tick_interval_ms = tick_interval_ms
+	bleed_next_tick_ms = game_time_ms + tick_interval_ms
+
 func _physics_process(delta: float) -> void:
 	game_time_ms += delta * 1000.0
 	if hp <= 0:
 		return
+	if bleed_ticks_remaining > 0 and game_time_ms >= bleed_next_tick_ms:
+		bleed_ticks_remaining -= 1
+		bleed_next_tick_ms = game_time_ms + bleed_tick_interval_ms
+		take_damage(rng.randi_range(bleed_damage_min, bleed_damage_max))
+		if hp <= 0:
+			return
 	var character := GameState.character
 	if character == null or not is_instance_valid(character):
 		velocity = Vector2.ZERO
