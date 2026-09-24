@@ -5,8 +5,9 @@ const FLEE_HP_THRESHOLD := 0.3
 
 ## Resolves the AI character's next state from its current situation.
 ## Expected context keys: hp_percent (float, 0.0-1.0), hostile_in_attack_range (bool),
-## hostile_in_aggro_range (bool), hostile_name (String), item_nearby (bool).
-## Returns {"state": <one of "flee"/"rest"/"combat"/"chase"/"loot"/"wander">, "reason": <String>}.
+## hostile_in_aggro_range (bool), hostile_name (String), item_nearby (bool),
+## ready_to_travel (bool), next_zone_name (String).
+## Returns {"state": <one of "flee"/"rest"/"combat"/"chase"/"loot"/"travel"/"wander">, "reason": <String>}.
 static func resolve_state(context: Dictionary) -> Dictionary:
 	var hp_percent: float = clampf(float(context.get("hp_percent", 1.0)), 0.0, 1.0)
 	var hostile_in_attack_range: bool = bool(context.get("hostile_in_attack_range", false))
@@ -15,6 +16,8 @@ static func resolve_state(context: Dictionary) -> Dictionary:
 	if hostile_name == "":
 		hostile_name = "an enemy"
 	var item_nearby: bool = bool(context.get("item_nearby", false))
+	var ready_to_travel: bool = bool(context.get("ready_to_travel", false))
+	var next_zone_name: String = String(context.get("next_zone_name", "the next zone"))
 
 	if hp_percent < FLEE_HP_THRESHOLD and hostile_in_aggro_range:
 		return {"state": "flee", "reason": "HP low (%d%%) - fleeing from %s" % [round(hp_percent * 100), hostile_name]}
@@ -26,4 +29,6 @@ static func resolve_state(context: Dictionary) -> Dictionary:
 		return {"state": "chase", "reason": "%s spotted - closing in" % hostile_name}
 	if item_nearby:
 		return {"state": "loot", "reason": "Item nearby - moving to pick it up"}
+	if ready_to_travel:
+		return {"state": "travel", "reason": "Time to move on - heading to %s" % next_zone_name}
 	return {"state": "wander", "reason": "Nothing pressing - wandering"}

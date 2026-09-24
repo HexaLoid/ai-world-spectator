@@ -10,10 +10,10 @@ const RESPAWN_POSITION := Vector2(0, 0)
 const HP_REGEN_PER_SECOND := 3.0
 const TARGET_SPRITE_SIZE := 40.0
 const ATTACK_ANIM_DURATION_MS := 400.0
-# Inset from ThornfieldMeadow's 800x600 background rect
-# (scenes/world/ThornfieldMeadow.tscn) by 20px on each side.
-const MEADOW_MIN := Vector2(-380, -280)
-const MEADOW_MAX := Vector2(380, 280)
+const RESPAWN_ZONE_ID := "thornfield_meadow"
+# How long the character stays in a zone, fighting/looting/wandering, before
+# the AI moves on to the next one in ZoneTable.TRAVEL_ORDER.
+const ZONE_STAY_DURATION_MS := 45000.0
 
 const STATE_DISPLAY_NAMES := {
 	"wander": "Wandering",
@@ -22,6 +22,7 @@ const STATE_DISPLAY_NAMES := {
 	"flee": "Fleeing",
 	"loot": "Looting",
 	"rest": "Resting",
+	"travel": "Traveling",
 }
 
 @export var max_hp: int = 60
@@ -42,6 +43,8 @@ var is_dead: bool = false
 var game_time_ms: float = 0.0
 var hp_regen_accumulator: float = 0.0
 var last_combat_target: Node2D = null
+var current_zone_id: String = RESPAWN_ZONE_ID
+var zone_entered_time_ms: float = 0.0
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var action_label: Label = $ActionLabel
 var attack_anim_until_ms: float = 0.0
@@ -111,12 +114,15 @@ func _play_animation(base_anim: String, facing: String) -> void:
 func _build_context() -> Dictionary:
 	var nearest_hostile := _find_nearest_in_group("enemies")
 	var nearest_item := _find_nearest_in_group("items")
+	var next_zone_id := ZoneTable.next_zone_id(current_zone_id)
 	var context := {
 		"hp_percent": float(hp) / float(max_hp),
 		"hostile_in_attack_range": false,
 		"hostile_in_aggro_range": false,
 		"hostile_name": "",
 		"item_nearby": false,
+		"ready_to_travel": (game_time_ms - zone_entered_time_ms) >= ZONE_STAY_DURATION_MS,
+		"next_zone_name": String(ZoneTable.ZONES[next_zone_id]["name"]),
 	}
 	if nearest_hostile:
 		var dist := global_position.distance_to(nearest_hostile.global_position)
@@ -179,11 +185,15 @@ func _act(delta: float, context: Dictionary) -> void:
 			base_anim = "walk"
 			_decay_resource(delta)
 		"wander":
+			var zone: Dictionary = ZoneTable.ZONES[current_zone_id]
 			if global_position.distance_to(wander_target) < 8.0:
-				wander_target = (global_position + Vector2(rng.randf_range(-100, 100), rng.randf_range(-100, 100))).clamp(MEADOW_MIN, MEADOW_MAX)
+				wander_target = (global_position + Vector2(rng.randf_range(-100, 100), rng.randf_range(-100, 100))).clamp(zone["bounds_min"], zone["bounds_max"])
 			_move_toward(wander_target - global_position, MOVE_SPEED * 0.5)
 			base_anim = "walk"
 			_decay_resource(delta)
+		"travel":
+			_do_travel()
+			base_anim = "run"
 	var facing := _facing_from_velocity(velocity)
 	if combat_hostile:
 		facing = _facing_from_velocity(combat_hostile.global_position - global_position)
@@ -191,11 +201,48 @@ func _act(delta: float, context: Dictionary) -> void:
 	if game_time_ms < attack_anim_until_ms:
 		base_anim = "slash"
 	_play_animation(base_anim, facing)
-	global_position = global_position.clamp(MEADOW_MIN, MEADOW_MAX)
+	# A hard safety clamp against the WHOLE traversable world, not just the
+	# current zone: any state (a mid-corridor Charge onto a border enemy,
+	# a Flee shoved past a zone edge, ...) can legitimately put the
+	# character outside its "home" zone's own bounds without that meaning
+	# it left the world. Clamping to current_zone_id's bounds here instead
+	# would snap it straight back across the map the instant that happens.
+	global_position = global_position.clamp(ZoneTable.WORLD_BOUNDS_MIN, ZoneTable.WORLD_BOUNDS_MAX)
+	_sync_current_zone()
 
 func _move_toward(direction: Vector2, speed: float) -> void:
 	velocity = direction.normalized() * speed
 	move_and_slide()
+
+func _do_travel() -> void:
+	var dest_center: Vector2 = ZoneTable.ZONES[ZoneTable.next_zone_id(current_zone_id)]["center"]
+	_move_toward(dest_center - global_position, MOVE_SPEED)
+
+## Detects "arrival" as actually crossing into a zone's bounds rectangle
+## (checked every frame, regardless of state) rather than the "travel" state
+## reaching that zone's exact center — so wandering/fighting across a border
+## (e.g. a Charge that lands inside the next zone) also correctly updates
+## which zone the character calls home, not just a deliberate full trip.
+func _sync_current_zone() -> void:
+	for zone_id in ZoneTable.ZONES:
+		if zone_id == current_zone_id:
+			continue
+		var zone: Dictionary = ZoneTable.ZONES[zone_id]
+		var bounds_min: Vector2 = zone["bounds_min"]
+		var bounds_max: Vector2 = zone["bounds_max"]
+		if global_position.x < bounds_min.x or global_position.x > bounds_max.x:
+			continue
+		if global_position.y < bounds_min.y or global_position.y > bounds_max.y:
+			continue
+		current_zone_id = zone_id
+		zone_entered_time_ms = game_time_ms
+		# Otherwise the next "wander" tick chases whatever stale target was
+		# picked back in the old zone — clamped to THAT zone's bounds — and
+		# walks the character straight back out across the corridor instead
+		# of actually exploring the one it just arrived in.
+		wander_target = global_position
+		GameState.log_event("Arrives in %s" % zone["name"])
+		return
 
 func _regen_hp(delta: float) -> void:
 	hp_regen_accumulator += HP_REGEN_PER_SECOND * delta
@@ -240,6 +287,8 @@ func _die() -> void:
 	hp = max_hp
 	global_position = RESPAWN_POSITION
 	wander_target = RESPAWN_POSITION
+	current_zone_id = RESPAWN_ZONE_ID
+	zone_entered_time_ms = game_time_ms
 	visible = true
 	set_physics_process(true)
 	is_dead = false

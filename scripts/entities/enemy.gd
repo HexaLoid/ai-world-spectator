@@ -1,6 +1,5 @@
 extends CharacterBody2D
 
-const TARGET_SPRITE_SIZE := 40.0
 const ATTACK_ANIM_DURATION_MS := 400.0
 
 @export var enemy_name: String = "Enemy"
@@ -12,6 +11,11 @@ const ATTACK_ANIM_DURATION_MS := 400.0
 @export var aggro_range: float = 120.0
 @export var attack_cooldown_ms: int = 1200
 @export var xp_reward: int = 25
+@export var sprite_size: float = 40.0
+@export var sprite_tint: Color = Color(1, 1, 1, 1)
+## When set, always drops this item on death instead of a random LootTable
+## roll — used by elites to guarantee a worthwhile drop for the fight.
+@export var guaranteed_drop_id: String = ""
 
 var hp: int
 var last_attack_time_ms: int = 0
@@ -39,6 +43,7 @@ func _ready() -> void:
 	add_to_group("enemies")
 	health_bar.max_value = max_hp
 	health_bar.value = hp
+	sprite.modulate = sprite_tint
 
 ## Applies (or refreshes) a bleed DoT: `tick_count` hits of
 ## [damage_min, damage_max] damage, one every `tick_interval_ms`.
@@ -114,7 +119,7 @@ func _play_animation(base_anim: String, facing: String) -> void:
 	if first_frame:
 		var native_size: Vector2 = first_frame.get_size()
 		if native_size.x > 0.0 and native_size.y > 0.0:
-			var s: float = TARGET_SPRITE_SIZE / max(native_size.x, native_size.y)
+			var s: float = sprite_size / max(native_size.x, native_size.y)
 			sprite.scale = Vector2(s, s)
 
 func _attack(character: Node2D) -> void:
@@ -146,7 +151,7 @@ func _die() -> void:
 	queue_free()
 
 func _drop_loot() -> void:
-	var item_id := LootTable.roll_drop(rng)
+	var item_id := guaranteed_drop_id if guaranteed_drop_id != "" else LootTable.roll_drop(rng)
 	var item_scene: PackedScene = load("res://scenes/entities/ItemPickup.tscn")
 	var item := item_scene.instantiate()
 	item.item_id = item_id
