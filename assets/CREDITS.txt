@@ -115,6 +115,13 @@ Files: sword_rusty_icon.png, sword_iron_icon.png (equipment icons for the
 "leather_armor" item — a shield icon, used as the conventional "defense/
 armor" symbol since the pack has no dedicated body-armor icon),
 potion_icon.png (for the "health_potion" item)
+
+Also from the same pack (32x32 variant): wooden_shield_icon.png,
+iron_shield_icon.png, tower_shield_icon.png, leather_cap_icon.png,
+iron_helm_icon.png, steel_helm_icon.png, silver_necklace_icon.png,
+sage_pendant_icon.png, copper_ring_icon.png, ring_of_vigor_icon.png,
+signet_of_power_icon.png, apprentice_staff_icon.png, oak_staff_icon.png,
+arcane_staff_icon.png, greater_health_potion_icon.png, gold_icon.png.
 Source: "Kyrise's Free 16x16 RPG Icon Pack" on OpenGameArt.org
         https://opengameart.org/content/kyrises-free-16x16-rpg-icon-pack
 Author: Kyrise (https://kyrise.itch.io/)
