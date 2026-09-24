@@ -17,11 +17,13 @@ Built with **Godot 4.7** (GDScript, 2D top-down).
 - **An autonomous character** that cycles through wandering, chasing, fighting,
   fleeing, resting, and looting, choosing each action from simple priority rules
   (for example: flee or rest when HP is low, fight when an enemy is in range).
-- **Loot and leveling** — enemies drop swords, armor, and health potions. Better
-  gear is equipped automatically, worse gear is logged and discarded. Kills grant
-  XP and level-ups increase HP and damage.
+- **Loot, gear and leveling** — enemies drop gear across six slots (weapon,
+  off-hand, head, chest, neck, ring) with multiple stats each, plus gold and
+  potions. The character equips only real upgrades for its class and level and
+  ignores the rest; armor reduces damage taken. Kills grant XP and level-ups
+  increase HP and damage.
 - **A spectator HUD**
-  - HP bar, XP bar, level, and equipped weapon/armor with icons
+  - HP bar, XP bar, level, six equipment slots with rarity-colored icons and hover tooltips, and a gold counter
   - An activity log explaining what the AI is doing and why
   - A floating label above the character showing its current action
   - Floating damage and heal numbers
@@ -65,9 +67,10 @@ scenes/
 scripts/
   ai/ai_decision.gd         Picks the character's next state from context
   entities/                 Character, enemy, spawn point, item pickup logic
-  systems/                  Combat, leveling, and loot table rules
+  systems/                  Combat, leveling, loot, item scoring, and stat rules
   ui/                       HUD, camera controller, health bar, floating text
   autoload/game_state.gd    Signal hub between gameplay and UI
+tests/                      Headless test suites (run with: godot --headless --path . --script res://tests/run_tests.gd)
 assets/
   sprites/, tiles/, icons/  Third-party art (see Credits)
   theme/spectator_theme.tres  Parchment-style HUD theme
