@@ -80,7 +80,7 @@ func _on_equipment_changed(weapon_id: String, armor_id: String, trinket_id: Stri
 ## Shared by all three equipment slots: sets "<slot>: <item or None>" text
 ## colored by the item's rarity (RARITY_COLORS), and loads its icon.
 func _update_equipment_slot(label: Label, icon: TextureRect, slot_name: String, item_id: String) -> void:
-	label.text = "%s: %s" % [slot_name, item_id if item_id != "" else "None"]
+	label.text = "%s: %s" % [slot_name, LootTable.display_name(item_id) if item_id != "" else "None"]
 	var item_def: Dictionary = LootTable.ITEMS.get(item_id, {})
 	var rarity: String = item_def.get("rarity", "")
 	label.add_theme_color_override("font_color", LootTable.RARITY_COLORS.get(rarity, DEFAULT_LABEL_COLOR))

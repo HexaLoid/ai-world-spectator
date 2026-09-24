@@ -536,7 +536,7 @@ func _acquire_item(item_id: String) -> void:
 		var old_hp := hp
 		hp = min(max_hp, hp + int(item_def.get("heal", 0)))
 		var healed := hp - old_hp
-		GameState.log_event("Used %s" % item_id)
+		GameState.log_event("Used %s" % LootTable.display_name(item_id))
 		GameState.emit_signal("character_hp_changed", hp, max_hp)
 		if healed > 0:
 			GameState.emit_signal("damage_dealt", global_position, healed, true)
@@ -548,31 +548,31 @@ func _acquire_item(item_id: String) -> void:
 			attack_damage_min += delta
 			attack_damage_max += delta
 			equipped_weapon_id = item_id
-			GameState.log_event("Equipped %s" % item_id)
+			GameState.log_event("Equipped %s" % LootTable.display_name(item_id))
 			GameState.emit_signal("character_equipment_changed", equipped_weapon_id, equipped_armor_id, equipped_trinket_id)
 		else:
-			GameState.log_event("Found %s - current gear is better" % item_id)
+			GameState.log_event("Found %s - current gear is better" % LootTable.display_name(item_id))
 	elif item_type == "armor":
 		if LootTable.should_equip(equipped_armor_id, item_id):
 			var old_bonus: int = int(LootTable.ITEMS.get(equipped_armor_id, {}).get("max_hp", 0))
 			var new_bonus: int = int(item_def.get("max_hp", 0))
 			max_hp += new_bonus - old_bonus
 			equipped_armor_id = item_id
-			GameState.log_event("Equipped %s" % item_id)
+			GameState.log_event("Equipped %s" % LootTable.display_name(item_id))
 			GameState.emit_signal("character_equipment_changed", equipped_weapon_id, equipped_armor_id, equipped_trinket_id)
 			GameState.emit_signal("character_hp_changed", hp, max_hp)
 		else:
-			GameState.log_event("Found %s - current gear is better" % item_id)
+			GameState.log_event("Found %s - current gear is better" % LootTable.display_name(item_id))
 	elif item_type == "trinket":
 		if LootTable.should_equip(equipped_trinket_id, item_id):
 			var old_bonus: float = float(LootTable.ITEMS.get(equipped_trinket_id, {}).get("crit_chance", 0.0))
 			var new_bonus: float = float(item_def.get("crit_chance", 0.0))
 			crit_chance += new_bonus - old_bonus
 			equipped_trinket_id = item_id
-			GameState.log_event("Equipped %s" % item_id)
+			GameState.log_event("Equipped %s" % LootTable.display_name(item_id))
 			GameState.emit_signal("character_equipment_changed", equipped_weapon_id, equipped_armor_id, equipped_trinket_id)
 		else:
-			GameState.log_event("Found %s - current gear is better" % item_id)
+			GameState.log_event("Found %s - current gear is better" % LootTable.display_name(item_id))
 
 func _find_quest(quest_id: String) -> Dictionary:
 	for quest in QuestTable.QUESTS:

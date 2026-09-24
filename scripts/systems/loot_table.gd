@@ -23,6 +23,11 @@ const ITEMS := {
 	"health_potion": {"type": "consumable", "heal": 20, "rarity": "common", "icon": "res://assets/icons/potion_icon.png"},
 }
 
+## Human-readable item name for the HUD and activity log ("iron_sword" ->
+## "Iron Sword"); the raw id is what code keys on.
+static func display_name(item_id: String) -> String:
+	return item_id.replace("_", " ").capitalize()
+
 ## Relative weight of each rarity tier in roll_drop()'s random pool. Epic
 ## items have weight 0 — they never drop randomly, only as a guaranteed
 ## elite/boss drop (Enemy.guaranteed_drop_id) or a quest reward, so finding
