@@ -23,6 +23,7 @@ const STATE_DISPLAY_NAMES := {
 	"loot": "Looting",
 	"rest": "Resting",
 	"travel": "Traveling",
+	"quest": "Questing",
 }
 
 @export var max_hp: int = 60
@@ -45,6 +46,14 @@ var hp_regen_accumulator: float = 0.0
 var last_combat_target: Node2D = null
 var current_zone_id: String = RESPAWN_ZONE_ID
 var zone_entered_time_ms: float = 0.0
+
+# Quest state. Progress is tracked passively (see take_kill_credit) rather
+# than by directing combat toward the quest target — the character already
+# fights whatever it encounters, so this just watches kills go by.
+var active_quest_id: String = ""
+var quest_progress: int = 0
+var completed_quest_ids: Array = []
+var last_offered_quest_index: int = -1
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var action_label: Label = $ActionLabel
 var attack_anim_until_ms: float = 0.0
@@ -114,6 +123,7 @@ func _play_animation(base_anim: String, facing: String) -> void:
 func _build_context() -> Dictionary:
 	var nearest_hostile := _find_nearest_in_group("enemies")
 	var nearest_item := _find_nearest_in_group("items")
+	var quest_giver := _find_nearest_in_group("quest_givers")
 	var next_zone_id := ZoneTable.next_zone_id(current_zone_id)
 	var context := {
 		"hp_percent": float(hp) / float(max_hp),
@@ -123,6 +133,8 @@ func _build_context() -> Dictionary:
 		"item_nearby": false,
 		"ready_to_travel": (game_time_ms - zone_entered_time_ms) >= ZONE_STAY_DURATION_MS,
 		"next_zone_name": String(ZoneTable.ZONES[next_zone_id]["name"]),
+		"quest_giver_in_zone": quest_giver != null and _zone_id_for_position(quest_giver.global_position) == current_zone_id,
+		"quest_ready": _quest_has_something_to_do(),
 	}
 	if nearest_hostile:
 		var dist := global_position.distance_to(nearest_hostile.global_position)
@@ -191,6 +203,15 @@ func _act(delta: float, context: Dictionary) -> void:
 			_move_toward(wander_target - global_position, MOVE_SPEED * 0.5)
 			base_anim = "walk"
 			_decay_resource(delta)
+		"quest":
+			var quest_giver := _find_nearest_in_group("quest_givers")
+			if quest_giver:
+				var to_giver := quest_giver.global_position - global_position
+				if to_giver.length() <= PICKUP_RANGE:
+					_interact_with_quest_giver()
+				else:
+					_move_toward(to_giver, MOVE_SPEED)
+			base_anim = "walk"
 		"travel":
 			_do_travel()
 			base_anim = "run"
@@ -218,31 +239,39 @@ func _do_travel() -> void:
 	var dest_center: Vector2 = ZoneTable.ZONES[ZoneTable.next_zone_id(current_zone_id)]["center"]
 	_move_toward(dest_center - global_position, MOVE_SPEED)
 
+## Which zone's bounds rectangle contains `pos`, or `current_zone_id` if
+## `pos` isn't inside any zone (e.g. the corridor) — used both to detect the
+## character's own arrival and to check which zone a stationary landmark
+## (the Quest Giver) belongs to.
+func _zone_id_for_position(pos: Vector2) -> String:
+	for zone_id in ZoneTable.ZONES:
+		var zone: Dictionary = ZoneTable.ZONES[zone_id]
+		var bounds_min: Vector2 = zone["bounds_min"]
+		var bounds_max: Vector2 = zone["bounds_max"]
+		if pos.x < bounds_min.x or pos.x > bounds_max.x:
+			continue
+		if pos.y < bounds_min.y or pos.y > bounds_max.y:
+			continue
+		return zone_id
+	return current_zone_id
+
 ## Detects "arrival" as actually crossing into a zone's bounds rectangle
 ## (checked every frame, regardless of state) rather than the "travel" state
 ## reaching that zone's exact center — so wandering/fighting across a border
 ## (e.g. a Charge that lands inside the next zone) also correctly updates
 ## which zone the character calls home, not just a deliberate full trip.
 func _sync_current_zone() -> void:
-	for zone_id in ZoneTable.ZONES:
-		if zone_id == current_zone_id:
-			continue
-		var zone: Dictionary = ZoneTable.ZONES[zone_id]
-		var bounds_min: Vector2 = zone["bounds_min"]
-		var bounds_max: Vector2 = zone["bounds_max"]
-		if global_position.x < bounds_min.x or global_position.x > bounds_max.x:
-			continue
-		if global_position.y < bounds_min.y or global_position.y > bounds_max.y:
-			continue
-		current_zone_id = zone_id
-		zone_entered_time_ms = game_time_ms
-		# Otherwise the next "wander" tick chases whatever stale target was
-		# picked back in the old zone — clamped to THAT zone's bounds — and
-		# walks the character straight back out across the corridor instead
-		# of actually exploring the one it just arrived in.
-		wander_target = global_position
-		GameState.log_event("Arrives in %s" % zone["name"])
+	var zone_id := _zone_id_for_position(global_position)
+	if zone_id == current_zone_id:
 		return
+	current_zone_id = zone_id
+	zone_entered_time_ms = game_time_ms
+	# Otherwise the next "wander" tick chases whatever stale target was
+	# picked back in the old zone — clamped to THAT zone's bounds — and
+	# walks the character straight back out across the corridor instead
+	# of actually exploring the one it just arrived in.
+	wander_target = global_position
+	GameState.log_event("Arrives in %s" % ZoneTable.ZONES[zone_id]["name"])
 
 func _regen_hp(delta: float) -> void:
 	hp_regen_accumulator += HP_REGEN_PER_SECOND * delta
@@ -403,9 +432,16 @@ func gain_xp(amount: int) -> void:
 func take_kill_credit(enemy_name: String, xp_reward: int) -> void:
 	GameState.log_event("Defeated %s" % enemy_name)
 	gain_xp(xp_reward)
+	_advance_quest_progress(enemy_name)
 
 func _pickup_item(item: Node2D) -> void:
-	var item_id: String = item.item_id
+	_acquire_item(item.item_id)
+	item.queue_free()
+
+## Shared by picking an item up off the ground and turning in a quest's
+## item reward — both are "the character now owns this item", same
+## equip-or-discard-with-a-reason logic either way.
+func _acquire_item(item_id: String) -> void:
 	var item_def: Dictionary = LootTable.ITEMS.get(item_id, {})
 	var item_type: String = item_def.get("type", "")
 	if item_type == "consumable":
@@ -439,4 +475,78 @@ func _pickup_item(item: Node2D) -> void:
 			GameState.emit_signal("character_hp_changed", hp, max_hp)
 		else:
 			GameState.log_event("Found %s - current gear is better" % item_id)
-	item.queue_free()
+
+func _find_quest(quest_id: String) -> Dictionary:
+	for quest in QuestTable.QUESTS:
+		if quest.get("id", "") == quest_id:
+			return quest
+	return {}
+
+func _advance_quest_progress(enemy_name: String) -> void:
+	if active_quest_id == "":
+		return
+	var quest := _find_quest(active_quest_id)
+	if quest.is_empty() or quest.get("target_name", "") != enemy_name:
+		return
+	quest_progress += 1
+	var count: int = int(quest.get("count", 0))
+	GameState.emit_signal("quest_changed", quest.get("name", ""), quest_progress, count)
+	if quest_progress >= count:
+		GameState.log_event("Quest ready to turn in: %s" % quest.get("name", ""))
+
+## Finds the next QUESTS entry (in rotation order from the last one offered)
+## that isn't already completed and meets its min_level. Recycles
+## completed_quest_ids once every quest has been done, so there's always
+## something to offer rather than the rotation running dry. Read-only aside
+## from that recycle — accepting is a separate step (_accept_next_quest).
+func _find_next_eligible_quest_index() -> int:
+	var quests: Array = QuestTable.QUESTS
+	if quests.is_empty():
+		return -1
+	if completed_quest_ids.size() >= quests.size():
+		completed_quest_ids.clear()
+	for i in range(quests.size()):
+		var idx: int = (last_offered_quest_index + 1 + i) % quests.size()
+		var quest: Dictionary = quests[idx]
+		if completed_quest_ids.has(quest.get("id", "")):
+			continue
+		if level < int(quest.get("min_level", 1)):
+			continue
+		return idx
+	return -1
+
+func _quest_has_something_to_do() -> bool:
+	if active_quest_id != "":
+		var quest := _find_quest(active_quest_id)
+		return not quest.is_empty() and quest_progress >= int(quest.get("count", 0))
+	return _find_next_eligible_quest_index() >= 0
+
+func _interact_with_quest_giver() -> void:
+	if active_quest_id != "":
+		var quest := _find_quest(active_quest_id)
+		if not quest.is_empty() and quest_progress >= int(quest.get("count", 0)):
+			_turn_in_quest(quest)
+	if active_quest_id == "":
+		_accept_next_quest()
+
+func _turn_in_quest(quest: Dictionary) -> void:
+	GameState.log_event("Turned in quest: %s" % quest.get("name", ""))
+	gain_xp(int(quest.get("xp_reward", 0)))
+	var item_reward: String = quest.get("item_reward", "")
+	if item_reward != "":
+		_acquire_item(item_reward)
+	completed_quest_ids.append(active_quest_id)
+	active_quest_id = ""
+	quest_progress = 0
+	GameState.emit_signal("quest_changed", "", 0, 0)
+
+func _accept_next_quest() -> void:
+	var idx := _find_next_eligible_quest_index()
+	if idx < 0:
+		return
+	var quest: Dictionary = QuestTable.QUESTS[idx]
+	last_offered_quest_index = idx
+	active_quest_id = quest.get("id", "")
+	quest_progress = 0
+	GameState.log_event("Accepted quest: %s (0/%d %s)" % [quest.get("name", ""), quest.get("count", 0), quest.get("target_name", "")])
+	GameState.emit_signal("quest_changed", quest.get("name", ""), 0, int(quest.get("count", 0)))

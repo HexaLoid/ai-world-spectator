@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/entities/SpawnPoint.tscn" id="1_spawnpoint"]
 [ext_resource type="PackedScene" path="res://scenes/entities/Enemy.tscn" id="2_enemy"]
 [ext_resource type="SpriteFrames" path="res://assets/sprites/wolf/wolf_frames.tres" id="3_wolf_frames"]
 [ext_resource type="SpriteFrames" path="res://assets/sprites/bandit/bandit_frames.tres" id="4_bandit_frames"]
 [ext_resource type="Texture2D" path="res://assets/tiles/tree_pine.png" id="5_tree_pine"]
+[ext_resource type="PackedScene" path="res://scenes/entities/QuestGiver.tscn" id="6_questgiver"]
 
 [node name="ThornfieldMeadow" type="Node2D"]
 
@@ -12,6 +13,9 @@
 position = Vector2(-400, -300)
 size = Vector2(800, 600)
 color = Color(0.35, 0.55, 0.25, 1.0)
+
+[node name="QuestGiver" parent="." instance=ExtResource("6_questgiver")]
+position = Vector2(-280, -160)
 
 [node name="SpawnPointWolf1" parent="." instance=ExtResource("1_spawnpoint")]
 position = Vector2(150, -80)

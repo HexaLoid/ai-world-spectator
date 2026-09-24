@@ -29,6 +29,11 @@ signal damage_dealt(position: Vector2, amount: int, is_heal: bool)
 ## null if not currently in combat. Enemy health bars listen to this to
 ## decide whether to show themselves.
 signal combat_target_changed(target: Node2D)
+## Emitted whenever the character's active quest changes — accepted,
+## progressed, or turned in. quest_name is "" when no quest is active;
+## progress/count are 0/0 in that case too. The Quest Giver's marker and
+## the HUD's quest tracker both listen to this.
+signal quest_changed(quest_name: String, progress: int, count: int)
 
 var character: Node2D = null
 var camera: Camera2D = null

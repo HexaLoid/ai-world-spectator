@@ -5,6 +5,7 @@
 [ext_resource type="Script" path="res://scripts/ui/speed_control.gd" id="3_speedcontrol"]
 [ext_resource type="Theme" path="res://assets/theme/spectator_theme.tres" id="4_theme"]
 [ext_resource type="Script" path="res://scripts/ui/ability_slot.gd" id="5_abilityslot"]
+[ext_resource type="Script" path="res://scripts/ui/quest_tracker.gd" id="6_questtracker"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xpfill"]
 bg_color = Color(0.82, 0.65, 0.15, 1)
@@ -78,6 +79,19 @@ size = Vector2(320, 160)
 [node name="LogList" type="ItemList" parent="ActivityLog"]
 position = Vector2(4, 4)
 size = Vector2(312, 152)
+
+[node name="QuestTracker" type="Panel" parent="."]
+script = ExtResource("6_questtracker")
+theme = ExtResource("4_theme")
+position = Vector2(500, 60)
+size = Vector2(280, 36)
+
+[node name="QuestLabel" type="Label" parent="QuestTracker"]
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 272.0
+offset_bottom = 28.0
+text = "Quest: None active"
 
 [node name="SpeedControl" type="HBoxContainer" parent="."]
 script = ExtResource("3_speedcontrol")
