@@ -11,6 +11,7 @@ const HP_REGEN_PER_SECOND := 3.0
 const TARGET_SPRITE_SIZE := 40.0
 const ATTACK_ANIM_DURATION_MS := 400.0
 const RESPAWN_ZONE_ID := "thornfield_meadow"
+const MAX_PARTY_SIZE := 2
 
 const STATE_DISPLAY_NAMES := {
 	"wander": "Wandering",
@@ -49,6 +50,7 @@ var hp_regen_accumulator: float = 0.0
 var last_combat_target: Node2D = null
 var current_zone_id: String = RESPAWN_ZONE_ID
 var zone_entered_time_ms: float = 0.0
+var party: Array = []
 
 # Quest state. Progress is tracked passively (see take_kill_credit) rather
 # than by directing combat toward the quest target — the character already
@@ -82,6 +84,12 @@ func _ready() -> void:
 	max_resource = float(class_def.get("max_resource", 0.0))
 	sprite.modulate = class_def.get("sprite_tint", Color(1.0, 1.0, 1.0, 1.0))
 	GameState.emit_signal("character_resource_changed", resource_amount, max_resource)
+	# _sync_current_zone() only recruits on a zone TRANSITION, but the
+	# character starts already inside its home zone rather than "arriving"
+	# there — so that zone's companions need recruiting once, up front, or
+	# they'd never get picked up unless the character later left and came
+	# back.
+	_recruit_companions_in_zone(current_zone_id)
 
 func _physics_process(delta: float) -> void:
 	game_time_ms += delta * 1000.0
@@ -281,6 +289,28 @@ func _sync_current_zone() -> void:
 	wander_target = global_position
 	GameState.log_event("Arrives in %s" % ZoneTable.ZONES[zone_id]["name"])
 	GameState.emit_signal("zone_changed", zone_id)
+	_recruit_companions_in_zone(zone_id)
+
+## Recruits up to MAX_PARTY_SIZE ungrouped SimulatedPlayers whose home zone
+## is the one just entered — permanent for this slice (no leave condition),
+## which is why this only ever needs to run on arrival, not continuously.
+## A recruited companion switches its own behavior (following instead of
+## zone-bound wandering, world bounds instead of zone bounds — see
+## SimulatedPlayer) entirely on its own once `group_leader` is set; nothing
+## else here needs to manage that.
+func _recruit_companions_in_zone(zone_id: String) -> void:
+	if party.size() >= MAX_PARTY_SIZE:
+		return
+	for sp in get_tree().get_nodes_in_group("simulated_players"):
+		if party.size() >= MAX_PARTY_SIZE:
+			return
+		if not is_instance_valid(sp) or sp.group_leader != null:
+			continue
+		if sp.home_zone_id != zone_id:
+			continue
+		sp.group_leader = self
+		party.append(sp)
+		GameState.log_event("%s joins the group!" % sp.player_name)
 
 func _regen_hp(delta: float) -> void:
 	hp_regen_accumulator += HP_REGEN_PER_SECOND * delta

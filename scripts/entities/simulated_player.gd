@@ -5,9 +5,23 @@ extends CharacterBody2D
 ## AIDecision.resolve_state() directly (the same pure function Character
 ## uses): passing a context with quest/travel/loot fields always false
 ## naturally limits it to flee/rest/combat/chase/wander, exactly the subset
-## that makes sense for a wandering companion with no quests, loot, or
-## inter-zone travel of its own. No XP/leveling/loot either — this is
-## atmosphere, not a second progression system to keep balanced.
+## that makes sense for a companion with no quests or loot of its own.
+##
+## `group_leader` (set by Character when it recruits this companion — see
+## Character._recruit_companions_in_zone) switches two behaviors: the
+## "wander" fallback becomes "follow the leader" instead of random zone-
+## bound wandering, and the position clamp switches from the home zone's
+## own bounds to the whole world's, so a grouped companion can actually
+## follow the leader between zones (including into Sundered Crypt, which
+## has no simulated players of its own). Ungrouped companions behave
+## exactly as before — zone-locked wandering, no leader to follow.
+## Recruitment is permanent for this slice: once grouped, always grouped.
+##
+## Still no quests or loot pickup (non-goals), but companions DO gain XP
+## and level up from their own kills now (LevelingSystem, same as
+## Character) — Erenshor's simulated players "get stronger" over time, and
+## that's cheap to support once EnemyDeath already tracks who landed the
+## kill.
 
 const MOVE_SPEED := 75.0
 const ATTACK_RANGE := 28.0
@@ -18,6 +32,8 @@ const HP_REGEN_PER_SECOND := 2.5
 const TARGET_SPRITE_SIZE := 40.0
 const ATTACK_ANIM_DURATION_MS := 400.0
 
+const FOLLOW_DISTANCE := 45.0
+
 @export var player_name: String = "Adventurer"
 @export var max_hp: int = 45
 @export var attack_damage_min: int = 5
@@ -26,6 +42,8 @@ const ATTACK_ANIM_DURATION_MS := 400.0
 @export var home_zone_id: String = "thornfield_meadow"
 
 var hp: int
+var level: int = 1
+var xp: int = 0
 var current_state: String = "wander"
 var last_attack_time_ms: int = 0
 var wander_target: Vector2 = Vector2.ZERO
@@ -35,6 +53,7 @@ var game_time_ms: float = 0.0
 var hp_regen_accumulator: float = 0.0
 var spawn_position: Vector2 = Vector2.ZERO
 var attack_anim_until_ms: float = 0.0
+var group_leader: Node2D = null
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var name_label: Label = $NameLabel
@@ -47,17 +66,39 @@ func _ready() -> void:
 	sprite.modulate = sprite_tint
 	name_label.text = player_name
 	add_to_group("combat_targets")
+	add_to_group("simulated_players")
 
 func _physics_process(delta: float) -> void:
 	game_time_ms += delta * 1000.0
 	if hp <= 0:
 		return
-	var context := _build_context()
+	# Resolved once per tick and reused by both the state decision AND the
+	# actual combat/chase actions in _act() below, so what gets fought is
+	# always exactly what the decision was based on — not two independent
+	# lookups that could disagree.
+	var preferred_hostile := _preferred_hostile()
+	var context := _build_context(preferred_hostile)
 	current_state = AIDecision.resolve_state(context)["state"]
-	_act(delta, context)
+	_act(delta, context, preferred_hostile)
 
-func _build_context() -> Dictionary:
-	var nearest_hostile := _find_nearest_in_group("enemies")
+## Prefer fighting alongside the leader's own target when one exists and is
+## still alive — this is what makes a grouped fight visibly "shared" rather
+## than just several individuals coincidentally near each other. Falls back
+## to the closest enemy otherwise (leader not in combat, or ungrouped).
+func _preferred_hostile() -> Node2D:
+	if group_leader != null and is_instance_valid(group_leader):
+		# Untyped on purpose: last_combat_target can be a stale reference to
+		# an Enemy that's since been freed (Character only updates it when
+		# ITS OWN combat_hostile changes, which can lag a frame behind the
+		# target actually dying). Assigning a freed instance straight into a
+		# Node2D-typed var throws "invalid previously freed instance" —
+		# is_instance_valid() is the only safe way to check it first.
+		var leader_target = group_leader.last_combat_target
+		if leader_target != null and is_instance_valid(leader_target):
+			return leader_target
+	return _find_nearest_in_group("enemies")
+
+func _build_context(nearest_hostile: Node2D) -> Dictionary:
 	var context := {
 		"hp_percent": float(hp) / float(max_hp),
 		"hostile_in_attack_range": false,
@@ -87,11 +128,14 @@ func _find_nearest_in_group(group_name: String) -> Node2D:
 			nearest = node
 	return nearest
 
-func _act(delta: float, context: Dictionary) -> void:
+func _act(delta: float, context: Dictionary, preferred_hostile: Node2D) -> void:
 	var base_anim := "idle"
 	var combat_hostile: Node2D = null
 	match current_state:
 		"flee":
+			# Flees from whatever's actually nearest to itself, not
+			# necessarily the leader's target — self-preservation, same as
+			# Character's own flee logic.
 			var hostile := _find_nearest_in_group("enemies")
 			if hostile:
 				_move_toward(global_position - hostile.global_position)
@@ -101,27 +145,40 @@ func _act(delta: float, context: Dictionary) -> void:
 			_regen_hp(delta)
 		"combat":
 			velocity = Vector2.ZERO
-			combat_hostile = _find_nearest_in_group("enemies")
+			combat_hostile = preferred_hostile
 			_attack_nearest_hostile(combat_hostile)
 		"chase":
-			var hostile := _find_nearest_in_group("enemies")
-			if hostile:
-				_move_toward(hostile.global_position - global_position)
+			if preferred_hostile:
+				_move_toward(preferred_hostile.global_position - global_position)
 			base_anim = "run"
 		"wander":
-			var zone: Dictionary = ZoneTable.ZONES[home_zone_id]
-			if global_position.distance_to(wander_target) < 8.0:
-				wander_target = (global_position + Vector2(rng.randf_range(-100, 100), rng.randf_range(-100, 100))).clamp(zone["bounds_min"], zone["bounds_max"])
-			_move_toward((wander_target - global_position) * 0.5)
-			base_anim = "walk"
+			if group_leader != null and is_instance_valid(group_leader):
+				var to_leader: Vector2 = group_leader.global_position - global_position
+				if to_leader.length() > FOLLOW_DISTANCE:
+					_move_toward(to_leader)
+					base_anim = "run" if to_leader.length() > 150.0 else "walk"
+				else:
+					velocity = Vector2.ZERO
+			else:
+				var zone: Dictionary = ZoneTable.ZONES[home_zone_id]
+				if global_position.distance_to(wander_target) < 8.0:
+					wander_target = (global_position + Vector2(rng.randf_range(-100, 100), rng.randf_range(-100, 100))).clamp(zone["bounds_min"], zone["bounds_max"])
+				_move_toward((wander_target - global_position) * 0.5)
+				base_anim = "walk"
 	var facing := _facing_from_velocity(velocity)
 	if combat_hostile:
 		facing = _facing_from_velocity(combat_hostile.global_position - global_position)
 	if game_time_ms < attack_anim_until_ms:
 		base_anim = "slash"
 	_play_animation(base_anim, facing)
-	var zone: Dictionary = ZoneTable.ZONES[home_zone_id]
-	global_position = global_position.clamp(zone["bounds_min"], zone["bounds_max"])
+	# Grouped companions roam the whole world following their leader (e.g.
+	# into Sundered Crypt); ungrouped ones stay clamped to their own zone,
+	# same as before.
+	if group_leader != null and is_instance_valid(group_leader):
+		global_position = global_position.clamp(ZoneTable.WORLD_BOUNDS_MIN, ZoneTable.WORLD_BOUNDS_MAX)
+	else:
+		var zone: Dictionary = ZoneTable.ZONES[home_zone_id]
+		global_position = global_position.clamp(zone["bounds_min"], zone["bounds_max"])
 
 func _move_toward(direction: Vector2) -> void:
 	velocity = direction.normalized() * MOVE_SPEED
@@ -157,11 +214,30 @@ func _die() -> void:
 	set_physics_process(false)
 	await get_tree().create_timer(RESPAWN_DELAY_S).timeout
 	hp = max_hp
-	global_position = spawn_position
-	wander_target = spawn_position
+	# A grouped companion respawns back at the leader's side rather than its
+	# original home spot — otherwise dying mid-journey (e.g. in Sundered
+	# Crypt) would strand it far from the party it's supposed to follow.
+	var respawn_position := spawn_position
+	if group_leader != null and is_instance_valid(group_leader):
+		respawn_position = group_leader.global_position
+	global_position = respawn_position
+	wander_target = respawn_position
 	visible = true
 	set_physics_process(true)
 	is_dead = false
+
+## Mirrors Character.gain_xp/take_kill_credit — companions "get stronger"
+## from their own kills too (same LevelingSystem, same hp/damage bonuses).
+func take_kill_credit(enemy_name: String, xp_reward: int) -> void:
+	var result := LevelingSystem.apply_xp(level, xp, xp_reward)
+	level = result["level"]
+	xp = result["xp"]
+	if result["leveled_up"]:
+		max_hp += result["hp_bonus"]
+		hp += result["hp_bonus"]
+		attack_damage_min += result["damage_bonus"]
+		attack_damage_max += result["damage_bonus"]
+		GameState.log_event("%s levels up to %d!" % [player_name, level])
 
 func _facing_from_velocity(vel: Vector2) -> String:
 	if vel.length() < 1.0:

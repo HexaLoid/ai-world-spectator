@@ -175,6 +175,7 @@ func _die() -> void:
 			last_attacker.take_kill_credit(enemy_name, xp_reward)
 		elif "player_name" in last_attacker:
 			GameState.log_event("%s defeats %s!" % [last_attacker.player_name, enemy_name])
+			last_attacker.take_kill_credit(enemy_name, xp_reward)
 	_drop_loot()
 	if spawn_point and is_instance_valid(spawn_point):
 		spawn_point.on_enemy_died()
