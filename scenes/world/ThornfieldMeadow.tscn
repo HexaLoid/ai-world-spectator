@@ -11,6 +11,7 @@
 [ext_resource type="Texture2D" path="res://assets/tiles/decor_flowers.png" id="9_flowers"]
 [ext_resource type="Texture2D" path="res://assets/tiles/decor_grass_tuft.png" id="10_tuft"]
 [ext_resource type="Texture2D" path="res://assets/tiles/decor_rock.png" id="11_rock"]
+[ext_resource type="Texture2D" path="res://assets/tiles/decor_pond.png" id="12_pond"]
 
 [node name="ThornfieldMeadow" type="Node2D"]
 
@@ -33,6 +34,11 @@ decoration_textures = Array[Texture2D]([ExtResource("9_flowers"), ExtResource("1
 count = 45
 area_min = Vector2(-370, -270)
 area_max = Vector2(370, 270)
+
+[node name="Pond" type="Sprite2D" parent="."]
+texture = ExtResource("12_pond")
+position = Vector2(250, -190)
+scale = Vector2(1.4, 1.4)
 
 [node name="QuestGiver" parent="." instance=ExtResource("6_questgiver")]
 position = Vector2(-280, -160)
