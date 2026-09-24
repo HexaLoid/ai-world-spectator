@@ -28,6 +28,8 @@ Built with **Godot 4.7** (GDScript, 2D top-down).
   - A floating label above the character showing its current action
   - Floating damage and heal numbers
   - A health bar over whichever enemy is currently being fought
+  - A character sheet (stats, gear, quest, kills/deaths/damage/gold statistics)
+  - A target frame showing the enemy being fought
   - Pause / 1x / 2x / 4x speed controls
 
 ## Running it
@@ -55,6 +57,7 @@ You can't control the character, but you can control how you watch:
 | Mouse wheel | Zoom in / out |
 | **Recenter** button | Snap the camera back to following the character |
 | **Pause / 1x / 2x / 4x** buttons | Change simulation speed |
+| **C** key / **Sheet (C)** button | Open or close the character sheet |
 
 ## Project layout
 
