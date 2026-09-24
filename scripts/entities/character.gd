@@ -114,6 +114,8 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	game_time_ms += delta * 1000.0
+	if low_hp_announced and hp * 10 > max_hp * 6:
+		low_hp_announced = false
 	if hp <= 0:
 		return
 	var context := _build_context()
@@ -427,6 +429,7 @@ func _die() -> void:
 	set_physics_process(false)
 	await get_tree().create_timer(RESPAWN_DELAY_S).timeout
 	hp = max_hp
+	low_hp_announced = false
 	global_position = RESPAWN_POSITION
 	wander_target = RESPAWN_POSITION
 	current_zone_id = RESPAWN_ZONE_ID
