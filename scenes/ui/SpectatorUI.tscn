@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/unit_frame.gd" id="1_unitframe"]
 [ext_resource type="Script" path="res://scripts/ui/activity_log.gd" id="2_activitylog"]
@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://scripts/ui/target_frame.gd" id="9_targetframe"]
 [ext_resource type="Script" path="res://scripts/ui/chat_director.gd" id="10_chatdirector"]
 [ext_resource type="Script" path="res://scripts/ui/chat_panel.gd" id="11_chatpanel"]
+[ext_resource type="Script" path="res://scripts/ui/party_frames.gd" id="12_partyframes"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xpfill"]
 bg_color = Color(0.82, 0.65, 0.15, 1)
@@ -242,3 +243,11 @@ theme_override_font_sizes/normal_font_size = 12
 theme_override_font_sizes/bold_font_size = 12
 bbcode_enabled = true
 scroll_following = true
+
+[node name="PartyFrames" type="VBoxContainer" parent="."]
+theme = ExtResource("4_theme")
+script = ExtResource("12_partyframes")
+offset_left = 16.0
+offset_top = 176.0
+offset_right = 240.0
+offset_bottom = 262.0
