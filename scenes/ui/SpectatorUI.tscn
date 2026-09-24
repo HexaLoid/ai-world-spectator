@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/unit_frame.gd" id="1_unitframe"]
 [ext_resource type="Script" path="res://scripts/ui/activity_log.gd" id="2_activitylog"]
@@ -8,6 +8,8 @@
 [ext_resource type="Script" path="res://scripts/ui/ability_bar.gd" id="7_abilitybar"]
 [ext_resource type="Script" path="res://scripts/ui/character_sheet.gd" id="8_charsheet"]
 [ext_resource type="Script" path="res://scripts/ui/target_frame.gd" id="9_targetframe"]
+[ext_resource type="Script" path="res://scripts/ui/chat_director.gd" id="10_chatdirector"]
+[ext_resource type="Script" path="res://scripts/ui/chat_panel.gd" id="11_chatpanel"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xpfill"]
 bg_color = Color(0.82, 0.65, 0.15, 1)
@@ -218,3 +220,25 @@ mouse_filter = 2
 position = Vector2(8, 44)
 theme_override_font_sizes/font_size = 12
 text = ""
+
+[node name="ChatDirector" type="Node" parent="."]
+script = ExtResource("10_chatdirector")
+
+[node name="ChatPanel" type="Panel" parent="."]
+theme = ExtResource("4_theme")
+script = ExtResource("11_chatpanel")
+position = Vector2(16, 270)
+size = Vector2(320, 124)
+
+[node name="Body" type="RichTextLabel" parent="ChatPanel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 6.0
+offset_right = -8.0
+offset_bottom = -6.0
+theme_override_font_sizes/normal_font_size = 12
+theme_override_font_sizes/bold_font_size = 12
+bbcode_enabled = true
+scroll_following = true
