@@ -111,6 +111,7 @@ func _ready() -> void:
 	# they'd never get picked up unless the character later left and came
 	# back.
 	_recruit_companions_in_zone(current_zone_id)
+	GameState.discover("zone", current_zone_id)
 
 func _physics_process(delta: float) -> void:
 	game_time_ms += delta * 1000.0
@@ -336,6 +337,7 @@ func _sync_current_zone() -> void:
 	wander_target = global_position
 	GameState.log_event("Arrives in %s" % ZoneTable.ZONES[zone_id]["name"])
 	GameState.emit_signal("zone_changed", zone_id)
+	GameState.discover("zone", zone_id)
 	GameState.emit_signal("chat_event", "zone_arrive", {"zone": String(ZoneTable.ZONES[zone_id]["name"])})
 	_recruit_companions_in_zone(zone_id)
 
@@ -372,6 +374,9 @@ func _update_combat_target(combat_hostile: Node2D) -> void:
 	if combat_hostile != last_combat_target:
 		last_combat_target = combat_hostile
 		GameState.emit_signal("combat_target_changed", combat_hostile)
+		if combat_hostile != null and is_instance_valid(combat_hostile):
+			for enemy_id in EnemyTable.ids_named(combat_hostile.enemy_name):
+				GameState.discover("enemy", enemy_id)
 
 func _attack_nearest_hostile() -> void:
 	var now := int(game_time_ms)
@@ -644,6 +649,8 @@ func gain_xp(amount: int) -> void:
 
 func take_kill_credit(enemy_name: String, xp_reward: int) -> void:
 	kills_by_name[enemy_name] = int(kills_by_name.get(enemy_name, 0)) + 1
+	for enemy_id in EnemyTable.ids_named(enemy_name):
+		GameState.discover("enemy", enemy_id)
 	GameState.log_event("Defeated %s" % enemy_name)
 	gain_xp(xp_reward)
 	_advance_quest_progress(enemy_name)
@@ -664,6 +671,7 @@ func _acquire_item(item_id: String) -> void:
 	if item_def.is_empty():
 		return
 	var display_name := LootTable.display_name(item_id)
+	GameState.discover("item", item_id)
 	if item_def.get("type", "") == "consumable":
 		var old_hp := hp
 		hp = min(max_hp, hp + int(item_def.get("heal", 0)))

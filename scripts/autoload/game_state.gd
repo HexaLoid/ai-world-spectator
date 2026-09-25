@@ -57,10 +57,35 @@ signal chat_event(event: String, context: Dictionary)
 signal chat_message(channel: String, speaker: String, text: String)
 ## Emitted when the character's party membership changes.
 signal party_changed()
+## Emitted when the character discovers a codex entry; `kind` is "enemy",
+## "item" or "zone" and `id` the EnemyTable / LootTable / ZoneTable key.
+signal codex_changed(kind: String, id: String)
 
 var character: Node2D = null
 var camera: Camera2D = null
+## What the spectated character has discovered (see CodexState). Session only.
+var codex := CodexState.new()
 
 func log_event(message: String) -> void:
 	activity_logged.emit(message)
 	print(message)
+
+## Records a discovery and, if it is new, announces it. `kind` is "enemy",
+## "item" or "zone".
+func discover(kind: String, id: String) -> void:
+	var is_new := false
+	var display := ""
+	match kind:
+		"enemy":
+			is_new = codex.discover_enemy(id)
+			display = EnemyTable.name_of(id)
+		"item":
+			is_new = codex.discover_item(id)
+			display = LootTable.display_name(id)
+		"zone":
+			is_new = codex.visit_zone(id)
+			display = String(ZoneTable.ZONES.get(id, {}).get("name", id))
+	if not is_new:
+		return
+	log_event("Codex: new entry - %s" % display)
+	codex_changed.emit(kind, id)
