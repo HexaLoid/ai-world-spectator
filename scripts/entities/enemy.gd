@@ -80,8 +80,12 @@ func _physics_process(delta: float) -> void:
 			return
 	var target := _find_nearest_target()
 	if target == null:
-		velocity = Vector2.ZERO
-		_play_animation("idle", "down")
+		velocity = _idle_velocity()
+		if velocity == Vector2.ZERO:
+			_play_animation("idle", "down")
+			return
+		move_and_slide()
+		_play_animation("walk", _facing_from_velocity(velocity))
 		return
 	var dist := global_position.distance_to(target.global_position)
 	if dist <= attack_range:
@@ -91,7 +95,9 @@ func _physics_process(delta: float) -> void:
 		velocity = (target.global_position - global_position).normalized() * move_speed
 		move_and_slide()
 	else:
-		velocity = Vector2.ZERO
+		velocity = _idle_velocity()
+		if velocity != Vector2.ZERO:
+			move_and_slide()
 	var facing := _facing_from_velocity(velocity)
 	if dist <= attack_range:
 		facing = _facing_from_velocity(target.global_position - global_position)
@@ -99,6 +105,14 @@ func _physics_process(delta: float) -> void:
 	if game_time_ms < attack_anim_until_ms:
 		base_anim = "slash"
 	_play_animation(base_anim, facing)
+
+## With nobody in aggro range, walk back to the spawn point (see
+## CombatSystem.return_home_velocity) rather than standing wherever the last
+## chase ended.
+func _idle_velocity() -> Vector2:
+	if spawn_point == null or not is_instance_valid(spawn_point):
+		return Vector2.ZERO
+	return CombatSystem.return_home_velocity(global_position, spawn_point.global_position, move_speed)
 
 func _facing_from_velocity(vel: Vector2) -> String:
 	if vel.length() < 1.0:

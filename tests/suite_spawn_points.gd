@@ -33,4 +33,12 @@ func run(t) -> void:
 		for key in OLD_OVERRIDES:
 			t.check(not text.contains(key + " ="), "%s no longer uses %s" % [file_name, key])
 	t.check(total >= 18, "all 18 spawn points name an enemy (found %d)" % total)
+	# Regression: an enemy with nobody in aggro range walks back to its spawn
+	# point instead of standing wherever its last chase ended (a Bandit left in
+	# a meadow corner could never be found again, stalling Bandit Trouble).
+	var home := Vector2(60, 150)
+	var back := CombatSystem.return_home_velocity(Vector2(-356, 280), home, 45.0)
+	t.check_near(back.length(), 45.0, "a stray enemy walks home at its move speed")
+	t.check(back.dot(home - Vector2(-356, 280)) > 0.0, "a stray enemy walks toward its spawn point")
+	t.check_eq(CombatSystem.return_home_velocity(home + Vector2(10, 0), home, 45.0), Vector2.ZERO, "an enemy at home stays put")
 	t.done()
