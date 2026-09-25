@@ -21,6 +21,7 @@ const SUITES := [
 	"res://tests/suite_spawn_points.gd",
 	"res://tests/suite_zone_table.gd",
 	"res://tests/suite_quest_table.gd",
+	"res://tests/suite_codex_state.gd",
 ]
 
 var checks := 0
