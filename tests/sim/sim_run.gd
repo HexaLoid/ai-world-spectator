@@ -19,6 +19,8 @@ extends Node
 ##   scale=<float>        Engine.time_scale (default 1.0; with --fixed-fps
 ##                        60 every physics step is then scale/60 s long)
 ##   snap=<float>         seconds of game time between snapshots (default 30)
+##   trace=1              also print every damage/heal number (`dmg` lines)
+##   watch=<enemy name>   also print that enemy's positions/HP with every snap
 ##
 ## Nothing in the game is modified: the class is set on the Character node
 ## before it enters the tree (exactly like a scene override of its
@@ -49,6 +51,8 @@ func _ready() -> void:
 	monitor.name = "SimMonitor"
 	monitor.duration_s = minutes * 60.0
 	monitor.snap_interval_s = snap_s
+	monitor.trace_damage = args.get("trace", "0") == "1"
+	monitor.watch_enemy = args.get("watch", "")
 	monitor.run_info = "class=%s|seed=%d|minutes=%s|scale=%s" % [character_class, seed_base, str(minutes), str(time_scale)]
 	main.add_child(monitor)
 	# Deferred: the tree is still busy adding this bootstrap scene.

@@ -226,7 +226,7 @@ def fight_table(runs, markdown):
     order = ["wolf", "bandit", "dire_wolf", "bandit_captain", "crypt_lord", "mire_wolf", "bog_bandit",
              "mire_tyrant", "frost_wolf", "frost_raider", "raider_captain", "frostpeak_warlord"]
     agg = defaultdict(lambda: {"win": 0, "death": 0, "other": 0, "dur": [], "minhp": [], "lvl": [],
-                               "first": [], "tries": []})
+                               "first": [], "tries": [], "flees": []})
     for r in runs:
         cls = r["info"].get("class", "?")
         seen_win = set()
@@ -240,6 +240,7 @@ def fight_table(runs, markdown):
                 a["dur"].append(float(f["dur"]))
                 a["minhp"].append(100.0 * int(f["min_hp"]) / max(1, int(f["max_hp"])))
                 a["lvl"].append(int(f["level"]))
+                a["flees"].append(int(f.get("flees", 0)))
                 if f["enemy"] not in seen_win:
                     seen_win.add(f["enemy"])
                     a["first"].append(int(f["level"]))
@@ -248,11 +249,12 @@ def fight_table(runs, markdown):
                 deaths_before[f["enemy"]] += 1
     med = lambda v: f"{statistics.median(v):.1f}" if v else "-"
     headers = ["class", "enemy", "wins", "deaths", "other", "med dur s", "med lowest HP %",
-               "med level", "level at 1st kill", "deaths before 1st kill"]
+               "wins with a flee %", "med level", "level at 1st kill", "deaths before 1st kill"]
     rows = []
     for (cls, enemy) in sorted(agg, key=lambda k: (k[0], order.index(k[1]) if k[1] in order else 99)):
         a = agg[(cls, enemy)]
-        rows.append([cls, enemy, a["win"], a["death"], a["other"], med(a["dur"]), med(a["minhp"]),
+        fled = f"{100.0 * sum(1 for x in a['flees'] if x > 0) / len(a['flees']):.0f}" if a["flees"] else "-"
+        rows.append([cls, enemy, a["win"], a["death"], a["other"], med(a["dur"]), med(a["minhp"]), fled,
                      med(a["lvl"]), med(a["first"]), " ".join(str(x) for x in a["tries"]) or "-"])
     return table(headers, rows, markdown)
 

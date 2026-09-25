@@ -8,6 +8,8 @@ extends Node
 var duration_s: float = 1500.0
 var snap_interval_s: float = 30.0
 var run_info: String = ""
+var trace_damage: bool = false
+var watch_enemy: String = ""
 
 var t: float = 0.0
 var next_snap_s: float = 0.0
@@ -50,6 +52,10 @@ func _ready() -> void:
 	GameState.character_equipment_changed.connect(_on_equipment_changed)
 	GameState.character_xp_changed.connect(_on_xp_changed)
 	GameState.combat_target_changed.connect(_on_target_changed)
+	if trace_damage:
+		GameState.damage_dealt.connect(func(pos: Vector2, amount: int, is_heal: bool) -> void:
+			_emit("dmg", {"amount": amount, "heal": int(is_heal), "x": roundi(pos.x), "y": roundi(pos.y),
+				"char_hp": _ch().hp if _ch() else -1}))
 	_emit("start", {"info": run_info})
 
 func _ch() -> Node:
@@ -68,9 +74,13 @@ func _physics_process(delta: float) -> void:
 	var zone: String = ch.current_zone_id
 	zone_time[zone] = float(zone_time.get(zone, 0.0)) + delta
 	if not ch.is_dead:
+		var fleeing: bool = ch.current_state == "flee"
 		for id in fights.keys():
 			var f: Dictionary = fights[id]
 			f["min_hp"] = mini(int(f["min_hp"]), ch.hp)
+			if fleeing and not f["fleeing"]:
+				f["flees"] = int(f["flees"]) + 1
+			f["fleeing"] = fleeing
 			if not is_instance_id_valid(id):
 				_end_fight(id, "other")
 	var state: String = "dead" if ch.is_dead else ch.current_state
@@ -110,6 +120,11 @@ func _snap() -> void:
 		"quest": ch.active_quest_id, "qprog": ch.quest_progress,
 		"allies": ",".join(allies),
 	})
+	if watch_enemy != "":
+		for e in get_tree().get_nodes_in_group("enemies"):
+			if is_instance_valid(e) and e.enemy_name == watch_enemy:
+				_emit("watch", {"enemy": watch_enemy, "x": roundi(e.global_position.x), "y": roundi(e.global_position.y),
+					"hp": e.hp, "max_hp": e.max_hp})
 
 func _summary() -> void:
 	var ch := _ch()
@@ -159,7 +174,8 @@ func _on_target_changed(target: Node2D) -> void:
 		return
 	var ch := _ch()
 	fights[last_target_id] = {"node": target, "enemy": String(target.enemy_name), "t0": t,
-		"hp0": ch.hp, "min_hp": ch.hp, "max_hp": ch.max_hp, "level": ch.level}
+		"hp0": ch.hp, "min_hp": ch.hp, "max_hp": ch.max_hp, "level": ch.level,
+		"enemy_hp0": target.hp, "dealt0": ch.damage_dealt_total, "flees": 0, "fleeing": false}
 
 func _end_fight(id: int, result: String) -> void:
 	if not fights.has(id):
@@ -172,7 +188,8 @@ func _end_fight(id: int, result: String) -> void:
 		enemy_id = ids[0]
 	_emit("fight", {"enemy": enemy_id, "result": result, "dur": "%.1f" % (t - float(f["t0"])),
 		"level": f["level"], "hp_start": f["hp0"], "min_hp": f["min_hp"] if result != "death" else 0,
-		"max_hp": f["max_hp"]})
+		"max_hp": f["max_hp"], "enemy_hp_start": f["enemy_hp0"],
+		"char_dmg": _ch().damage_dealt_total - int(f["dealt0"]), "flees": f["flees"]})
 
 func _on_equipment_changed(equipment: Dictionary) -> void:
 	for slot in equipment:
@@ -196,7 +213,8 @@ func _on_activity(message: String) -> void:
 			# Killed in the same frame it was first engaged (Character only
 			# reports its combat target after that frame's attacks land).
 			fights[-1] = {"node": null, "enemy": enemy_name, "t0": t, "hp0": ch.hp, "min_hp": ch.hp,
-				"max_hp": ch.max_hp, "level": ch.level}
+				"max_hp": ch.max_hp, "level": ch.level, "enemy_hp0": -1, "dealt0": ch.damage_dealt_total,
+				"flees": 0, "fleeing": false}
 			_end_fight(-1, "win")
 		if boss_names.has(enemy_name):
 			boss_kills.append(boss_names[enemy_name])
