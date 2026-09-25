@@ -12,3 +12,4 @@ func run(t) -> void:
 		t.check(float(weights.get(def.get("primary_stat", ""), 0.0)) > 0.0, "%s weights its primary stat" % class_id)
 	t.check_near(float(AbilityTable.CLASSES["warrior"]["stat_weights"]["damage"]), 3.0, "warrior damage weight")
 	t.check_near(float(AbilityTable.CLASSES["mage"]["stat_weights"]["intellect"]), 2.0, "mage intellect weight")
+	t.done()

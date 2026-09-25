@@ -33,6 +33,7 @@ func run(t) -> void:
 	# the new chain
 	for id in ["drain_the_mire", "bog_bandits", "the_mire_tyrant", "frozen_fangs", "raiders_of_the_pass", "raider_captain_bounty", "the_frostpeak_warlord"]:
 		t.check(ids.has(id), "new quest %s exists" % id)
+	t.done()
 
 func _has_cycle(ids: Dictionary, id: String, path: Array) -> bool:
 	if path.has(id):

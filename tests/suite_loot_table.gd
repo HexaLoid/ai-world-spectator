@@ -32,7 +32,7 @@ func run(t) -> void:
 		if reward != "":
 			t.check(LootTable.ITEMS.has(reward), "quest %s reward %s exists" % [quest["id"], reward])
 			if LootTable.ITEMS.has(reward):
-				t.check(int(LootTable.ITEMS[reward]["level_req"]) <= int(quest["min_level"]), "quest %s reward %s is equippable at the quest's min_level" % [quest["id"], reward])
+				t.check(int(LootTable.ITEMS[reward].get("level_req", 1)) <= int(quest["min_level"]), "quest %s reward %s is equippable at the quest's min_level" % [quest["id"], reward])
 	for boss_drop in ["iron_sword", "warlords_greatsword"]:
 		t.check(LootTable.ITEMS.has(boss_drop), "guaranteed drop %s exists" % boss_drop)
 	var rng := RandomNumberGenerator.new()
@@ -61,3 +61,4 @@ func run(t) -> void:
 			"frostguard_shield", "marsh_helm", "rimewatch_helm", "reinforced_mail", "glacier_plate", "swamp_charm",
 			"rimewatch_amulet", "ring_of_the_mire", "frozen_band"]:
 		t.check(LootTable.ITEMS.has(item_id), "new item %s exists" % item_id)
+	t.done()

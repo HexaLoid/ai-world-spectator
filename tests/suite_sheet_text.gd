@@ -75,3 +75,4 @@ func run(t) -> void:
 	t.check(SheetText.build(named).begins_with("[b]Aldric[/b]"), "sheet starts with the character's name")
 	t.check(not SheetText.build(_full_snapshot()).contains("[b]Aldric[/b]"), "no name line without a name")
 	t.check(SheetText.build({}).begins_with("[b]Level 1 Adventurer[/b]"), "empty snapshot still starts with the level line")
+	t.done()

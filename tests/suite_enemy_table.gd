@@ -63,3 +63,4 @@ func run(t) -> void:
 	t.check_eq(EnemyTable.ids_named("Dire Wolf"), ["dire_wolf"], "ids_named")
 	t.check_eq(EnemyTable.ids_named("Nobody"), [], "ids_named unknown")
 	t.check(EnemyTable.get_def("nope").is_empty(), "get_def unknown is empty")
+	t.done()

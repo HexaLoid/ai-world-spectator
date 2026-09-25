@@ -44,3 +44,4 @@ func run(t) -> void:
 	t.check_eq(StatCalculator.mitigate(10, 25), 5, "25 armor halves damage (100 / (100 + 25x4))")
 	t.check_eq(StatCalculator.mitigate(1, 100), 1, "damage never mitigated below 1")
 	t.check_eq(StatCalculator.mitigate(0, 50), 0, "zero damage stays zero")
+	t.done()

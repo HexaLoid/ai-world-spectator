@@ -31,3 +31,4 @@ func run(t) -> void:
 	t.check_eq(LevelingSystem.get_next_threshold(9), 3200, "next threshold from level 9")
 	t.check_eq(LevelingSystem.get_next_threshold(10), -1, "no threshold at the cap")
 	t.check_eq(LevelingSystem.get_next_threshold(0), -1, "invalid level has no threshold")
+	t.done()

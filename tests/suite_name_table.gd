@@ -15,3 +15,4 @@ func run(t) -> void:
 	rng.seed = 42
 	for i in 50:
 		t.check(NameTable.NAMES.has(NameTable.pick(rng)), "pick returns a pool name")
+	t.done()

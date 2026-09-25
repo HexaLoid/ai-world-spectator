@@ -3,7 +3,9 @@ extends SceneTree
 ## Headless test runner. Run with:
 ##   godot --headless --path . --script res://tests/run_tests.gd
 ## Each suite is a script with a `run(t)` method that calls `t.check(...)` /
-## `t.check_eq(...)`. Exit code is 1 if any check fails.
+## `t.check_eq(...)`. Exit code is 1 if any check fails. Every suite's
+## `run(t)` must end with `t.done()`; a suite that ends early (e.g. a
+## runtime script error) records a FAIL.
 
 const SUITES := [
 	"res://tests/suite_ability_table.gd",
@@ -23,6 +25,7 @@ const SUITES := [
 
 var checks := 0
 var failures := 0
+var suite_finished := false
 
 func check(condition: bool, message: String) -> void:
 	checks += 1
@@ -32,6 +35,9 @@ func check(condition: bool, message: String) -> void:
 
 func check_eq(actual, expected, message: String) -> void:
 	check(actual == expected, "%s (expected %s, got %s)" % [message, str(expected), str(actual)])
+
+func done() -> void:
+	suite_finished = true
 
 func check_near(actual: float, expected: float, message: String) -> void:
 	check(absf(actual - expected) < 0.0001, "%s (expected %s, got %s)" % [message, str(expected), str(actual)])
@@ -44,6 +50,8 @@ func _init() -> void:
 			check(false, "suite failed to load: " + path)
 			continue
 		var suite = script.new()
+		suite_finished = false
 		suite.run(self)
+		check(suite_finished, "suite %s ended early (runtime error?)" % path.get_file())
 	print("%d checks, %d failures" % [checks, failures])
 	quit(1 if failures > 0 else 0)

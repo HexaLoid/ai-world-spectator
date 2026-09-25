@@ -22,3 +22,4 @@ func run(t) -> void:
 		for key in OLD_OVERRIDES:
 			t.check(not text.contains(key + " ="), "%s no longer uses %s" % [file_name, key])
 	t.check(total >= 7, "at least seven spawn points name an enemy (found %d)" % total)
+	t.done()

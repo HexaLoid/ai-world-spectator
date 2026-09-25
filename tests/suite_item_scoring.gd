@@ -42,3 +42,4 @@ func run(t) -> void:
 	t.check_eq(ItemScoring.describe_stats("lucky_charm"), "+5% crit", "describe crit as a percentage")
 	t.check_eq(ItemScoring.describe_stats("steel_sword"), "+11 damage, +2 STR", "describe uses STAT_ORDER")
 	t.check_eq(ItemScoring.describe_stats("health_potion"), "", "consumables have no stat text")
+	t.done()

@@ -33,7 +33,7 @@ GODOT="/c/Users/n1njaz/Desktop/Godot_v4.7.2-stable_mono_win64/Godot_v4.7.2-stabl
 timeout 90 "$GODOT" --headless --path . --script res://tests/run_tests.gd
 ```
 
-  Exit code 0 = all pass; failures print lines starting `FAIL:`. A suite that fails to parse is reported as `FAIL: suite failed to load: ...`. The baseline before this plan is `1945 checks, 0 failures`.
+  Exit code 0 = all pass; failures print lines starting `FAIL:`. A suite that fails to parse is reported as `FAIL: suite failed to load: ...`. The baseline before this plan is `1945 checks, 0 failures`. Every suite's `run(t)` must end with `t.done()`; the runner reports a suite that ends early.
 - Commit `.gd.uid` sidecars and `.png.import` files next to new scripts/images (repo convention). Do **not** commit Godot's line-ending-only rewrites of unrelated `.import` files, the `mcp_interaction_server` autoload line in `project.godot`, or `mcp_interaction_server.gd*`.
 - Commit messages end with: `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>`
 - **Line endings:** many files are CRLF in the working tree (git normalizes to LF in commits). Preserve each file's existing line endings when editing (Python with `newline=''`, inserting text with the file's own ending) and check `git diff --stat` shows only the lines you meant to change. New files may be LF.

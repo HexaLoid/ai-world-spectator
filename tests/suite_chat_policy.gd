@@ -28,3 +28,4 @@ func run(t) -> void:
 	t.check_near(ChatPolicy.next_ambient_delay_ms(0.0), 30000.0, "ambient delay lower bound")
 	t.check_near(ChatPolicy.next_ambient_delay_ms(1.0), 60000.0, "ambient delay upper bound")
 	t.check_near(ChatPolicy.next_ambient_delay_ms(0.5), 45000.0, "ambient delay midpoint")
+	t.done()
