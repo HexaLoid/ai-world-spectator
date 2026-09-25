@@ -25,6 +25,7 @@ func run(t) -> void:
 		for path in EnemyTable.SPRITE_FRAMES.values():
 			t.check(FileAccess.file_exists(path), "sprite frames file exists: %s" % path)
 		t.check(String(def.get("name", "")) != "", "%s has a name" % id)
+		t.check(ZoneTable.ZONES.has(def.get("zone", "")), "%s has a valid zone (%s)" % [id, def.get("zone", "")])
 		t.check(not names.has(def["name"]), "enemy name %s is unique" % def["name"])
 		names[def["name"]] = id
 		t.check(int(def["max_hp"]) > 0, "%s has hp" % id)

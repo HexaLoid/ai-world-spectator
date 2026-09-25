@@ -7,6 +7,14 @@ const OLD_OVERRIDES := ["enemy_name_override", "max_hp_override", "move_speed_ov
 	"attack_damage_max_override", "xp_reward_override", "aggro_range_override", "sprite_frames_override",
 	"sprite_size_override", "sprite_tint_override", "guaranteed_drop_id_override"]
 
+const SCENE_ZONES := {
+	"ThornfieldMeadow.tscn": "thornfield_meadow",
+	"BlackthornForest.tscn": "blackthorn_forest",
+	"SunderedCrypt.tscn": "sundered_crypt",
+	"MirewaterSwamp.tscn": "mirewater_swamp",
+	"FrostpeakPass.tscn": "frostpeak_pass",
+}
+
 func run(t) -> void:
 	var regex := RegEx.new()
 	regex.compile("enemy_id = \"([a-z_]+)\"")
@@ -19,6 +27,9 @@ func run(t) -> void:
 			total += 1
 			var id := m.get_string(1)
 			t.check(not EnemyTable.get_def(id).is_empty(), "%s: enemy_id '%s' exists in EnemyTable" % [file_name, id])
+			var scene_zone: String = SCENE_ZONES.get(file_name, "")
+			t.check(scene_zone != "", "%s is a known zone scene" % file_name)
+			t.check_eq(EnemyTable.get_def(id).get("zone", ""), scene_zone, "%s: enemy %s belongs to this scene's zone" % [file_name, id])
 		for key in OLD_OVERRIDES:
 			t.check(not text.contains(key + " ="), "%s no longer uses %s" % [file_name, key])
 	t.check(total >= 18, "all 18 spawn points name an enemy (found %d)" % total)

@@ -4,6 +4,7 @@ extends RefCounted
 ## Central enemy definitions. SpawnPoint reads an entry by id; quests match
 ## kills by `name`; the (future) codex lists these. Sprites are recolored /
 ## rescaled versions of the two existing sheets ("wolf", "bandit").
+## `zone`: the enemy's home zone id (ZoneTable), shown by the codex.
 ## `loot_level`: random drops only pick items with level_req <= this.
 ## `guaranteed_drop` (bosses/elites): always dropped, and gold is x5.
 
@@ -15,22 +16,22 @@ const SPRITE_FRAMES := {
 const ENEMIES := {
 	# --- Thornfield Meadow / Blackthorn Forest / Sundered Crypt (unchanged stats) ---
 	"wolf": {
-		"name": "Wolf", "sprite": "wolf", "tint": Color(1, 1, 1, 1), "sprite_size": 40.0,
+		"name": "Wolf", "zone": "thornfield_meadow", "sprite": "wolf", "tint": Color(1, 1, 1, 1), "sprite_size": 40.0,
 		"max_hp": 18, "move_speed": 70.0, "attack_min": 2, "attack_max": 4, "aggro_range": 120.0,
 		"xp_reward": 20, "gold_min": 1, "gold_max": 3, "loot_level": 2, "guaranteed_drop": "",
 	},
 	"dire_wolf": {
-		"name": "Dire Wolf", "sprite": "wolf", "tint": Color(1, 1, 1, 1), "sprite_size": 40.0,
+		"name": "Dire Wolf", "zone": "blackthorn_forest", "sprite": "wolf", "tint": Color(1, 1, 1, 1), "sprite_size": 40.0,
 		"max_hp": 30, "move_speed": 75.0, "attack_min": 4, "attack_max": 7, "aggro_range": 120.0,
 		"xp_reward": 35, "gold_min": 1, "gold_max": 3, "loot_level": 3, "guaranteed_drop": "",
 	},
 	"bandit": {
-		"name": "Bandit", "sprite": "bandit", "tint": Color(1, 1, 1, 1), "sprite_size": 40.0,
+		"name": "Bandit", "zone": "thornfield_meadow", "sprite": "bandit", "tint": Color(1, 1, 1, 1), "sprite_size": 40.0,
 		"max_hp": 35, "move_speed": 45.0, "attack_min": 4, "attack_max": 8, "aggro_range": 120.0,
 		"xp_reward": 35, "gold_min": 1, "gold_max": 3, "loot_level": 2, "guaranteed_drop": "",
 	},
 	"bandit_captain": {
-		"name": "Bandit Captain", "sprite": "bandit", "tint": Color(0.65, 0.3, 0.85, 1.0), "sprite_size": 56.0,
+		"name": "Bandit Captain", "zone": "blackthorn_forest", "sprite": "bandit", "tint": Color(0.65, 0.3, 0.85, 1.0), "sprite_size": 56.0,
 		"max_hp": 70, "move_speed": 50.0, "attack_min": 8, "attack_max": 14, "aggro_range": 120.0,
 		"xp_reward": 90, "gold_min": 1, "gold_max": 3, "loot_level": 3, "guaranteed_drop": "iron_sword",
 	},
@@ -39,44 +40,44 @@ const ENEMIES := {
 	# the character on every visit instead of possibly never coming into range
 	# during a short wander before the zone's dwell timer expires.
 	"crypt_lord": {
-		"name": "Crypt Lord", "sprite": "bandit", "tint": Color(0.2, 0.06, 0.1, 1.0), "sprite_size": 64.0,
+		"name": "Crypt Lord", "zone": "sundered_crypt", "sprite": "bandit", "tint": Color(0.2, 0.06, 0.1, 1.0), "sprite_size": 64.0,
 		"max_hp": 150, "move_speed": 45.0, "attack_min": 10, "attack_max": 18, "aggro_range": 280.0,
 		"xp_reward": 300, "gold_min": 1, "gold_max": 3, "loot_level": 4, "guaranteed_drop": "warlords_greatsword",
 	},
 	# --- Mirewater Swamp (levels 4+) ---
 	"mire_wolf": {
-		"name": "Mire Wolf", "sprite": "wolf", "tint": Color(0.55, 0.85, 0.6, 1.0), "sprite_size": 40.0,
+		"name": "Mire Wolf", "zone": "mirewater_swamp", "sprite": "wolf", "tint": Color(0.55, 0.85, 0.6, 1.0), "sprite_size": 40.0,
 		"max_hp": 45, "move_speed": 72.0, "attack_min": 5, "attack_max": 9, "aggro_range": 120.0,
 		"xp_reward": 55, "gold_min": 3, "gold_max": 6, "loot_level": 6, "guaranteed_drop": "",
 	},
 	"bog_bandit": {
-		"name": "Bog Bandit", "sprite": "bandit", "tint": Color(0.5, 0.85, 0.55, 1.0), "sprite_size": 40.0,
+		"name": "Bog Bandit", "zone": "mirewater_swamp", "sprite": "bandit", "tint": Color(0.5, 0.85, 0.55, 1.0), "sprite_size": 40.0,
 		"max_hp": 55, "move_speed": 46.0, "attack_min": 6, "attack_max": 11, "aggro_range": 120.0,
 		"xp_reward": 65, "gold_min": 4, "gold_max": 7, "loot_level": 6, "guaranteed_drop": "",
 	},
 	"mire_tyrant": {
-		"name": "Mire Tyrant", "sprite": "bandit", "tint": Color(0.25, 0.5, 0.3, 1.0), "sprite_size": 64.0,
+		"name": "Mire Tyrant", "zone": "mirewater_swamp", "sprite": "bandit", "tint": Color(0.25, 0.5, 0.3, 1.0), "sprite_size": 64.0,
 		"max_hp": 260, "move_speed": 50.0, "attack_min": 14, "attack_max": 24, "aggro_range": 200.0,
 		"xp_reward": 600, "gold_min": 6, "gold_max": 10, "loot_level": 6, "guaranteed_drop": "tyrants_maul",
 	},
 	# --- Frostpeak Pass (levels 7+) ---
 	"frost_wolf": {
-		"name": "Frost Wolf", "sprite": "wolf", "tint": Color(0.7, 0.88, 1.0, 1.0), "sprite_size": 42.0,
+		"name": "Frost Wolf", "zone": "frostpeak_pass", "sprite": "wolf", "tint": Color(0.7, 0.88, 1.0, 1.0), "sprite_size": 42.0,
 		"max_hp": 70, "move_speed": 78.0, "attack_min": 8, "attack_max": 13, "aggro_range": 130.0,
 		"xp_reward": 90, "gold_min": 5, "gold_max": 9, "loot_level": 9, "guaranteed_drop": "",
 	},
 	"frost_raider": {
-		"name": "Frost Raider", "sprite": "bandit", "tint": Color(0.6, 0.8, 1.0, 1.0), "sprite_size": 42.0,
+		"name": "Frost Raider", "zone": "frostpeak_pass", "sprite": "bandit", "tint": Color(0.6, 0.8, 1.0, 1.0), "sprite_size": 42.0,
 		"max_hp": 85, "move_speed": 50.0, "attack_min": 9, "attack_max": 15, "aggro_range": 130.0,
 		"xp_reward": 105, "gold_min": 6, "gold_max": 10, "loot_level": 9, "guaranteed_drop": "",
 	},
 	"raider_captain": {
-		"name": "Raider Captain", "sprite": "bandit", "tint": Color(0.35, 0.55, 0.95, 1.0), "sprite_size": 58.0,
+		"name": "Raider Captain", "zone": "frostpeak_pass", "sprite": "bandit", "tint": Color(0.35, 0.55, 0.95, 1.0), "sprite_size": 58.0,
 		"max_hp": 180, "move_speed": 55.0, "attack_min": 12, "attack_max": 20, "aggro_range": 160.0,
 		"xp_reward": 260, "gold_min": 10, "gold_max": 16, "loot_level": 9, "guaranteed_drop": "rimewatch_helm",
 	},
 	"frostpeak_warlord": {
-		"name": "Frostpeak Warlord", "sprite": "bandit", "tint": Color(0.9, 0.95, 1.0, 1.0), "sprite_size": 72.0,
+		"name": "Frostpeak Warlord", "zone": "frostpeak_pass", "sprite": "bandit", "tint": Color(0.9, 0.95, 1.0, 1.0), "sprite_size": 72.0,
 		"max_hp": 420, "move_speed": 50.0, "attack_min": 18, "attack_max": 30, "aggro_range": 220.0,
 		"xp_reward": 1200, "gold_min": 20, "gold_max": 30, "loot_level": 9, "guaranteed_drop": "glacier_plate",
 	},
