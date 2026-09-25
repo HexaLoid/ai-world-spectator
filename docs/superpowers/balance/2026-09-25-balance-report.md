@@ -210,3 +210,103 @@ Class parity needed no class change once pacing was fixed.
    per loop. The final quest, "The Frostpeak Warlord", is often still
    pending at 45 min.
 6. **Gold has no sink.**
+
+## 6. Danger pass (2026-09-26)
+
+Goal: the character should die rarely but really (about 1-4 times per 45
+game-minutes, mostly to bosses or on under-levelled zone visits), with no
+death spiral and no pacing regression. Same harness, 32 seeds per class for
+the final config (16 for the intermediate steps). `tests/sim` is unchanged:
+the `death` line already carries the killer as `last_target`.
+
+### Result
+
+| class | config | deaths/run mean (median, max) | runs with 0 deaths | worst 5-min same-zone cluster | L5 median (min) | L10 median (reached) |
+|---|---|---|---|---|---|---|
+| warrior | before (2bdf6ac) | 0.00 (0, 0) | 16/16 | 0 | 10.2 | 37.9 (14/16) |
+| mage | before | 0.00 (0, 0) | 16/16 | 0 | 10.6 | 41.0 (12/16) |
+| warrior | after | 0.91 (1, 4) | 11/32 | max 2, mean 0.7 | 10.0 | 38.1 (30/32) |
+| mage | after | 1.34 (1, 4) | 8/32 | max 2, mean 1.0 | 11.5 | 39.6 (26/32) |
+
+Class comparison after: L5 10.0 vs 11.5 (15% gap; was 4%), L10 38.1 vs 39.6
+(4%). The mage dies more (1.34 vs 0.91): lower armor and HP, no gap-closer.
+
+Killers over all 64 final runs, by the character's level at death:
+
+| killer | deaths (warrior / mage) | levels |
+|---|---|---|
+| Crypt Lord | 38 (16 / 22) | 32 at level 3, 5 at level 4, 1 at level 6 |
+| Mire Tyrant | 26 (11 / 15) | level 4: 4, 5: 7, 6: 6, 7: 7, 8: 2 |
+| Frostpeak Warlord | 7 (2 / 5) | level 8-10 |
+| Raider Captain | 1 (0 / 1) | level 7 |
+
+Boss fights (both classes, final config): Crypt Lord 835 fights, 38 deaths
+(median lowest HP 41%); Mire Tyrant 174 fights, 26 deaths (median lowest HP
+14%); Frostpeak Warlord 25 fights, 7 deaths; Raider Captain 27 fights, 1
+death. Before: no boss fight ever ended in a death.
+
+No spiral: the worst same-zone cluster within 5 minutes is 2 deaths. The
+worst runs (4 deaths: one warrior and one mage seed of 32) have their deaths
+spaced by full loop passes, typically the level-3 Crypt Lord and then Tyrant
+deaths at levels 4-7: "under-levelled for the next zone", not a respawn-die
+loop at one boss.
+
+### What changed (old -> new) and why
+
+| where | old -> new | why |
+|---|---|---|
+| `AIDecision.FLEE_HP_THRESHOLD` | 0.30 -> 0.10 | The character ran before a burst could land. Alone, 0.15 gave 0.03 deaths per run (fights end in ~3 s). At 0.10, with the boss changes, ~1 per run. A full-HP character still survives 4+ boss hits (max boss hit is 12-25% of max HP after armor). |
+| `AIDecision.REST_HP_THRESHOLD` (new) | (was the same constant, 0.30) -> 0.30 | Split from the flee threshold. Rest still starts below 30% HP but only when nothing hostile is in aggro range; with a hostile near, the character keeps fighting until 10%. `tests/suite_ai_decision.gd` covers the ordering. |
+| Crypt Lord | 300 HP, 14-22, speed 45 -> 380 HP, 17-27, speed 78 | Most-fought boss (~13 fights/run). More HP lengthens the mid-game fights; speed 78 (still under the character's 80) makes fleeing less reliable. Damage stayed modest because this is the level-3 first-boss: at 20-32 the mage's L5 slipped ~1 min more. Pinned ORIGINAL in `suite_enemy_table.gd`, updated in the same commit. |
+| Mire Tyrant | 520 HP, 16-26, speed 50 -> 900 HP, 32-52, speed 80 | Its fights took 3.6 s with the character at a median 63% lowest HP. Now ~6 s, median lowest HP 14%, 15% of fights fatal. Main source of "under-levelled swamp visit" deaths. |
+| Raider Captain | 360 HP, 14-22, speed 55 -> 560 HP, 28-42, speed 80 | Same reasoning; rarely met (~0.4 fights/run) so few deaths. |
+| Frostpeak Warlord | 840 HP, 22-34, speed 50 -> 1300 HP, 34-50, speed 84 | 40-60 damage was fatal in 9 of 15 fights and produced a 3-deaths-in-10-min cluster; 34-50 is fatal in ~28%. Speed 84 is above the character's 80: it cannot outrun this boss. |
+| `LevelingSystem.XP_THRESHOLDS` | `[100,400,1000,1850,2800,4100,6000,8500,11800]` -> `[100,400,900,1600,2450,3500,5300,7500,10400]` | Deaths plus the walk back from the meadow cost pace: with only the danger changes, L5 was 11.3 (warrior) / 13.3 (mage) and mage reached L10 in 5-11 of 16 runs. Lowering the L5 step ~12% restores L5, lowering the tail ~12% restores L10 (the L10 step is what sets L10 timing). |
+
+### Intermediate measurements (16 seeds per class unless noted)
+
+| step | warrior deaths/run | mage deaths/run | note |
+|---|---|---|---|
+| baseline | 0.00 | 0.00 | reproduces section 2 config C |
+| flee 0.15 | 0.06 | 0.00 | the threshold alone is not enough |
+| + Crypt Lord 20-32, Tyrant 22-36, Raider 20-30, Warlord 30-46 | 0.50 | 0.50 | nearly all deaths at the level-3 Crypt Lord |
+| + Tyrant 30-48, Raider 28-42, Warlord 40-60 | 0.62 | 0.06 | noise: same boss config moves a class by 0.5 |
+| + Tyrant/Raider speed 80, Warlord 84 | 0.44 | 0.38 | speed alone did little, fights are too short for a chase |
+| + boss HP x1.3-1.7 | 0.69 | 0.62 | deaths appear at Tyrant/Warlord; Warlord fights last 20 s |
+| + flee 0.10, Crypt Lord back to 17-27 | 1.25 | 1.31 | Warlord 60% fatal, 3 deaths in 10 min in one run |
+| + Warlord 34-50, XP tail -8% | 0.81 | 1.12 | |
+| + Crypt Lord speed 78, Tyrant 32-52 | 0.94 | 1.44 | mage L10 43.5 (5/16) |
+| + XP tail -12% (32 seeds) | 1.12 | 1.19 | mage L5 13.3, L10 41.3 (22/32) |
+| + XP early levels lower (final, 32 seeds) | 0.91 | 1.34 | L5 10.0 / 11.5, L10 38.1 / 39.6 |
+
+Seed-to-seed spread is large: the same boss stats moved a class between 0.06
+and 0.62 deaths per run on 16 seeds. Read a difference under ~0.4 as noise.
+
+### Respawn consequences
+
+`Character._die` respawns in Thornfield Meadow, so a death in a far zone sends
+the character back through the loop. From a death to the next arrival in the
+zone it died in (73 deaths in the 64-run intermediate batch): median 3.0 min,
+max 9.4 min; crypt 2.4, swamp 3.1, pass 4.3 min. Each death costs about 2-4
+min of pace, which the XP threshold change offsets. No long stalls, so the
+respawn point was left alone (respawning at the current zone's entry would be
+a design change).
+
+### Remaining concerns
+
+1. **Median is 1, not 2.** Mean is 0.9-1.3 deaths per run and about a third
+   of runs (8-11 of 32 per class) have no death. Configs that reached a
+   mean of ~1.3 on both classes also had a 3-deaths-in-10-min cluster or
+   boss fights that were 60% fatal.
+2. **Class gap at level 5: 15%** (mage 11.5, warrior 10.0). The mage is the
+   more fragile class and takes 22 of its 43 deaths at the level-3 Crypt
+   Lord. A class-specific early tweak (mage HP/armor at levels 1-4) would
+   close it; not done here.
+3. **The first Crypt Lord visit is a near coin flip**: 32 of 64 runs (15 of
+   32 warrior, 17 of 32 mage) die to it at level 3. That is the "under-levelled
+   visit" intent, but half of all runs is a lot for a first boss.
+4. **Ally falls were not re-measured** with the tougher Tyrant and Warlord;
+   expect the section 5 concern 2 numbers to rise again.
+5. **A death is often one hit.** With flee at 10% and boss hits of 12-25% of
+   max HP, dying depends on whether a hit lands before the flee. No new
+   mechanic (enrage etc.) was added.

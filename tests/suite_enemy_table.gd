@@ -11,7 +11,7 @@ const ORIGINAL := {
 	# game-minutes, no zone ally to soften it) and from the second kill on it
 	# died in ~1 s with the character above ~80% HP. See
 	# docs/superpowers/balance/2026-09-25-balance-report.md.
-	"crypt_lord": {"name": "Crypt Lord", "max_hp": 300, "move_speed": 45.0, "attack_min": 14, "attack_max": 22, "xp_reward": 300, "sprite": "bandit", "guaranteed_drop": "warlords_greatsword"},
+	"crypt_lord": {"name": "Crypt Lord", "max_hp": 380, "move_speed": 78.0, "attack_min": 17, "attack_max": 27, "xp_reward": 300, "sprite": "bandit", "guaranteed_drop": "warlords_greatsword"},
 }
 
 const NEW_IDS := ["mire_wolf", "bog_bandit", "mire_tyrant", "frost_wolf", "frost_raider", "raider_captain", "frostpeak_warlord"]

@@ -2,7 +2,7 @@ class_name LevelingSystem
 extends RefCounted
 
 ## Cumulative XP required to REACH levels 2-10 (index 0 = threshold for level 2, etc).
-const XP_THRESHOLDS := [100, 400, 1000, 1850, 2800, 4100, 6000, 8500, 11800]
+const XP_THRESHOLDS := [100, 400, 900, 1600, 2450, 3500, 5300, 7500, 10400]
 const MAX_LEVEL := 10
 const HP_PER_LEVEL := 10
 const DAMAGE_PER_LEVEL := 2
