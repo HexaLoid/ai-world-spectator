@@ -10,6 +10,14 @@ offline.
 
 Built with **Godot 4.7** (GDScript, 2D top-down).
 
+## Screenshots
+
+![The character in Mirewater Swamp with the party frames, chat and activity log](docs/screenshots/world.png)
+
+| Character sheet (`C`) | Codex (`B`) |
+|---|---|
+| ![Character sheet](docs/screenshots/sheet.png) | ![Codex bestiary](docs/screenshots/codex.png) |
+
 ## What you'll see
 
 - **Five zones** — Thornfield Meadow, Blackthorn Forest, the Sundered Crypt,
