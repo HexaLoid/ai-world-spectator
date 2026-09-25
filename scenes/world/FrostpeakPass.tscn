@@ -30,6 +30,7 @@ region_rect = Rect2(0, 0, 800, 600)
 texture_repeat = 2
 
 [node name="Decorations" type="Node2D" parent="."]
+modulate = Color(1.5, 1.7, 2.0, 1)
 script = ExtResource("7_decor")
 decoration_textures = Array[Texture2D]([ExtResource("8_tuft"), ExtResource("9_rock")])
 count = 30
