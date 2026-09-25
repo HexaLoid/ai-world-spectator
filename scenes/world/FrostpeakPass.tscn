@@ -121,7 +121,7 @@ position = Vector2(420, 200)
 
 
 [node name="SimulatedPlayerHrolf" parent="." instance=ExtResource("12_simplayer")]
-position = Vector2(0, 230)
+position = Vector2(-330, -230)
 player_name = "Hrolf"
 max_hp = 90
 attack_damage_min = 12

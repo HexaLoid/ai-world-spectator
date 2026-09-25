@@ -32,11 +32,11 @@ static func derive(base: Dictionary, equipment: Dictionary, class_def: Dictionar
 		damage_multiplier += float(gear.get(primary, 0.0)) * PRIMARY_STAT_DAMAGE_PER_POINT
 	var gear_damage := float(gear.get("damage", 0.0))
 	return {
-		"max_hp": int(base["max_hp"]) + roundi(float(gear.get("max_hp", 0.0))),
+		"max_hp": int(base["max_hp"]) + int(class_def.get("bonus_max_hp", 0)) + roundi(float(gear.get("max_hp", 0.0))),
 		"damage_min": roundi((float(base["damage_min"]) + gear_damage) * damage_multiplier),
 		"damage_max": roundi((float(base["damage_max"]) + gear_damage) * damage_multiplier),
 		"crit_chance": float(base["crit_chance"]) + float(gear.get("crit_chance", 0.0)),
-		"armor": roundi(float(gear.get("armor", 0.0))),
+		"armor": int(class_def.get("bonus_armor", 0)) + roundi(float(gear.get("armor", 0.0))),
 	}
 
 ## Damage actually taken after armor. Zero stays zero; any positive damage

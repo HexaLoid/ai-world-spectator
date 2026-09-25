@@ -47,12 +47,12 @@ const ENEMIES := {
 	# --- Mirewater Swamp (levels 4+) ---
 	"mire_wolf": {
 		"name": "Mire Wolf", "zone": "mirewater_swamp", "sprite": "wolf", "tint": Color(0.55, 0.85, 0.6, 1.0), "sprite_size": 40.0,
-		"max_hp": 45, "move_speed": 72.0, "attack_min": 5, "attack_max": 9, "aggro_range": 120.0,
+		"max_hp": 45, "move_speed": 72.0, "attack_min": 6, "attack_max": 11, "aggro_range": 120.0,
 		"xp_reward": 55, "gold_min": 3, "gold_max": 6, "loot_level": 6, "guaranteed_drop": "",
 	},
 	"bog_bandit": {
 		"name": "Bog Bandit", "zone": "mirewater_swamp", "sprite": "bandit", "tint": Color(0.5, 0.85, 0.55, 1.0), "sprite_size": 40.0,
-		"max_hp": 55, "move_speed": 46.0, "attack_min": 6, "attack_max": 11, "aggro_range": 120.0,
+		"max_hp": 55, "move_speed": 46.0, "attack_min": 7, "attack_max": 13, "aggro_range": 120.0,
 		"xp_reward": 65, "gold_min": 4, "gold_max": 7, "loot_level": 6, "guaranteed_drop": "",
 	},
 	"mire_tyrant": {
@@ -63,12 +63,12 @@ const ENEMIES := {
 	# --- Frostpeak Pass (levels 7+) ---
 	"frost_wolf": {
 		"name": "Frost Wolf", "zone": "frostpeak_pass", "sprite": "wolf", "tint": Color(0.7, 0.88, 1.0, 1.0), "sprite_size": 42.0,
-		"max_hp": 70, "move_speed": 78.0, "attack_min": 8, "attack_max": 13, "aggro_range": 130.0,
+		"max_hp": 70, "move_speed": 78.0, "attack_min": 9, "attack_max": 15, "aggro_range": 130.0,
 		"xp_reward": 90, "gold_min": 5, "gold_max": 9, "loot_level": 9, "guaranteed_drop": "",
 	},
 	"frost_raider": {
 		"name": "Frost Raider", "zone": "frostpeak_pass", "sprite": "bandit", "tint": Color(0.6, 0.8, 1.0, 1.0), "sprite_size": 42.0,
-		"max_hp": 85, "move_speed": 50.0, "attack_min": 9, "attack_max": 15, "aggro_range": 130.0,
+		"max_hp": 85, "move_speed": 50.0, "attack_min": 10, "attack_max": 17, "aggro_range": 130.0,
 		"xp_reward": 105, "gold_min": 6, "gold_max": 10, "loot_level": 9, "guaranteed_drop": "",
 	},
 	"raider_captain": {

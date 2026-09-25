@@ -39,6 +39,13 @@ func run(t) -> void:
 	var crit := StatCalculator.derive(base, {"neck": "lucky_charm", "ring": "ring_of_fortune"}, warrior)
 	t.check_near(float(crit["crit_chance"]), 0.17, "crit from neck + ring")
 
+	# class bonuses: flat HP and armor, none for a class without them
+	var mage_base := StatCalculator.derive(base, {}, mage)
+	t.check_eq(mage_base["max_hp"], int(base["max_hp"]) + int(mage.get("bonus_max_hp", 0)), "mage bonus HP applies")
+	t.check_eq(mage_base["armor"], int(mage.get("bonus_armor", 0)), "mage bonus armor applies")
+	t.check(int(mage.get("bonus_max_hp", 0)) > 0 and int(mage.get("bonus_armor", 0)) > 0, "mage has class bonuses")
+	t.check_eq(StatCalculator.derive(base, {}, warrior)["armor"], 0, "warrior has no bonus armor")
+
 	# mitigate()
 	t.check_eq(StatCalculator.mitigate(10, 0), 10, "no armor, no reduction")
 	t.check_eq(StatCalculator.mitigate(10, 25), 5, "25 armor halves damage (100 / (100 + 25x4))")

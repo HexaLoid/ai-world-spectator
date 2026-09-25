@@ -19,7 +19,7 @@ func run(t) -> void:
 	var met := CodexText.enemy_entry("mire_wolf", true, 0, true)
 	t.check(met.contains("Mire Wolf"), "met enemy shows its name")
 	t.check(met.contains("HP: 45"), "met enemy shows hp")
-	t.check(met.contains("Damage: 5 - 9"), "met enemy shows damage")
+	t.check(met.contains("Damage: 6 - 11"), "met enemy shows damage")
 	t.check(met.contains("Mirewater Swamp"), "met enemy shows its zone")
 	t.check(not met.contains("XP"), "xp is hidden until the first kill")
 	var killed := CodexText.enemy_entry("mire_wolf", true, 3, true)

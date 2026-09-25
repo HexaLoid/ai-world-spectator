@@ -310,3 +310,17 @@ a design change).
 5. **A death is often one hit.** With flee at 10% and boss hits of 12-25% of
    max HP, dying depends on whether a hit lands before the flee. No new
    mechanic (enrage etc.) was added.
+
+## 7. Follow-up: mage gap, swamp/pass pressure, ally spawns
+
+Changes (45-minute sims, 16-32 seeds per class):
+
+| Change | Result |
+|---|---|
+| Mage class bonus `bonus_max_hp` 25, `bonus_armor` 5 (flat, applied in `StatCalculator.derive`) | Mage L5 11.5 -> 10.4 min (warrior 10.2): gap closed. Mage deaths fell 1.2 -> 0.6. Bonus 15/3 or 25/2 left L5 at 11.3-11.5 (armor is what matters). |
+| Mire Wolf 5-9 -> 6-11, Bog Bandit 6-11 -> 7-13, Frost Wolf 8-13 -> 9-15, Frost Raider 9-15 -> 10-17 | Warrior deaths 1.1 -> 1.8 per run (median 2, 0-4). Mage 0.7 (median 1). Levels unchanged (warrior L5 9.9, L10 35.8; mage L5 11.0, L10 38.7). |
+| Vesper and Hrolf moved to the zones' NW corner (-330, -230) | Out of aggro range of the Tyrant, Captain and Warlord (>= 500 px). |
+
+Trade-off: the mage's cushion is what closes the level-5 gap, and it also
+makes the mage safer (median 1 death, warrior 2). Weakening the bonus
+reintroduces the gap, so the classes stay at different danger levels.

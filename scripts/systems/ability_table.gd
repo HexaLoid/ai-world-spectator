@@ -30,6 +30,10 @@ const CLASSES := {
 		"max_resource": 100.0,
 		"resource_regen_per_second": 6.0,
 		"primary_stat": "intellect",
+			# Flat class bonuses (see StatCalculator.derive): the mage is the more
+			# fragile class, so it gets a cushion for the level-3 Crypt Lord.
+			"bonus_max_hp": 25,
+			"bonus_armor": 5,
 		"stat_weights": {
 			"damage": 3.0, "intellect": 2.0, "armor": 0.5, "max_hp": 0.3, "crit_chance": 100.0,
 		},
