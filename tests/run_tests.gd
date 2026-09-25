@@ -22,6 +22,7 @@ const SUITES := [
 	"res://tests/suite_zone_table.gd",
 	"res://tests/suite_quest_table.gd",
 	"res://tests/suite_codex_state.gd",
+	"res://tests/suite_codex_data.gd",
 ]
 
 var checks := 0
