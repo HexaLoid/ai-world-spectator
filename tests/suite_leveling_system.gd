@@ -18,17 +18,18 @@ func run(t) -> void:
 	t.check_eq(first["hp_bonus"], LevelingSystem.HP_PER_LEVEL, "one level of hp bonus")
 	t.check_eq(first["damage_bonus"], LevelingSystem.DAMAGE_PER_LEVEL, "one level of damage bonus")
 
-	var top := LevelingSystem.apply_xp(1, 0, 3200)
-	t.check_eq(top["level"], 10, "3200 xp reaches level 10")
+	var cap_xp: int = LevelingSystem.XP_THRESHOLDS[LevelingSystem.MAX_LEVEL - 2]
+	var top := LevelingSystem.apply_xp(1, 0, cap_xp)
+	t.check_eq(top["level"], 10, "the last threshold reaches level 10")
 	t.check_eq(top["hp_bonus"], 9 * LevelingSystem.HP_PER_LEVEL, "nine levels of hp bonus")
 	t.check_eq(top["damage_bonus"], 9 * LevelingSystem.DAMAGE_PER_LEVEL, "nine levels of damage bonus")
 
-	var capped := LevelingSystem.apply_xp(10, 3200, 5000)
+	var capped := LevelingSystem.apply_xp(10, cap_xp, 5000)
 	t.check_eq(capped["level"], 10, "cannot exceed the cap")
 	t.check(not capped["leveled_up"], "no level-up at the cap")
 
 	t.check_eq(LevelingSystem.get_next_threshold(1), 100, "next threshold from level 1")
-	t.check_eq(LevelingSystem.get_next_threshold(9), 3200, "next threshold from level 9")
+	t.check_eq(LevelingSystem.get_next_threshold(9), cap_xp, "next threshold from level 9")
 	t.check_eq(LevelingSystem.get_next_threshold(10), -1, "no threshold at the cap")
 	t.check_eq(LevelingSystem.get_next_threshold(0), -1, "invalid level has no threshold")
 	t.done()

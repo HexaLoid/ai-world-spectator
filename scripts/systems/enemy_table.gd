@@ -41,7 +41,7 @@ const ENEMIES := {
 	# during a short wander before the zone's dwell timer expires.
 	"crypt_lord": {
 		"name": "Crypt Lord", "zone": "sundered_crypt", "sprite": "bandit", "tint": Color(0.2, 0.06, 0.1, 1.0), "sprite_size": 64.0,
-		"max_hp": 150, "move_speed": 45.0, "attack_min": 10, "attack_max": 18, "aggro_range": 280.0,
+		"max_hp": 300, "move_speed": 45.0, "attack_min": 14, "attack_max": 22, "aggro_range": 280.0,
 		"xp_reward": 300, "gold_min": 1, "gold_max": 3, "loot_level": 4, "guaranteed_drop": "warlords_greatsword",
 	},
 	# --- Mirewater Swamp (levels 4+) ---
@@ -57,7 +57,7 @@ const ENEMIES := {
 	},
 	"mire_tyrant": {
 		"name": "Mire Tyrant", "zone": "mirewater_swamp", "sprite": "bandit", "tint": Color(0.25, 0.5, 0.3, 1.0), "sprite_size": 64.0,
-		"max_hp": 260, "move_speed": 50.0, "attack_min": 14, "attack_max": 24, "aggro_range": 200.0,
+		"max_hp": 520, "move_speed": 50.0, "attack_min": 16, "attack_max": 26, "aggro_range": 200.0,
 		"xp_reward": 600, "gold_min": 6, "gold_max": 10, "loot_level": 6, "guaranteed_drop": "tyrants_maul",
 	},
 	# --- Frostpeak Pass (levels 7+) ---
@@ -73,12 +73,12 @@ const ENEMIES := {
 	},
 	"raider_captain": {
 		"name": "Raider Captain", "zone": "frostpeak_pass", "sprite": "bandit", "tint": Color(0.35, 0.55, 0.95, 1.0), "sprite_size": 58.0,
-		"max_hp": 180, "move_speed": 55.0, "attack_min": 12, "attack_max": 20, "aggro_range": 160.0,
+		"max_hp": 360, "move_speed": 55.0, "attack_min": 14, "attack_max": 22, "aggro_range": 160.0,
 		"xp_reward": 260, "gold_min": 10, "gold_max": 16, "loot_level": 9, "guaranteed_drop": "rimewatch_helm",
 	},
 	"frostpeak_warlord": {
 		"name": "Frostpeak Warlord", "zone": "frostpeak_pass", "sprite": "bandit", "tint": Color(0.9, 0.95, 1.0, 1.0), "sprite_size": 72.0,
-		"max_hp": 420, "move_speed": 50.0, "attack_min": 18, "attack_max": 30, "aggro_range": 220.0,
+		"max_hp": 840, "move_speed": 50.0, "attack_min": 22, "attack_max": 34, "aggro_range": 220.0,
 		"xp_reward": 1200, "gold_min": 20, "gold_max": 30, "loot_level": 9, "guaranteed_drop": "glacier_plate",
 	},
 }

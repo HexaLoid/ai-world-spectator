@@ -5,7 +5,13 @@ const ORIGINAL := {
 	"dire_wolf": {"name": "Dire Wolf", "max_hp": 30, "move_speed": 75.0, "attack_min": 4, "attack_max": 7, "xp_reward": 35, "sprite": "wolf"},
 	"bandit": {"name": "Bandit", "max_hp": 35, "move_speed": 45.0, "attack_min": 4, "attack_max": 8, "xp_reward": 35, "sprite": "bandit"},
 	"bandit_captain": {"name": "Bandit Captain", "max_hp": 70, "move_speed": 50.0, "attack_min": 8, "attack_max": 14, "xp_reward": 90, "sprite": "bandit", "guaranteed_drop": "iron_sword"},
-	"crypt_lord": {"name": "Crypt Lord", "max_hp": 150, "move_speed": 45.0, "attack_min": 10, "attack_max": 18, "xp_reward": 300, "sprite": "bandit", "guaranteed_drop": "warlords_greatsword"},
+	# Crypt Lord re-tuned by the 2026-09-25 balance pass (was 150 HP, 10-18
+	# damage). Measured with tests/sim: it is the boss the character fights
+	# most (the crypt lies on both legs of the zone loop, ~13 kills per 45
+	# game-minutes, no zone ally to soften it) and from the second kill on it
+	# died in ~1 s with the character above ~80% HP. See
+	# docs/superpowers/balance/2026-09-25-balance-report.md.
+	"crypt_lord": {"name": "Crypt Lord", "max_hp": 300, "move_speed": 45.0, "attack_min": 14, "attack_max": 22, "xp_reward": 300, "sprite": "bandit", "guaranteed_drop": "warlords_greatsword"},
 }
 
 const NEW_IDS := ["mire_wolf", "bog_bandit", "mire_tyrant", "frost_wolf", "frost_raider", "raider_captain", "frostpeak_warlord"]
