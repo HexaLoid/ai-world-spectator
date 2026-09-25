@@ -1,7 +1,13 @@
 class_name AIDecision
 extends RefCounted
 
-const FLEE_HP_THRESHOLD := 0.3
+## Below this HP fraction the character runs from a hostile in aggro range.
+## Kept well under REST_HP_THRESHOLD on purpose: a burst (a boss hit) can still
+## kill a character that has already dropped this low, so deaths are rare but real.
+const FLEE_HP_THRESHOLD := 0.1
+## Below this HP fraction the character rests, but only when nothing hostile is
+## in aggro range (with a hostile near, it keeps fighting until FLEE_HP_THRESHOLD).
+const REST_HP_THRESHOLD := 0.3
 
 ## Resolves the AI character's next state from its current situation.
 ## Expected context keys: hp_percent (float, 0.0-1.0), hostile_in_attack_range (bool),
@@ -24,7 +30,7 @@ static func resolve_state(context: Dictionary) -> Dictionary:
 
 	if hp_percent < FLEE_HP_THRESHOLD and hostile_in_aggro_range:
 		return {"state": "flee", "reason": "HP low (%d%%) - fleeing from %s" % [round(hp_percent * 100), hostile_name]}
-	if hp_percent < FLEE_HP_THRESHOLD:
+	if hp_percent < REST_HP_THRESHOLD and not hostile_in_aggro_range:
 		return {"state": "rest", "reason": "HP low (%d%%) - resting to recover" % round(hp_percent * 100)}
 	if hostile_in_attack_range:
 		return {"state": "combat", "reason": "%s in range - engaging" % hostile_name}
