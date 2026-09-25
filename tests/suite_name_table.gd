@@ -1,7 +1,7 @@
 extends RefCounted
 
 ## The four simulated-player names placed in the world scenes.
-const ALLY_NAMES := ["Kaelen", "Elowen", "Brynhild", "Gorrim"]
+const ALLY_NAMES := ["Kaelen", "Elowen", "Brynhild", "Gorrim", "Vesper", "Hrolf"]
 
 func run(t) -> void:
 	t.check(NameTable.NAMES.size() >= 8, "at least eight names")

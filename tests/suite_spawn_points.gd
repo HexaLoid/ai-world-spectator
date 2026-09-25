@@ -21,5 +21,5 @@ func run(t) -> void:
 			t.check(not EnemyTable.get_def(id).is_empty(), "%s: enemy_id '%s' exists in EnemyTable" % [file_name, id])
 		for key in OLD_OVERRIDES:
 			t.check(not text.contains(key + " ="), "%s no longer uses %s" % [file_name, key])
-	t.check(total >= 7, "at least seven spawn points name an enemy (found %d)" % total)
+	t.check(total >= 18, "all 18 spawn points name an enemy (found %d)" % total)
 	t.done()
