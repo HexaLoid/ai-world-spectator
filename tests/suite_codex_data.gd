@@ -18,13 +18,18 @@ func run(t) -> void:
 	var none := CodexData.item_sources("no_such_item")
 	t.check(none["guaranteed"].is_empty() and none["quests"].is_empty() and int(none["random_from_loot_level"]) == -1, "unknown item has empty sources")
 
-	# every non-epic item can be found somewhere
-	# (epics are excluded: frostbrand, glacier_staff, frostguard_shield and champions_plate currently have no source at all)
+	# boss bonus sources (extra epic drop from bosses)
+	t.check_eq(CodexData.item_sources("frostbrand")["boss_bonus"], ["Raider Captain", "Frostpeak Warlord"], "frostbrand can bonus-drop from the L9 bosses")
+	t.check_eq(CodexData.item_sources("champions_plate")["boss_bonus"], ["Bandit Captain", "Crypt Lord", "Mire Tyrant", "Raider Captain", "Frostpeak Warlord"], "champions_plate can bonus-drop from every boss")
+	t.check(not CodexData.item_sources("tyrants_maul")["boss_bonus"].has("Mire Tyrant"), "a boss's own guaranteed epic is not a bonus drop")
+	t.check(CodexData.item_sources("tyrants_maul")["boss_bonus"].has("Frostpeak Warlord"), "tyrants_maul can bonus-drop from other bosses")
+	t.check(CodexData.item_sources("rusty_sword")["boss_bonus"].is_empty(), "non-epics have no boss bonus source")
+	t.check(CodexData.item_sources("no_such_item")["boss_bonus"].is_empty(), "unknown item has no boss bonus source")
+
+	# every item can be found somewhere
 	for item_id in LootTable.ITEMS:
-		if LootTable.ITEMS[item_id].get("rarity", "") == "epic":
-			continue
 		var src := CodexData.item_sources(item_id)
-		var has_source: bool = not src["guaranteed"].is_empty() or not src["quests"].is_empty() or int(src["random_from_loot_level"]) >= 0
+		var has_source: bool = not src["guaranteed"].is_empty() or not src["quests"].is_empty() or not src["boss_bonus"].is_empty() or int(src["random_from_loot_level"]) >= 0
 		t.check(has_source, "%s has at least one source" % item_id)
 
 	# zones

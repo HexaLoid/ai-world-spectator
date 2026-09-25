@@ -100,6 +100,32 @@ const RARITY_COLORS := {
 	"epic": Color(0.68, 0.32, 0.95, 1.0),
 }
 
+## Chance that a boss (an enemy with a guaranteed drop) also drops one extra
+## epic item, on top of its guaranteed drop.
+const BOSS_BONUS_EPIC_CHANCE := 0.35
+
+## Sorted ids of every epic item with level_req <= `loot_level`.
+static func epic_ids_up_to(loot_level: int) -> Array:
+	var ids: Array = []
+	for item_id in ITEMS:
+		var item: Dictionary = ITEMS[item_id]
+		if item.get("rarity", "") == "epic" and int(item.get("level_req", 1)) <= loot_level:
+			ids.append(item_id)
+	ids.sort()
+	return ids
+
+## Boss bonus roll: with BOSS_BONUS_EPIC_CHANCE returns a uniformly random epic
+## id usable at `loot_level` (never `exclude_id`), else "" (also "" when no
+## epic is eligible).
+static func roll_boss_bonus(rng: RandomNumberGenerator, loot_level: int, exclude_id: String = "") -> String:
+	if rng.randf() >= BOSS_BONUS_EPIC_CHANCE:
+		return ""
+	var pool := epic_ids_up_to(loot_level)
+	pool.erase(exclude_id)
+	if pool.is_empty():
+		return ""
+	return String(pool[rng.randi_range(0, pool.size() - 1)])
+
 ## Picks a random item key from ITEMS using the given rng, weighted by
 ## RARITY_WEIGHTS (so epic items, at weight 0, are never picked here) and
 ## limited to items whose level_req is at most `loot_level` (consumables count

@@ -65,6 +65,8 @@ static func item_entry(id: String, found: bool) -> String:
 		lines.append("Guaranteed drop: %s" % enemy_name)
 	for quest_name in sources["quests"]:
 		lines.append("Quest reward: %s" % quest_name)
+	if not sources["boss_bonus"].is_empty():
+		lines.append("Bonus drop from bosses: %s" % ", ".join(sources["boss_bonus"]))
 	if int(sources["random_from_loot_level"]) >= 0:
 		lines.append("Random drops from level %d enemies" % int(sources["random_from_loot_level"]))
 	return "\n".join(lines)

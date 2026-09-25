@@ -61,4 +61,42 @@ func run(t) -> void:
 			"frostguard_shield", "marsh_helm", "rimewatch_helm", "reinforced_mail", "glacier_plate", "swamp_charm",
 			"rimewatch_amulet", "ring_of_the_mire", "frozen_band"]:
 		t.check(LootTable.ITEMS.has(item_id), "new item %s exists" % item_id)
+	# boss bonus epic
+	var epic_ids := LootTable.epic_ids_up_to(99)
+	var real_epics: Array = []
+	for item_id in LootTable.ITEMS:
+		if LootTable.ITEMS[item_id].get("rarity", "") == "epic":
+			real_epics.append(item_id)
+	real_epics.sort()
+	t.check_eq(epic_ids, real_epics, "epic_ids_up_to(99) is every epic, sorted")
+	t.check_eq(LootTable.epic_ids_up_to(2), [], "no epic is available at level 2")
+	t.check_eq(LootTable.epic_ids_up_to(3), ["amulet_of_wrath", "champions_plate", "crown_of_thornfield", "warlords_greatsword"], "level-3 epics")
+	t.check(LootTable.epic_ids_up_to(9).has("glacier_plate") and LootTable.epic_ids_up_to(9).has("frostbrand"), "level-9 epics include the frost set")
+	t.check(not LootTable.epic_ids_up_to(7).has("frostbrand"), "frostbrand needs level 8")
+	t.check_eq(LootTable.BOSS_BONUS_EPIC_CHANCE, 0.35, "boss bonus chance is 35%")
+	var bonus_rng := RandomNumberGenerator.new()
+	bonus_rng.seed = 4242
+	for i in 500:
+		t.check_eq(LootTable.roll_boss_bonus(bonus_rng, 2), "", "level-2 bonus roll never finds an epic")
+	var hits := 0
+	var seen := {}
+	for i in 2000:
+		var bonus := LootTable.roll_boss_bonus(bonus_rng, 9)
+		if bonus == "":
+			continue
+		hits += 1
+		seen[bonus] = true
+		t.check(LootTable.ITEMS.has(bonus) and LootTable.ITEMS[bonus]["rarity"] == "epic", "bonus roll returns an epic")
+		t.check(int(LootTable.ITEMS[bonus]["level_req"]) <= 9, "bonus roll respects loot_level")
+	t.check(hits >= 500 and hits <= 900, "about 35%% of level-9 bonus rolls succeed (got %d/2000)" % hits)
+	t.check_eq(seen.size(), LootTable.epic_ids_up_to(9).size(), "every eligible epic can be rolled")
+	var lvl5_rng := RandomNumberGenerator.new()
+	lvl5_rng.seed = 7
+	for i in 500:
+		var low_bonus := LootTable.roll_boss_bonus(lvl5_rng, 5)
+		t.check(low_bonus == "" or int(LootTable.ITEMS[low_bonus]["level_req"]) <= 5, "level-5 bonus never above level 5")
+	var ex_rng := RandomNumberGenerator.new()
+	ex_rng.seed = 11
+	for i in 500:
+		t.check(LootTable.roll_boss_bonus(ex_rng, 9, "glacier_plate") != "glacier_plate", "bonus never returns the excluded id")
 	t.done()

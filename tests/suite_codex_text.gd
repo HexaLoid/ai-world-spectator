@@ -71,4 +71,6 @@ func run(t) -> void:
 	var no_boss := CodexText.zone_entry("thornfield_meadow", true, [])
 	t.check(not no_boss.contains("Boss:"), "zones without a boss have no boss line")
 	t.check_eq(CodexText.zone_entry("no_such_zone", true, []), "", "unknown zone has no entry")
+	t.check(CodexText.item_entry("frostbrand", true).contains("Bonus drop from bosses: Raider Captain, Frostpeak Warlord"), "epics list their boss bonus sources")
+	t.check(not CodexText.item_entry("rusty_sword", true).contains("Bonus drop from bosses:"), "non-epics have no boss bonus line")
 	t.done()

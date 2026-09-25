@@ -4,11 +4,14 @@ extends RefCounted
 ## Pure derived facts for the codex, computed from the static tables.
 
 ## {"guaranteed": [enemy names], "quests": [quest names],
-##  "random_from_loot_level": int} for an item. `random_from_loot_level` is the
+##  "boss_bonus": [boss names], "random_from_loot_level": int} for an item.
+## `boss_bonus` lists (in EnemyTable order) the bosses that can drop an epic
+## item as an extra bonus: bosses whose loot_level covers the item's level_req,
+## excluding a boss's own guaranteed drop; always empty for non-epics. `random_from_loot_level` is the
 ## lowest enemy loot_level at which the item can drop randomly, or -1 when it
 ## never drops randomly (epic items, or nothing has a high enough loot level).
 static func item_sources(item_id: String) -> Dictionary:
-	var result := {"guaranteed": [], "quests": [], "random_from_loot_level": -1}
+	var result := {"guaranteed": [], "quests": [], "boss_bonus": [], "random_from_loot_level": -1}
 	var item: Dictionary = LootTable.ITEMS.get(item_id, {})
 	if item.is_empty():
 		return result
@@ -19,6 +22,13 @@ static func item_sources(item_id: String) -> Dictionary:
 	for quest in QuestTable.QUESTS:
 		if quest.get("item_reward", "") == item_id:
 			result["quests"].append(quest["name"])
+	if item.get("rarity", "") == "epic":
+		var level_req := int(item.get("level_req", 1))
+		for enemy_id in EnemyTable.ENEMIES:
+			var boss: Dictionary = EnemyTable.ENEMIES[enemy_id]
+			var own_drop: String = boss.get("guaranteed_drop", "")
+			if own_drop != "" and own_drop != item_id and int(boss["loot_level"]) >= level_req:
+				result["boss_bonus"].append(boss["name"])
 	var weight := int(LootTable.RARITY_WEIGHTS.get(item.get("rarity", "common"), 0))
 	if weight > 0:
 		var needed := int(item.get("level_req", 1))

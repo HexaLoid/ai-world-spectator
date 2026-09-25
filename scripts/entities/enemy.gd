@@ -199,6 +199,13 @@ func _drop_loot() -> void:
 	item.item_id = item_id
 	item.global_position = global_position
 	get_tree().current_scene.add_child.call_deferred(item)
+	if guaranteed_drop_id != "":
+		var bonus_id := LootTable.roll_boss_bonus(rng, loot_level, guaranteed_drop_id)
+		if bonus_id != "":
+			var bonus := item_scene.instantiate()
+			bonus.item_id = bonus_id
+			bonus.global_position = global_position + Vector2(rng.randf_range(-16.0, 16.0), rng.randf_range(-16.0, 16.0))
+			get_tree().current_scene.add_child.call_deferred(bonus)
 	# Elites/bosses (the ones with a guaranteed drop) pay out five times more gold.
 	var gold_multiplier := 5 if guaranteed_drop_id != "" else 1
 	var gold := item_scene.instantiate()
