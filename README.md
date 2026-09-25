@@ -12,8 +12,13 @@ Built with **Godot 4.7** (GDScript, 2D top-down).
 
 ## What you'll see
 
-- **Thornfield Meadow** — one small zone ringed by pine trees, with two wolves
-  and a bandit that respawn after being defeated.
+- **Five zones** — Thornfield Meadow, Blackthorn Forest, the Sundered Crypt,
+  Mirewater Swamp and Frostpeak Pass — linked by corridors along one east-west
+  road. Each has its own enemies that respawn after being defeated, and the
+  character travels between them in order, skipping zones above its level.
+  Later zones have tougher enemies and bosses: the Bandit Captain, the Crypt
+  Lord, the Mire Tyrant, the Raider Captain and the Frostpeak Warlord. Bosses
+  always drop a guaranteed item and 5x gold.
 - **An autonomous character** that cycles through wandering, chasing, fighting,
   fleeing, resting, and looting, choosing each action from simple priority rules
   (for example: flee or rest when HP is low, fight when an enemy is in range).
@@ -22,7 +27,8 @@ Built with **Godot 4.7** (GDScript, 2D top-down).
   off-hand, head, chest, neck, ring) with multiple stats each, plus gold and
   potions. The character equips only real upgrades for its class and level and
   ignores the rest; armor reduces damage taken. Kills grant XP and level-ups
-  increase HP and damage.
+  increase HP and damage, up to a level cap of 10. Random drops are
+  level-aware, so each zone drops gear suited to it.
 - **A spectator HUD**
   - HP bar, XP bar, level, six equipment slots with rarity-colored icons and hover tooltips, and a gold counter
   - An activity log explaining what the AI is doing and why
@@ -67,13 +73,14 @@ You can't control the character, but you can control how you watch:
 ```
 scenes/
   Main.tscn                 Root scene: world, character, camera, HUD
-  world/ThornfieldMeadow.tscn   The zone, spawn points, and tree border
+  world/                    World.tscn plus one scene per zone (spawn points, tree border)
   entities/                 Character, Enemy, SpawnPoint, item pickup
   ui/                       Spectator HUD and floating damage text
 scripts/
   ai/ai_decision.gd         Picks the character's next state from context
   entities/                 Character, enemy, spawn point, item pickup logic
-  systems/                  Combat, leveling, loot, item scoring, and stat rules
+  systems/                  Combat, leveling, item scoring, stat rules, and the
+                            enemy / zone / quest / loot data tables
   ui/                       HUD, camera controller, health bar, floating text
   autoload/game_state.gd    Signal hub between gameplay and UI
 tests/                      Headless test suites (run with: godot --headless --path . --script res://tests/run_tests.gd)
