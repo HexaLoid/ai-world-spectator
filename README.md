@@ -120,5 +120,6 @@ including per-author attribution files kept next to the assets.
 - HUD icons: [Kyrise's Free 16x16 RPG Icon Pack](https://opengameart.org/content/kyrises-free-16x16-rpg-icon-pack)
   (CC-BY 4.0)
 
-The CC-BY-SA terms apply to the art itself. No license has been chosen for the
-game's own source code yet.
+The game's own source code is released under the [MIT License](LICENSE). The
+third-party art keeps its own licenses (CC-BY-SA / CC-BY, see above), which apply
+to the art itself and not to the code.
