@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/unit_frame.gd" id="1_unitframe"]
 [ext_resource type="Script" path="res://scripts/ui/activity_log.gd" id="2_activitylog"]
@@ -11,6 +11,7 @@
 [ext_resource type="Script" path="res://scripts/ui/chat_director.gd" id="10_chatdirector"]
 [ext_resource type="Script" path="res://scripts/ui/chat_panel.gd" id="11_chatpanel"]
 [ext_resource type="Script" path="res://scripts/ui/party_frames.gd" id="12_partyframes"]
+[ext_resource type="Script" path="res://scripts/ui/codex_panel.gd" id="13_codexpanel"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xpfill"]
 bg_color = Color(0.82, 0.65, 0.15, 1)
@@ -157,6 +158,9 @@ text = "Recenter"
 [node name="SheetButton" type="Button" parent="SpeedControl"]
 text = "Sheet (C)"
 
+[node name="CodexButton" type="Button" parent="SpeedControl"]
+text = "Codex (B)"
+
 [node name="AbilityBar" type="HBoxContainer" parent="."]
 position = Vector2(487, 592)
 theme = ExtResource("4_theme")
@@ -251,3 +255,41 @@ offset_left = 16.0
 offset_top = 176.0
 offset_right = 240.0
 offset_bottom = 262.0
+
+[node name="CodexPanel" type="Panel" parent="."]
+visible = false
+theme = ExtResource("4_theme")
+script = ExtResource("13_codexpanel")
+offset_left = 262.0
+offset_top = 110.0
+offset_right = 780.0
+offset_bottom = 540.0
+
+[node name="Tabs" type="HBoxContainer" parent="CodexPanel"]
+offset_left = 12.0
+offset_top = 10.0
+offset_right = 508.0
+offset_bottom = 42.0
+
+[node name="List" type="ItemList" parent="CodexPanel"]
+offset_left = 12.0
+offset_top = 52.0
+offset_right = 192.0
+offset_bottom = 418.0
+
+[node name="Portrait" type="TextureRect" parent="CodexPanel"]
+offset_left = 204.0
+offset_top = 52.0
+offset_right = 268.0
+offset_bottom = 116.0
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Detail" type="RichTextLabel" parent="CodexPanel"]
+offset_left = 276.0
+offset_top = 52.0
+offset_right = 508.0
+offset_bottom = 418.0
+theme_override_font_sizes/normal_font_size = 13
+theme_override_font_sizes/bold_font_size = 13
+bbcode_enabled = true
