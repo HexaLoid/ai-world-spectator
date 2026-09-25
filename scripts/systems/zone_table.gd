@@ -77,5 +77,12 @@ static func next_zone_id(current_zone_id: String, level: int = 1) -> String:
 			return candidate
 	return TRAVEL_ORDER[(start) % TRAVEL_ORDER.size()]
 
+## Whether entering `entered_zone_id` ends the current travel leg (heading
+## for `destination_id`, "" when not traveling). Zones crossed on the way to
+## the destination don't count; with no leg in progress (wandering or a
+## Charge across a border) any zone entered becomes the new home zone.
+static func is_travel_arrival(entered_zone_id: String, destination_id: String) -> bool:
+	return destination_id == "" or entered_zone_id == destination_id
+
 static func stay_duration_ms(zone_id: String) -> float:
 	return float(ZONES[zone_id].get("stay_duration_ms", DEFAULT_STAY_DURATION_MS))

@@ -45,4 +45,10 @@ func run(t) -> void:
 	t.check_eq(ZoneTable.next_zone_id("mirewater_swamp", 6), "thornfield_meadow", "swamp -> meadow below the pass's level")
 	t.check_eq(ZoneTable.next_zone_id("mirewater_swamp", 7), "frostpeak_pass", "swamp -> pass at level 7")
 	t.check_eq(ZoneTable.next_zone_id("frostpeak_pass", 10), "thornfield_meadow", "the loop wraps around")
+	# Regression: the wrap-around leg (pass -> meadow) walks through the swamp;
+	# that must not count as arriving there, or the rotation ping-pongs
+	# swamp <-> pass forever and never reaches the meadow again.
+	t.check(not ZoneTable.is_travel_arrival("mirewater_swamp", "thornfield_meadow"), "crossing a zone mid-leg is not an arrival")
+	t.check(ZoneTable.is_travel_arrival("thornfield_meadow", "thornfield_meadow"), "reaching the leg's destination is an arrival")
+	t.check(ZoneTable.is_travel_arrival("blackthorn_forest", ""), "with no leg in progress any zone entered is an arrival")
 	t.done()

@@ -66,6 +66,12 @@ var hp_regen_accumulator: float = 0.0
 var last_combat_target: Node2D = null
 var current_zone_id: String = RESPAWN_ZONE_ID
 var zone_entered_time_ms: float = 0.0
+## Zone the current "travel" leg is heading for, locked in when the leg
+## starts and cleared on arrival there (or on death). "" = not traveling.
+## Walking THROUGH other zones on the way (e.g. the wrap-around leg from
+## Frostpeak Pass back to Thornfield Meadow crosses every zone in between)
+## updates current_zone_id but is not an arrival — see _sync_current_zone().
+var travel_destination_id: String = ""
 var party: Array = []
 
 # Quest state. Progress is tracked passively (see take_kill_credit) rather
@@ -164,14 +170,16 @@ func _build_context() -> Dictionary:
 	var nearest_hostile := _find_nearest_in_group("enemies")
 	var nearest_item := _find_nearest_wanted_item()
 	var quest_giver := _find_nearest_in_group("quest_givers")
-	var next_zone_id := ZoneTable.next_zone_id(current_zone_id, level)
+	var next_zone_id := travel_destination_id
+	if next_zone_id == "":
+		next_zone_id = ZoneTable.next_zone_id(current_zone_id, level)
 	var context := {
 		"hp_percent": float(hp) / float(max_hp),
 		"hostile_in_attack_range": false,
 		"hostile_in_aggro_range": false,
 		"hostile_name": "",
 		"item_nearby": false,
-		"ready_to_travel": (game_time_ms - zone_entered_time_ms) >= ZoneTable.stay_duration_ms(current_zone_id),
+		"ready_to_travel": travel_destination_id != "" or (game_time_ms - zone_entered_time_ms) >= ZoneTable.stay_duration_ms(current_zone_id),
 		"next_zone_name": String(ZoneTable.ZONES[next_zone_id]["name"]),
 		"quest_giver_in_zone": quest_giver != null and _zone_id_for_position(quest_giver.global_position) == current_zone_id,
 		"quest_ready": _quest_has_something_to_do(),
@@ -300,7 +308,9 @@ func _move_toward(direction: Vector2, speed: float) -> void:
 	move_and_slide()
 
 func _do_travel() -> void:
-	var dest_center: Vector2 = ZoneTable.ZONES[ZoneTable.next_zone_id(current_zone_id, level)]["center"]
+	if travel_destination_id == "":
+		travel_destination_id = ZoneTable.next_zone_id(current_zone_id, level)
+	var dest_center: Vector2 = ZoneTable.ZONES[travel_destination_id]["center"]
 	_move_toward(dest_center - global_position, MOVE_SPEED)
 
 ## Which zone's bounds rectangle contains `pos`, or `current_zone_id` if
@@ -329,7 +339,14 @@ func _sync_current_zone() -> void:
 	if zone_id == current_zone_id:
 		return
 	current_zone_id = zone_id
-	zone_entered_time_ms = game_time_ms
+	# Only the leg's destination restarts the stay timer; a zone merely
+	# crossed on the way keeps the leg going (ready_to_travel stays true).
+	# Without this, the wrap-around leg from the last zone "arrived" in the
+	# zone next door and the rotation ping-ponged between the last two zones
+	# forever, never returning to the early zones' quest chain.
+	if ZoneTable.is_travel_arrival(zone_id, travel_destination_id):
+		travel_destination_id = ""
+		zone_entered_time_ms = game_time_ms
 	# Otherwise the next "wander" tick chases whatever stale target was
 	# picked back in the old zone — clamped to THAT zone's bounds — and
 	# walks the character straight back out across the corridor instead
@@ -439,6 +456,7 @@ func _die() -> void:
 	wander_target = RESPAWN_POSITION
 	current_zone_id = RESPAWN_ZONE_ID
 	zone_entered_time_ms = game_time_ms
+	travel_destination_id = ""
 	visible = true
 	set_physics_process(true)
 	is_dead = false
