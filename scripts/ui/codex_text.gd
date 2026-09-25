@@ -78,8 +78,8 @@ static func zone_entry(id: String, visited: bool, enemies_met_in_zone: Array) ->
 		return UNDISCOVERED
 	var lines: Array[String] = []
 	lines.append("[b]%s[/b]" % zone["name"])
-	var range := CodexData.zone_level_range(id)
-	lines.append("Levels %d - %d" % [range[0], range[1]])
+	var level_range := CodexData.zone_level_range(id)
+	lines.append("Levels %d - %d" % [level_range[0], level_range[1]])
 	var roster := CodexData.zone_enemy_ids(id)
 	var met_count := 0
 	lines.append("Enemies:")

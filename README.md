@@ -38,6 +38,7 @@ Built with **Godot 4.7** (GDScript, 2D top-down).
   - A character sheet (stats, gear, quest, kills/deaths/damage/gold statistics)
   - A target frame showing the enemy being fought
   - Party frames for the character's grouped allies (name, level, HP)
+  - A codex that fills in as the character discovers enemies, items and zones
   - An ally chat panel: allies greet, congratulate, warn and chat in `[Party]` and `[Zone]` channels
   - Pause / 1x / 2x / 4x speed controls
 
@@ -67,6 +68,7 @@ You can't control the character, but you can control how you watch:
 | **Recenter** button | Snap the camera back to following the character |
 | **Pause / 1x / 2x / 4x** buttons | Change simulation speed |
 | **C** key / **Sheet (C)** button | Open or close the character sheet |
+| **B** key / **Codex (B)** button | Open or close the codex (bestiary, items, zones) |
 
 ## Project layout
 
