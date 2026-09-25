@@ -33,7 +33,7 @@ const ITEMS := {
 	"apprentice_staff": {"slot": "weapon", "rarity": "common", "level_req": 1, "icon": "res://assets/icons/apprentice_staff_icon.png", "stats": {"damage": 3, "intellect": 2}},
 	"oak_staff": {"slot": "weapon", "rarity": "uncommon", "level_req": 2, "icon": "res://assets/icons/oak_staff_icon.png", "stats": {"damage": 5, "intellect": 4}},
 	"arcane_staff": {"slot": "weapon", "rarity": "rare", "level_req": 3, "icon": "res://assets/icons/arcane_staff_icon.png", "stats": {"damage": 8, "intellect": 7}},
-	"tempered_sword": {"slot": "weapon", "rarity": "rare", "level_req": 5, "icon": "res://assets/icons/tempered_sword_icon.png", "stats": {"damage": 15, "strength": 3}},
+	"tempered_sword": {"slot": "weapon", "rarity": "rare", "level_req": 5, "icon": "res://assets/icons/tempered_sword_icon.png", "stats": {"damage": 19, "strength": 3}},
 	"mirewood_staff": {"slot": "weapon", "rarity": "rare", "level_req": 5, "icon": "res://assets/icons/mirewood_staff_icon.png", "stats": {"damage": 11, "intellect": 9}},
 	"tyrants_maul": {"slot": "weapon", "rarity": "epic", "level_req": 6, "icon": "res://assets/icons/tyrants_maul_icon.png", "stats": {"damage": 20, "strength": 5, "intellect": 3}},
 	"frostbrand": {"slot": "weapon", "rarity": "epic", "level_req": 8, "icon": "res://assets/icons/frostbrand_icon.png", "stats": {"damage": 24, "strength": 6}},
@@ -55,7 +55,7 @@ const ITEMS := {
 	"leather_armor": {"slot": "chest", "rarity": "common", "level_req": 1, "icon": "res://assets/icons/armor_icon.png", "stats": {"armor": 2, "max_hp": 15}},
 	"chainmail_armor": {"slot": "chest", "rarity": "rare", "level_req": 3, "icon": "res://assets/icons/chainmail_armor_icon.png", "stats": {"armor": 5, "max_hp": 25}},
 	"champions_plate": {"slot": "chest", "rarity": "epic", "level_req": 3, "icon": "res://assets/icons/champions_plate_icon.png", "stats": {"armor": 9, "max_hp": 40, "strength": 3}},
-	"reinforced_mail": {"slot": "chest", "rarity": "rare", "level_req": 5, "icon": "res://assets/icons/chainmail_armor_icon.png", "stats": {"armor": 8, "max_hp": 35}},
+	"reinforced_mail": {"slot": "chest", "rarity": "rare", "level_req": 5, "icon": "res://assets/icons/chainmail_armor_icon.png", "stats": {"armor": 11, "max_hp": 45}},
 	"glacier_plate": {"slot": "chest", "rarity": "epic", "level_req": 9, "icon": "res://assets/icons/champions_plate_icon.png", "stats": {"armor": 13, "max_hp": 55, "strength": 4, "intellect": 4}},
 	# Neck
 	"lucky_charm": {"slot": "neck", "rarity": "common", "level_req": 1, "icon": "res://assets/icons/lucky_charm_icon.png", "stats": {"crit_chance": 0.05}},

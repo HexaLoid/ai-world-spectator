@@ -156,7 +156,7 @@ enemy_scene = ExtResource("2_enemy")
 enemy_id = "raider_captain"
 
 [node name="SpawnPointFrostpeakWarlord" parent="." instance=ExtResource("1_spawnpoint")]
-position = Vector2(0, 0)
+position = Vector2(260, -180)
 respawn_delay_s = 150.0
 enemy_scene = ExtResource("2_enemy")
 enemy_id = "frostpeak_warlord"
