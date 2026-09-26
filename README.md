@@ -16,6 +16,10 @@ Built with **Godot 4.7** (GDScript, 2D top-down).
 
 ![The character in Mirewater Swamp with the party frames, chat and activity log](docs/screenshots/world.png)
 
+![The character select screen with seven jobs](docs/screenshots/select.png)
+
+![A White Mage run: job resource bar, ability bar and healing log lines](docs/screenshots/jobs.png)
+
 | Character sheet (`C`) | Codex (`B`) |
 |---|---|
 | ![Character sheet](docs/screenshots/sheet.png) | ![Codex bestiary](docs/screenshots/codex.png) |
@@ -42,6 +46,7 @@ Built with **Godot 4.7** (GDScript, 2D top-down).
 - **Made to be watched** — hit flashes and knockback, damage numbers that grow on crits and boss hits, camera shake on
   heavy blows, a name banner and health bar for bosses, slow motion on the killing blow, and an auto-director camera
   that frames boss fights and pulls out while travelling.
+- **Jobs** — seven Final Fantasy style jobs (Warrior, Black Mage, White Mage, Thief, Black Belt, Dragoon, Red Mage) with roles, resources and abilities; pick one on the character select screen or press New Character; allies have jobs too, and the White Mage ally heals the party.
 - **Personality and story** — each run rolls a trait (Steady, Cautious, Reckless, Greedy or Explorer) that changes
   when the character flees, rests, loots and moves on; a narrator tells the story in the Story chat channel; a recap card
   follows every death; and a journal lists the run's milestones.
@@ -87,6 +92,7 @@ You can't control the character, but you can control how you watch:
 | **C** key / **Sheet (C)** button | Open or close the character sheet |
 | **B** key / **Codex (B)** button | Open or close the codex (bestiary, items, zones) |
 | **J** key / **Journal (J)** button | Open or close the journal (the run's milestones, newest first) |
+| **New Character** button | Return to the character select screen and start a new run |
 
 ## Project layout
 
