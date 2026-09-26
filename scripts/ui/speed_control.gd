@@ -28,6 +28,14 @@ func _ready() -> void:
 	journal_button.text = "Journal (J)"
 	journal_button.pressed.connect(func(): GameState.journal_toggle_requested.emit())
 	add_child(journal_button)
+	var new_button := Button.new()
+	new_button.text = "New Character"
+	new_button.pressed.connect(func():
+		GameState.reset_run()
+		GameState.job_chosen = false
+		get_tree().change_scene_to_file("res://scenes/CharacterSelect.tscn")
+	)
+	add_child(new_button)
 
 ## Remembers the human's speed so boss slow-motion can restore it exactly.
 func _set_speed(new_scale: float) -> void:

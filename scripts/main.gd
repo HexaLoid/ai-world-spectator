@@ -1,6 +1,11 @@
 extends Node2D
 
 const FLOATING_TEXT_SCENE: PackedScene = preload("res://scenes/ui/FloatingText.tscn")
+const SELECT_SCENE := "res://scenes/CharacterSelect.tscn"
+
+func _enter_tree() -> void:
+	if GameState.select_screen_enabled and not GameState.job_chosen:
+		get_tree().change_scene_to_file.call_deferred(SELECT_SCENE)
 
 func _ready() -> void:
 	GameState.damage_dealt.connect(_on_damage_dealt)

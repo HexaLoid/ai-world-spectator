@@ -100,11 +100,24 @@ var user_time_scale: float = 1.0
 var fx_enabled: bool = true
 ## Job picked on the character select screen ("" until chosen).
 var selected_job: String = ""
+var job_chosen: bool = false
+## When true, Main redirects to the character select screen until a job is
+## chosen. The balance sim turns this off.
+var select_screen_enabled: bool = true
 
 var character: Node2D = null
 var camera: Camera2D = null
 ## What the spectated character has discovered (see CodexState). Session only.
 var codex := CodexState.new()
+
+## Clears everything that belongs to one run (called before a new character).
+func reset_run() -> void:
+	codex = CodexState.new()
+	journal = Journal.new()
+	character = null
+	camera = null
+	Engine.time_scale = 1.0
+	user_time_scale = 1.0
 
 func log_event(message: String) -> void:
 	activity_logged.emit(message)

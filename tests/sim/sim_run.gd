@@ -32,6 +32,7 @@ const SimMonitor := preload("res://tests/sim/sim_monitor.gd")
 
 func _ready() -> void:
 	GameState.fx_enabled = false
+	GameState.select_screen_enabled = false
 	var args := _parse_args()
 	var character_class: String = args.get("class", "warrior")
 	var seed_base := int(args.get("seed", "0"))
