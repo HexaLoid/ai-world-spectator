@@ -447,9 +447,12 @@ time of 3 to 8 minutes, at most 15% timeouts and at most 1.0 hero deaths per 10 
 
 | start job | attempts | clear rate | mean minutes (all runs) | timeouts | deaths/10 min |
 |---|---|---|---|---|---|
-| warrior | 37 | 28 / 37 (76%) | 2.8 | 0 | 0.2 |
-| white mage | 39 | 28 / 39 (72%) | 2.7 | 0 | 0.1 |
-| thief | 34 | 21 / 34 (62%) | 2.6 | 0 | 0.2 |
+| warrior | 37 | 23 / 37 (62%) | 2.8 | 0 | 0.2 |
+| white mage | 39 | 27 / 39 (69%) | 2.7 | 0 | 0.2 |
+| thief | 35 | 26 / 35 (74%) | 2.8 | 0 | 0.2 |
+
+(Final numbers, measured after the review fixes below. Before them, round 6 gave
+76% / 72% / 62%.)
 
 The mean run time is slightly under the 3 minute target because failed runs end
 early (a cleared run takes about 3 to 3.5 minutes). All other criteria pass.
@@ -471,3 +474,12 @@ Final numbers: Vault Skeleton 620 HP / 8-13, Vault Wraith 310 / 10-15, Bone Ward
 below 60% HP when nothing hostile is near (it used to press on at half HP and die).
 Level sync leaves allies permanently stronger after a run, so with `dungeon=1` the
 open-world balance is slightly easier than in the sections above.
+
+Review fixes that changed behavior and were re-measured: the wider world bounds
+(12750) now apply only while a dungeon run is active (they briefly let a fleeing
+hero run into the empty corridor east of Frostpeak Pass with the dungeon off); the
+tank's pull range equals the enemies' chase range (1.0x aggro; 1.3x made enemies
+pick a target they would not chase) and threat targeting only applies to dungeon
+enemies; a hero dying during the 6 second clear delay no longer turns a clear into a
+fail; the boss's adds are removed when it dies and leftover drops move to the gate.
+With the dungeon off, all 14 seeded runs are still identical to the phase-2 logs.
