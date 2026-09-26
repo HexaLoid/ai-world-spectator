@@ -35,6 +35,9 @@ const SUITES := [
 	"res://tests/suite_job_table.gd",
 	"res://tests/suite_job_state.gd",
 	"res://tests/suite_job_switch.gd",
+	"res://tests/suite_party_builder.gd",
+	"res://tests/suite_threat_rules.gd",
+	"res://tests/suite_encounter_logic.gd",
 ]
 
 var checks := 0
