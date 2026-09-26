@@ -54,6 +54,13 @@ var hp_regen_accumulator: float = 0.0
 var spawn_position: Vector2 = Vector2.ZERO
 var attack_anim_until_ms: float = 0.0
 var group_leader: Node2D = null
+## Set in the zone scene; "" = the original ally (unchanged stats and behavior).
+@export var job_id: String = ""
+const HEAL_INTERVAL_MS := 6000.0
+const HEAL_BELOW := 0.7
+const HEAL_PERCENT := 0.25
+var job_role: String = ""
+var next_heal_ms: float = 0.0
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var name_label: Label = $NameLabel
@@ -62,6 +69,13 @@ func _ready() -> void:
 	rng.randomize()
 	spawn_position = global_position
 	wander_target = global_position
+	if job_id != "" and AbilityTable.CLASSES.has(job_id):
+		var job: Dictionary = AbilityTable.CLASSES[job_id]
+		job_role = String(job.get("role", ""))
+		max_hp = maxi(1, roundi(float(max_hp) * float(job.get("ally_hp_mult", 1.0))))
+		var damage_mult := float(job.get("ally_damage_mult", 1.0))
+		attack_damage_min = maxi(1, roundi(float(attack_damage_min) * damage_mult))
+		attack_damage_max = maxi(attack_damage_min, roundi(float(attack_damage_max) * damage_mult))
 	hp = max_hp
 	sprite.modulate = sprite_tint
 	name_label.text = player_name
@@ -83,6 +97,43 @@ func _physics_process(delta: float) -> void:
 	var context := _build_context(preferred_hostile)
 	current_state = AIDecision.resolve_state(context)["state"]
 	_act(delta, context, preferred_hostile)
+	_tick_healer()
+
+func receive_heal(amount: int) -> void:
+	if is_dead or amount <= 0:
+		return
+	var old_hp := hp
+	hp = mini(max_hp, hp + amount)
+	if hp > old_hp:
+		GameState.emit_signal("damage_dealt", global_position, hp - old_hp, true)
+
+## Healer allies restore the lowest-HP member among the leader and the party.
+func _tick_healer() -> void:
+	if job_role != "healer" or game_time_ms < next_heal_ms:
+		return
+	if group_leader == null or not is_instance_valid(group_leader):
+		return
+	var members: Array = [group_leader]
+	for ally in group_leader.get("party"):
+		if is_instance_valid(ally):
+			members.append(ally)
+	var hps: Array = []
+	var max_hps: Array = []
+	var candidates: Array = []
+	for member in members:
+		if member.is_dead:
+			continue
+		candidates.append(member)
+		hps.append(member.hp)
+		max_hps.append(member.max_hp)
+	var index := AbilityMath.pick_heal_target(hps, max_hps, HEAL_BELOW)
+	if index < 0:
+		return
+	next_heal_ms = game_time_ms + HEAL_INTERVAL_MS
+	var target = candidates[index]
+	target.receive_heal(AbilityMath.heal_amount(int(max_hps[index]), HEAL_PERCENT))
+	var who: String = String(target.get("player_name")) if target != group_leader else "the leader"
+	GameState.log_event("[Ally] %s heals %s" % [player_name, who])
 
 ## Prefer fighting alongside the leader's own target when one exists and is
 ## still alive — this is what makes a grouped fight visibly "shared" rather
