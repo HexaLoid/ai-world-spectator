@@ -379,3 +379,28 @@ Tuning: the first White Mage (+20 HP, +4 armor, Cure 30%, Benediction 35% every
 Benediction 25% every 35 s: 0.4 deaths and level 10 in 12 of 12 runs. The other
 five jobs passed at their first numbers. Warrior and Black Mage runs are
 bit-identical to the pre-job logs (8 of 8 seeded runs compared).
+
+### Pass B: allies with jobs
+
+Kaelen Warrior, Elowen White Mage (healer), Brynhild Dragoon, Gorrim Black Belt,
+Vesper Red Mage, Hrolf Thief. With the first healer settings (heals the lowest
+member below 70% HP for 25% of max HP every 6 s) every job became too safe:
+Warrior 0.6 deaths (was 2.1 without a healer), Black Mage 0.2, White Mage 0.2,
+Thief 0.2, Dragoon 0.1, Red Mage 0.2, and level 10 arrived about 3 minutes
+earlier. The ally healer was weakened to below 50% HP, 15% of max HP, every 12 s.
+
+| job | deaths/run | L5 (min) | L10 (min) | L10 reached |
+|---|---|---|---|---|
+| warrior | 0.9 | 9.6 | 34.0 | 12 / 12 |
+| black mage | 0.3 | 9.8 | 37.7 | 12 / 12 |
+| white mage | 0.3 | 10.3 | 35.4 | 12 / 12 |
+| thief | 0.9 | 10.1 | 35.1 | 11 / 12 |
+| black belt | 0.4 | 9.0 | 32.6 | 12 / 12 |
+| dragoon | 0.6 | 9.0 | 34.0 | 12 / 12 |
+| red mage | 0.4 | 10.7 | 37.4 | 12 / 12 |
+
+All seven jobs pass the acceptance band. Trade-off: with a healer in the
+starting party the hero dies less than before the job change (Warrior 2.1 to
+0.9 per run), and Black Mage and White Mage sit right at the 0.3 floor. If more
+danger is wanted, the ally healer's `HEAL_INTERVAL_MS`, `HEAL_BELOW` and
+`HEAL_PERCENT` in `simulated_player.gd` and the boss damage are the levers.

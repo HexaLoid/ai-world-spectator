@@ -56,9 +56,9 @@ var attack_anim_until_ms: float = 0.0
 var group_leader: Node2D = null
 ## Set in the zone scene; "" = the original ally (unchanged stats and behavior).
 @export var job_id: String = ""
-const HEAL_INTERVAL_MS := 6000.0
-const HEAL_BELOW := 0.7
-const HEAL_PERCENT := 0.25
+const HEAL_INTERVAL_MS := 12000.0
+const HEAL_BELOW := 0.5
+const HEAL_PERCENT := 0.15
 var job_role: String = ""
 var next_heal_ms: float = 0.0
 

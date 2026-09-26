@@ -51,6 +51,7 @@ scale = Vector2(1.1, 1.1)
 position = Vector2(-280, -160)
 
 [node name="SimulatedPlayerKaelen" parent="." instance=ExtResource("14_simplayer")]
+job_id = "warrior"
 position = Vector2(-40, -230)
 player_name = "Kaelen"
 max_hp = 45
@@ -60,6 +61,7 @@ sprite_tint = Color(1.0, 0.75, 0.6, 1.0)
 home_zone_id = "thornfield_meadow"
 
 [node name="SimulatedPlayerElowen" parent="." instance=ExtResource("14_simplayer")]
+job_id = "white_mage"
 position = Vector2(20, 230)
 player_name = "Elowen"
 max_hp = 40
