@@ -404,3 +404,32 @@ starting party the hero dies less than before the job change (Warrior 2.1 to
 0.9 per run), and Black Mage and White Mage sit right at the 0.3 floor. If more
 danger is wanted, the ally healer's `HEAL_INTERVAL_MS`, `HEAL_BELOW` and
 `HEAL_PERCENT` in `simulated_player.gd` and the boss damage are the levers.
+
+## 10. Job switching
+
+Measured with 120-minute sims, 8 seeds per starting job, `trait=steady`,
+`switching=1`. With switching off, all 14 checked seeded runs (7 jobs x 2 seeds)
+are identical to the phase-1 logs.
+
+Acceptance: at least 3 job changes per run, mean deaths per 10 minutes at most
+1.0, and at least 75% of changes reaching level 10 within 25 minutes.
+
+| start job | job changes/run | deaths/10 min | changes reaching L10 in 25 min | final level (mean) |
+|---|---|---|---|---|
+| warrior | 5.8 | 0.1 | 40 / 46 (87%) | 8.8 |
+| white mage | 5.5 | 0.0 | 36 / 44 (82%) | 8.6 |
+| thief | 5.9 | 0.1 | 39 / 47 (83%) | 8.6 |
+
+Findings on the way (each measured before it was changed):
+
+| attempt | result | fix |
+|---|---|---|
+| Loop trigger on every re-entry into the meadow | 12 to 13 changes per run, none ever reached L10 | Wandering across the meadow's border re-entered the zone; the loop now needs 3 different zones visited since the last change |
+| Same, plus a level 8 gate | 8 changes per run, only 20 to 30% reached L10 | Below level 7 the pass is skipped, so a loop takes about 10 minutes; jobs cycled at levels 6 to 8 because the best level never rose and each new job starts 2 below it |
+| Loop trigger only at the level cap | 5.5 to 5.9 changes per run, 82 to 87% reach L10 | kept: a job is only left when it is mastered, so the best level reaches 10 and catch-up starts new jobs at 8 |
+
+So in practice the hero changes job when its job reaches level 10 (about every
+15 to 18 minutes after the first job, which takes about 35 minutes) and walks
+back to the crystal in the meadow; the "loop" trigger now only matters if the
+cap was reached elsewhere. Constants: `CATCH_UP_GAP` 2, `LOOP_GAP` 2,
+`LOOP_MIN_ZONES` 3, `LOOP_MIN_LEVEL` = level cap, in `job_switch.gd`.
