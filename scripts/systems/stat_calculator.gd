@@ -35,7 +35,7 @@ static func derive(base: Dictionary, equipment: Dictionary, class_def: Dictionar
 		"max_hp": int(base["max_hp"]) + int(class_def.get("bonus_max_hp", 0)) + roundi(float(gear.get("max_hp", 0.0))),
 		"damage_min": roundi((float(base["damage_min"]) + gear_damage) * damage_multiplier),
 		"damage_max": roundi((float(base["damage_max"]) + gear_damage) * damage_multiplier),
-		"crit_chance": float(base["crit_chance"]) + float(gear.get("crit_chance", 0.0)),
+		"crit_chance": float(base["crit_chance"]) + float(class_def.get("bonus_crit_chance", 0.0)) + float(gear.get("crit_chance", 0.0)),
 		"armor": int(class_def.get("bonus_armor", 0)) + roundi(float(gear.get("armor", 0.0))),
 	}
 
