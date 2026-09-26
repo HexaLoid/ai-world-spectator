@@ -19,6 +19,10 @@ var director_enabled := true
 ## True once the human dragged or scrolled; pauses the director until Recenter.
 var manual := false
 var trauma := 0.0
+var _last_ticks_ms := -1
+var _zoom_reset_done := false
+## Directed camera snaps instead of lerping beyond this distance (respawn/startup).
+const SNAP_DISTANCE := 600.0
 
 func _ready() -> void:
 	GameState.camera = self
@@ -29,9 +33,7 @@ func _process(delta: float) -> void:
 	var have_character: bool = character != null and is_instance_valid(character)
 	var boss = null
 	if have_character:
-		var foe = character.last_combat_target
-		if is_instance_valid(foe) and foe.has_method("is_boss") and foe.is_boss() and not foe.is_dead:
-			boss = foe
+		boss = character.current_boss()
 	var plan := CameraDirector.decide({
 		"enabled": director_enabled,
 		"manual": manual,
@@ -51,11 +53,25 @@ func _process(delta: float) -> void:
 	if directed:
 		var wanted: Vector2 = (Vector2.ONE * float(plan["zoom"])).clamp(Vector2.ONE * MIN_ZOOM, Vector2.ONE * MAX_ZOOM)
 		zoom = zoom.lerp(wanted, 1.0 - exp(-ZOOM_SMOOTH * delta))
-	trauma = maxf(0.0, trauma - SHAKE_DECAY * delta)
-	if GameState.fx_enabled and trauma > 0.0:
-		offset = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * trauma * trauma * SHAKE_MAX_PX
-	else:
+	if not director_enabled:
+		# Director off behaves exactly as before the feature: snap zoom once, no shake.
+		if not _zoom_reset_done:
+			_zoom_reset_done = true
+			zoom = Vector2.ONE
+		trauma = 0.0
 		offset = Vector2.ZERO
+		return
+	_zoom_reset_done = false
+	# Shake decays in real time so pause / slow-mo neither freezes nor jitters it.
+	var now := Time.get_ticks_msec()
+	var real_dt := 0.0 if _last_ticks_ms < 0 else float(now - _last_ticks_ms) / 1000.0
+	_last_ticks_ms = now
+	trauma = maxf(0.0, trauma - SHAKE_DECAY * real_dt)
+	if Engine.time_scale > 0.0:
+		if GameState.fx_enabled and trauma > 0.0:
+			offset = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * trauma * trauma * SHAKE_MAX_PX
+		else:
+			offset = Vector2.ZERO
 
 func add_shake(strength: float) -> void:
 	trauma = minf(1.0, trauma + strength)
@@ -98,4 +114,5 @@ func toggle_director() -> bool:
 	director_enabled = not director_enabled
 	if director_enabled:
 		manual = false
+		following = true
 	return director_enabled

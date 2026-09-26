@@ -1,6 +1,7 @@
 extends CharacterBody2D
 
 const MOVE_SPEED := 80.0
+const BOSS_TRACK_RANGE := 450.0
 const ATTACK_RANGE := 28.0
 const AGGRO_RANGE := 160.0
 const PICKUP_RANGE := 20.0
@@ -64,6 +65,10 @@ var is_dead: bool = false
 var game_time_ms: float = 0.0
 var hp_regen_accumulator: float = 0.0
 var last_combat_target: Node2D = null
+## Most recent boss targeted; survives last_combat_target flipping to null
+## (chase/flee). Read through current_boss(), which validates it.
+var boss_foe: Node2D = null
+var _fled_announced_id: int = 0
 var current_zone_id: String = RESPAWN_ZONE_ID
 var zone_entered_time_ms: float = 0.0
 ## Zone the current "travel" leg is heading for, locked in when the leg
@@ -387,14 +392,28 @@ func _regen_hp(delta: float) -> void:
 		hp += 1
 		hp_regen_accumulator -= 1.0
 
+## The tracked boss, only while it is alive, within BOSS_TRACK_RANGE and the
+## character is alive; otherwise clears the tracking and returns null.
+func current_boss() -> Node2D:
+	if boss_foe == null:
+		return null
+	if not is_instance_valid(boss_foe) or is_dead or bool(boss_foe.get("is_dead")) 			or global_position.distance_to(boss_foe.global_position) > BOSS_TRACK_RANGE:
+		boss_foe = null
+		return null
+	return boss_foe
+
 func _update_combat_target(combat_hostile: Node2D) -> void:
+	if is_instance_valid(combat_hostile) and combat_hostile.has_method("is_boss") 			and bool(combat_hostile.call("is_boss")):
+		boss_foe = combat_hostile
+		_fled_announced_id = 0
+	if current_state == "flee":
+		var fled_boss = current_boss()
+		if fled_boss != null and fled_boss.get_instance_id() != _fled_announced_id:
+			_fled_announced_id = fled_boss.get_instance_id()
+			GameState.emit_signal("boss_event", "fled", String(fled_boss.get("enemy_name")))
 	if combat_hostile != last_combat_target:
-		var previous = last_combat_target
 		last_combat_target = combat_hostile
 		GameState.emit_signal("combat_target_changed", combat_hostile)
-		if not is_instance_valid(combat_hostile) and current_state == "flee" \
-				and is_instance_valid(previous) and previous.is_boss():
-			GameState.emit_signal("boss_event", "fled", previous.enemy_name)
 		if combat_hostile != null and is_instance_valid(combat_hostile):
 			for enemy_id in EnemyTable.ids_named(combat_hostile.enemy_name):
 				GameState.discover("enemy", enemy_id)
@@ -447,13 +466,15 @@ func take_damage(amount: int, is_crit: bool = false) -> void:
 		_die()
 
 func _die() -> void:
+	# Read the boss before is_dead flips (current_boss() returns null when dead).
+	var foe = current_boss()
 	is_dead = true
 	deaths += 1
 	GameState.emit_signal("chat_event", "leader_died", {})
-	var foe = last_combat_target
-	if is_instance_valid(foe) and foe.is_boss():
-		GameState.emit_signal("boss_event", "defeated", foe.enemy_name)
+	if foe != null:
+		GameState.emit_signal("boss_event", "defeated", String(foe.get("enemy_name")))
 	_update_combat_target(null)
+	boss_foe = null
 	GameState.log_event("Character died - respawning")
 	visible = false
 	set_physics_process(false)

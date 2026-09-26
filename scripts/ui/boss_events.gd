@@ -86,29 +86,32 @@ func _ready() -> void:
 	GameState.boss_event.connect(_on_boss_event)
 
 func _process(_delta: float) -> void:
-	if not tracking:
+	var character = GameState.character
+	var current = null
+	if character != null and is_instance_valid(character):
+		current = character.current_boss()
+	if current == null:
+		if tracking:
+			_stop_tracking()
 		return
-	if not is_instance_valid(boss):
-		_stop_tracking()
-		return
+	if current != boss or not tracking:
+		boss = current
+		tracking = true
+		bar.max_value = float(boss.get("max_hp"))
+		bar_name.text = String(boss.get("enemy_name"))
+		bar_panel.visible = true
 	bar.value = float(boss.get("hp"))
 	bar_text.text = "%d / %d" % [int(boss.get("hp")), int(boss.get("max_hp"))]
 
+## Announces a boss the first time it is targeted. The bar itself is driven by
+## polling in _process so a momentary null target (chase state) cannot flicker it.
 func _on_target_changed(target: Node2D) -> void:
 	# is_instance_valid first: a freed Object compares equal to null.
 	if is_instance_valid(target) and target.has_method("is_boss") and bool(target.call("is_boss")):
-		boss = target
-		tracking = true
-		var boss_name := String(target.get("enemy_name"))
-		bar.max_value = float(target.get("max_hp"))
-		bar_name.text = boss_name
-		bar_panel.visible = true
 		var id := target.get_instance_id()
 		if not announced.has(id):
 			announced[id] = true
-			_show_banner("BOSS - %s" % boss_name, ENGAGED_COLOR)
-	else:
-		_stop_tracking()
+			_show_banner("BOSS - %s" % String(target.get("enemy_name")), ENGAGED_COLOR)
 
 func _stop_tracking() -> void:
 	tracking = false
@@ -134,10 +137,20 @@ func _show_banner(text: String, color: Color) -> void:
 	banner_tween.tween_interval(HOLD_S)
 	banner_tween.tween_property(banner, "modulate:a", 0.0, FADE_S)
 
+var slow_active := false
+
+func _exit_tree() -> void:
+	if slow_active:
+		slow_active = false
+		Engine.time_scale = GameState.user_time_scale
+
 func _slow_motion() -> void:
 	if not GameState.fx_enabled or not SpectatorFx.should_slow_kill(true, Engine.time_scale):
 		return
 	Engine.time_scale = SpectatorFx.SLOW_SCALE
+	slow_active = true
 	# process_always = true, process_in_physics = false, ignore_time_scale = true
 	await get_tree().create_timer(SpectatorFx.SLOW_DURATION_S, true, false, true).timeout
-	Engine.time_scale = GameState.user_time_scale
+	if is_instance_valid(self) and slow_active:
+		slow_active = false
+		Engine.time_scale = GameState.user_time_scale

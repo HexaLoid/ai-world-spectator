@@ -201,7 +201,7 @@ func _die() -> void:
 	GameState.emit_signal("enemy_died", self)
 	if is_boss():
 		var c = GameState.character
-		if c != null and is_instance_valid(c) and c.global_position.distance_to(global_position) < BOSS_EVENT_RANGE:
+		if c != null and is_instance_valid(c) and not c.is_dead and c.global_position.distance_to(global_position) < BOSS_EVENT_RANGE:
 			GameState.emit_signal("boss_event", "victory", enemy_name)
 	if guaranteed_drop_id != "":
 		GameState.emit_signal("chat_event", "elite_kill", {"enemy": enemy_name})
