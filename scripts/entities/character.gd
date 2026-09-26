@@ -23,6 +23,7 @@ const STATE_DISPLAY_NAMES := {
 	"rest": "Resting",
 	"travel": "Traveling",
 	"quest": "Questing",
+	"job_change": "Changing job",
 }
 
 @export var max_hp: int = 60
@@ -90,6 +91,22 @@ var zone_entered_time_ms: float = 0.0
 var travel_destination_id: String = ""
 var party: Array = []
 
+const CRYSTAL_ZONE_ID := "thornfield_meadow"
+const CRYSTAL_RANGE := 30.0
+
+## Per-job progress for jobs the hero has taken (job id -> JobState). The
+## active job's level, xp and equipment live in `level`, `xp` and `equipment`.
+var job_states: Dictionary = {}
+var jobs_mastered: Array = []
+var wants_job_change: bool = false
+var job_change_reason: String = ""
+var _left_crystal_zone: bool = false
+## Level-1 base stats, captured in _ready; base stats at a level are derived
+## from these (identical to what gain_xp accumulates).
+var _lvl1_hp: int = 0
+var _lvl1_damage_min: int = 0
+var _lvl1_damage_max: int = 0
+
 # Quest state. Progress is tracked passively (see take_kill_credit) rather
 # than by directing combat toward the quest target — the character already
 # fights whatever it encounters, so this just watches kills go by.
@@ -131,6 +148,9 @@ func _ready() -> void:
 	base_max_hp = max_hp
 	base_damage_min = attack_damage_min
 	base_damage_max = attack_damage_max
+	_lvl1_hp = base_max_hp - (level - 1) * LevelingSystem.HP_PER_LEVEL
+	_lvl1_damage_min = base_damage_min - (level - 1) * LevelingSystem.DAMAGE_PER_LEVEL
+	_lvl1_damage_max = base_damage_max - (level - 1) * LevelingSystem.DAMAGE_PER_LEVEL
 	_recompute_stats()
 	GameState.emit_signal("character_resource_changed", resource_amount, max_resource)
 	# _sync_current_zone() only recruits on a zone TRANSITION, but the
@@ -196,6 +216,8 @@ func _build_context() -> Dictionary:
 	var next_zone_id := travel_destination_id
 	if next_zone_id == "":
 		next_zone_id = ZoneTable.next_zone_id(current_zone_id, level)
+	if wants_job_change:
+		next_zone_id = CRYSTAL_ZONE_ID
 	var context := {
 		"hp_percent": float(hp) / float(max_hp),
 		"flee_hp": float(trait_def.get("flee_hp", AIDecision.FLEE_HP_THRESHOLD)),
@@ -204,10 +226,11 @@ func _build_context() -> Dictionary:
 		"hostile_in_aggro_range": false,
 		"hostile_name": "",
 		"item_nearby": false,
-		"ready_to_travel": travel_destination_id != "" or (game_time_ms - zone_entered_time_ms) >= ZoneTable.stay_duration_ms(current_zone_id) * float(trait_def.get("stay_mult", 1.0)),
+		"ready_to_travel": (wants_job_change and current_zone_id != CRYSTAL_ZONE_ID) or travel_destination_id != "" or (game_time_ms - zone_entered_time_ms) >= ZoneTable.stay_duration_ms(current_zone_id) * float(trait_def.get("stay_mult", 1.0)),
 		"next_zone_name": String(ZoneTable.ZONES[next_zone_id]["name"]),
 		"quest_giver_in_zone": quest_giver != null and _zone_id_for_position(quest_giver.global_position) == current_zone_id,
 		"quest_ready": _quest_has_something_to_do(),
+		"job_change_ready": _job_crystal_here() != null,
 	}
 	if nearest_hostile:
 		var dist := global_position.distance_to(nearest_hostile.global_position)
@@ -309,6 +332,16 @@ func _act(delta: float, _context: Dictionary) -> void:
 				else:
 					_move_toward(to_giver, MOVE_SPEED)
 			base_anim = "walk"
+		"job_change":
+			var crystal := _job_crystal_here()
+			if crystal:
+				var to_crystal := crystal.global_position - global_position
+				if to_crystal.length() <= CRYSTAL_RANGE:
+					_change_job(JobSwitch.pick_next_job(character_class, _taken_levels(), character_trait, rng.randf()))
+					wants_job_change = false
+				else:
+					_move_toward(to_crystal, MOVE_SPEED)
+			base_anim = "walk"
 		"travel":
 			_do_travel()
 			base_anim = "run"
@@ -335,6 +368,8 @@ func _move_toward(direction: Vector2, speed: float) -> void:
 func _do_travel() -> void:
 	if travel_destination_id == "":
 		travel_destination_id = ZoneTable.next_zone_id(current_zone_id, level)
+	if wants_job_change and travel_destination_id != CRYSTAL_ZONE_ID:
+		travel_destination_id = CRYSTAL_ZONE_ID
 	var dest_center: Vector2 = ZoneTable.ZONES[travel_destination_id]["center"]
 	_move_toward(dest_center - global_position, MOVE_SPEED)
 
@@ -382,6 +417,11 @@ func _sync_current_zone() -> void:
 	GameState.discover("zone", zone_id)
 	GameState.emit_signal("chat_event", "zone_arrive", {"zone": String(ZoneTable.ZONES[zone_id]["name"])})
 	_recruit_companions_in_zone(zone_id)
+	if zone_id != CRYSTAL_ZONE_ID:
+		_left_crystal_zone = true
+	elif _left_crystal_zone:
+		_left_crystal_zone = false
+		_check_job_change("loop")
 
 ## Recruits up to MAX_PARTY_SIZE ungrouped SimulatedPlayers whose home zone
 ## is the one just entered — permanent for this slice (no leave condition),
@@ -757,6 +797,7 @@ func get_sheet_snapshot() -> Dictionary:
 		quest_text = "%s %d/%d" % [quest.get("name", ""), quest_progress, int(quest.get("count", 0))]
 	return {
 		"character_name": character_name,
+		"jobs": _job_rows(),
 		"trait_id": character_trait,
 		"trait_title": TraitTable.title_of(character_trait),
 		"level": level,
@@ -787,6 +828,92 @@ func get_sheet_snapshot() -> Dictionary:
 		"time_played_ms": game_time_ms,
 	}
 
+## Levels of every taken job including the active one (id -> level).
+func _taken_levels() -> Dictionary:
+	var levels := {}
+	for id in job_states.keys():
+		levels[id] = (job_states[id] as JobState).level
+	levels[character_class] = level
+	return levels
+
+## Levels of every job except the active one, untaken jobs counted as 1.
+func _other_levels() -> Array:
+	var taken := _taken_levels()
+	var result: Array = []
+	for id in AbilityTable.job_ids():
+		if id != character_class:
+			result.append(int(taken.get(id, 1)))
+	return result
+
+func _set_base_stats_for_level(new_level: int) -> void:
+	base_max_hp = _lvl1_hp + (new_level - 1) * LevelingSystem.HP_PER_LEVEL
+	base_damage_min = _lvl1_damage_min + (new_level - 1) * LevelingSystem.DAMAGE_PER_LEVEL
+	base_damage_max = _lvl1_damage_max + (new_level - 1) * LevelingSystem.DAMAGE_PER_LEVEL
+
+## Swaps to another job: the outgoing job's level, XP and gear are stored, the
+## new job's are loaded (created on first use with the catch-up level and
+## inherited gear). Everything else (quests, gold, party, codex) is shared.
+func _change_job(new_id: String) -> void:
+	if new_id == "" or new_id == character_class or not AbilityTable.CLASSES.has(new_id):
+		return
+	var old_id := character_class
+	job_states[old_id] = JobState.create(level, xp, equipment)
+	var state: JobState
+	if job_states.has(new_id):
+		state = job_states[new_id]
+	else:
+		var start_level := JobSwitch.catch_up_level(_taken_levels())
+		state = JobState.create(start_level, JobSwitch.starting_xp(start_level), JobSwitch.inherit_equipment(equipment, start_level))
+	character_class = new_id
+	class_def = AbilityTable.CLASSES[new_id]
+	max_resource = float(class_def.get("max_resource", 0.0))
+	sprite.modulate = class_def.get("sprite_tint", Color(1.0, 1.0, 1.0, 1.0))
+	level = state.level
+	xp = state.xp
+	equipment = state.equipment.duplicate()
+	_set_base_stats_for_level(level)
+	_recompute_stats()
+	hp = max_hp
+	resource_amount = 0.0
+	ability_cooldowns.clear()
+	wants_job_change = false
+	job_change_reason = ""
+	_left_crystal_zone = false
+	GameState.log_event("Changed job: %s -> %s (level %d)" % [AbilityTable.job_name(old_id), AbilityTable.job_name(new_id), level])
+	GameState.emit_signal("job_changed", old_id, new_id, level)
+	GameState.emit_signal("character_equipment_changed", equipment.duplicate())
+	GameState.emit_signal("character_hp_changed", hp, max_hp)
+	GameState.emit_signal("character_resource_changed", resource_amount, max_resource)
+	GameState.emit_signal("character_xp_changed", xp)
+
+## Sets the "go to the crystal" flag when a switch is due for `reason`.
+func _check_job_change(reason: String) -> void:
+	if not GameState.job_switching_enabled or wants_job_change:
+		return
+	if JobSwitch.switch_due(level, _other_levels(), reason):
+		wants_job_change = true
+		job_change_reason = reason
+
+## The crystal in the current zone if a job change is pending, else null.
+func _job_crystal_here() -> Node2D:
+	if not wants_job_change:
+		return null
+	var crystal := _find_nearest_in_group("job_crystals")
+	if crystal != null and _zone_id_for_position(crystal.global_position) == current_zone_id:
+		return crystal
+	return null
+
+func _job_rows() -> Array:
+	var rows: Array = []
+	for id in AbilityTable.job_ids():
+		var row_level := 0
+		if id == character_class:
+			row_level = level
+		elif job_states.has(id):
+			row_level = (job_states[id] as JobState).level
+		rows.append({"id": id, "name": AbilityTable.job_name(id), "level": row_level, "active": id == character_class})
+	return rows
+
 func gain_xp(amount: int) -> void:
 	var result := LevelingSystem.apply_xp(level, xp, amount)
 	level = result["level"]
@@ -801,6 +928,10 @@ func gain_xp(amount: int) -> void:
 		GameState.emit_signal("character_leveled_up", level)
 		GameState.emit_signal("chat_event", "leader_level_up", {"level": level})
 		GameState.emit_signal("character_hp_changed", hp, max_hp)
+	if level >= LevelingSystem.MAX_LEVEL and not jobs_mastered.has(character_class):
+		jobs_mastered.append(character_class)
+		GameState.emit_signal("job_mastered", character_class)
+		_check_job_change("cap")
 	GameState.emit_signal("character_xp_changed", xp)
 
 func take_kill_credit(enemy_name: String, xp_reward: int) -> void:

@@ -104,6 +104,14 @@ var job_chosen: bool = false
 ## When true, Main redirects to the character select screen until a job is
 ## chosen. The balance sim turns this off.
 var select_screen_enabled: bool = true
+## The hero changes job by itself at the crystal (phase 2). The balance sim
+## turns this off unless it is measuring the feature (`switching=1`).
+var job_switching_enabled: bool = true
+
+## The hero changed job (ids are AbilityTable class ids; `level` is the new job's level).
+signal job_changed(old_id: String, new_id: String, level: int)
+## A job reached the level cap for the first time.
+signal job_mastered(job_id: String)
 
 var character: Node2D = null
 var camera: Camera2D = null
