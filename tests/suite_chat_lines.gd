@@ -49,4 +49,6 @@ func run(t) -> void:
 	var zone_line := ChatLines.format("zone", "Gorrim", "Hi")
 	t.check(zone_line.contains("[lb]Zone[rb]") and zone_line.contains("d9b382"), "zone tag and color")
 	t.check(ChatLines.format("weird", "X", "y").contains("[lb]Zone[rb]"), "unknown channel falls back to the zone style")
+	t.check(ChatLines.format("story", "Narrator", "It begins.").contains("[lb]Story[rb]"), "story channel has its own label")
+	t.check(not ChatLines.format("story", "Narrator", "It begins.").contains("[lb]Zone[rb]"), "story is not the zone style")
 	t.done()

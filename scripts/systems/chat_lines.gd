@@ -77,6 +77,7 @@ const TEMPLATES := {
 const CHANNELS := {
 	"party": ["Party", "6fa8dc"],
 	"zone": ["Zone", "d9b382"],
+	"story": ["Story", "e6c25a"],
 }
 
 ## Picks a template for `event` with `rng` and fills its placeholders from
