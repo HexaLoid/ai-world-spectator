@@ -6,6 +6,9 @@ func _ready() -> void:
 	GameState.damage_dealt.connect(_on_damage_dealt)
 	GameState.hit_landed.connect(_on_hit_landed)
 	add_child(HitFeedback.new())
+	var ui := get_node_or_null("UI")
+	if ui != null:
+		ui.add_child(BossEvents.new())
 
 # Heals still arrive through damage_dealt; damage numbers come from
 # hit_landed, which knows about crits and boss fights.
