@@ -28,6 +28,7 @@ const SUITES := [
 	"res://tests/suite_spectator_fx.gd",
 	"res://tests/suite_camera_director.gd",
 	"res://tests/suite_trait_table.gd",
+	"res://tests/suite_journal.gd",
 ]
 
 var checks := 0
