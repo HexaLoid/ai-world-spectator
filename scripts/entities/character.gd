@@ -101,6 +101,8 @@ var jobs_mastered: Array = []
 var wants_job_change: bool = false
 var job_change_reason: String = ""
 var _left_crystal_zone: bool = false
+## Zones (other than the crystal's) entered since the last job change.
+var _zones_since_switch: Dictionary = {}
 ## Level-1 base stats, captured in _ready; base stats at a level are derived
 ## from these (identical to what gain_xp accumulates).
 var _lvl1_hp: int = 0
@@ -419,7 +421,8 @@ func _sync_current_zone() -> void:
 	_recruit_companions_in_zone(zone_id)
 	if zone_id != CRYSTAL_ZONE_ID:
 		_left_crystal_zone = true
-	elif _left_crystal_zone:
+		_zones_since_switch[zone_id] = true
+	elif _left_crystal_zone and _zones_since_switch.size() >= JobSwitch.LOOP_MIN_ZONES:
 		_left_crystal_zone = false
 		_check_job_change("loop")
 
@@ -880,6 +883,7 @@ func _change_job(new_id: String) -> void:
 	wants_job_change = false
 	job_change_reason = ""
 	_left_crystal_zone = false
+	_zones_since_switch.clear()
 	GameState.log_event("Changed job: %s -> %s (level %d)" % [AbilityTable.job_name(old_id), AbilityTable.job_name(new_id), level])
 	GameState.emit_signal("job_changed", old_id, new_id, level)
 	GameState.emit_signal("character_equipment_changed", equipment.duplicate())

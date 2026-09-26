@@ -10,6 +10,9 @@ const CATCH_UP_GAP := 2
 const LOOP_GAP := 2
 ## A trait's preferred job is only used within this many levels of the lowest.
 const NUDGE_WINDOW := 2
+## "loop" trigger: this many different zones must have been visited since the
+## last change, so wandering across the meadow's border is not a loop.
+const LOOP_MIN_ZONES := 3
 
 static func catch_up_level(levels: Dictionary) -> int:
 	var best := 1
