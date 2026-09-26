@@ -94,13 +94,13 @@ const TEMPLATES := {
 ## `roll` (0..1) makes the choice deterministic: below TRAIT_CHANCE the trait's
 ## line is used when it has one, otherwise a neutral line.
 static func line_for(event: String, trait_id: String, context: Dictionary, roll: float) -> String:
-	var set: Dictionary = TEMPLATES.get(event, {})
-	if set.is_empty():
+	var pool_set: Dictionary = TEMPLATES.get(event, {})
+	if pool_set.is_empty():
 		return ""
 	var r := clampf(roll, 0.0, 0.999999)
-	var pool: Array = set["neutral"]
+	var pool: Array = pool_set["neutral"]
 	var index := 0
-	var trait_pool: Array = set.get(trait_id, [])
+	var trait_pool: Array = pool_set.get(trait_id, [])
 	if r < TRAIT_CHANCE and not trait_pool.is_empty():
 		pool = trait_pool
 		index = mini(int(r / TRAIT_CHANCE * float(pool.size())), pool.size() - 1)
