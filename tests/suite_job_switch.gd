@@ -43,6 +43,8 @@ func run(t) -> void:
 	t.check(JobSwitch.switch_due(8, [6], "loop"), "loop: gap of exactly 2 is due")
 	t.check(not JobSwitch.switch_due(8, [7], "loop"), "loop: gap of 1 is not due")
 	t.check(not JobSwitch.switch_due(5, [], "loop"), "loop: no other jobs")
+	t.check(not JobSwitch.switch_due(7, [1], "loop"), "loop: the active job is not nearly done (level 7)")
+	t.check(JobSwitch.switch_due(8, [1], "loop"), "loop: level 8 is nearly done")
 	t.check(JobSwitch.switch_due(10, [8, 10], "loop"), "loop at the cap with a job 2 below")
 	t.check(not JobSwitch.switch_due(5, [1], "nope"), "unknown reason is never due")
 

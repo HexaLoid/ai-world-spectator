@@ -13,6 +13,9 @@ const NUDGE_WINDOW := 2
 ## "loop" trigger: this many different zones must have been visited since the
 ## last change, so wandering across the meadow's border is not a loop.
 const LOOP_MIN_ZONES := 3
+## "loop" trigger: the active job must be at least this level (nearly done),
+## otherwise a short loop would swap jobs before any of them got trained.
+const LOOP_MIN_LEVEL := 8
 
 static func catch_up_level(levels: Dictionary) -> int:
 	var best := 1
@@ -47,6 +50,8 @@ static func switch_due(active_level: int, other_levels: Array, reason: String) -
 				return true
 		return false
 	if reason == "loop":
+		if active_level < LOOP_MIN_LEVEL:
+			return false
 		for level in other_levels:
 			if int(level) <= active_level - LOOP_GAP:
 				return true
