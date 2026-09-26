@@ -31,8 +31,8 @@ func _ready() -> void:
 	banner = Label.new()
 	banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	banner.anchor_right = 1.0
-	banner.offset_top = 140.0
-	banner.offset_bottom = 190.0
+	banner.offset_top = 216.0
+	banner.offset_bottom = 266.0
 	banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	banner.add_theme_font_size_override("font_size", 34)
 	banner.add_theme_constant_override("outline_size", 8)
@@ -46,8 +46,8 @@ func _ready() -> void:
 	bar_panel.anchor_right = 0.5
 	bar_panel.offset_left = -200.0
 	bar_panel.offset_right = 200.0
-	bar_panel.offset_top = 104.0
-	bar_panel.offset_bottom = 134.0
+	bar_panel.offset_top = 178.0
+	bar_panel.offset_bottom = 208.0
 	bar_panel.visible = false
 	add_child(bar_panel)
 

@@ -12,6 +12,8 @@ Built with **Godot 4.7** (GDScript, 2D top-down).
 
 ## Screenshots
 
+![A boss fight: boss health bar, scaled numbers and the directed camera](docs/screenshots/boss.png)
+
 ![The character in Mirewater Swamp with the party frames, chat and activity log](docs/screenshots/world.png)
 
 | Character sheet (`C`) | Codex (`B`) |
@@ -37,6 +39,9 @@ Built with **Godot 4.7** (GDScript, 2D top-down).
   ignores the rest; armor reduces damage taken. Kills grant XP and level-ups
   increase HP and damage, up to a level cap of 10. Random drops are
   level-aware, so each zone drops gear suited to it.
+- **Made to be watched** — hit flashes and knockback, damage numbers that grow on crits and boss hits, camera shake on
+  heavy blows, a name banner and health bar for bosses, slow motion on the killing blow, and an auto-director camera
+  that frames boss fights and pulls out while travelling.
 - **A spectator HUD**
   - HP bar, XP bar, level, six equipment slots with rarity-colored icons and hover tooltips, and a gold counter
   - An activity log explaining what the AI is doing and why
@@ -74,6 +79,7 @@ You can't control the character, but you can control how you watch:
 | Left-click + drag | Pan the camera (stops following the character) |
 | Mouse wheel | Zoom in / out |
 | **Recenter** button | Snap the camera back to following the character |
+| **Director** button | Toggle the auto-director camera (boss framing, travel pull-out). Dragging or scrolling takes over; Recenter hands it back |
 | **Pause / 1x / 2x / 4x** buttons | Change simulation speed |
 | **C** key / **Sheet (C)** button | Open or close the character sheet |
 | **B** key / **Codex (B)** button | Open or close the codex (bestiary, items, zones) |

@@ -31,6 +31,12 @@ func _ready() -> void:
 	GameState.combat_target_changed.connect(_on_combat_target_changed)
 
 func _on_combat_target_changed(new_target: Node2D) -> void:
+	# Bosses get the big boss bar (BossEvents) instead of this frame.
+	if is_instance_valid(new_target) and bool(new_target.call("is_boss")):
+		target = null
+		tracking = false
+		visible = false
+		return
 	# is_instance_valid first: a freed Object compares equal to null.
 	if is_instance_valid(new_target):
 		target = new_target
