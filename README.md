@@ -50,6 +50,9 @@ Built with **Godot 4.7** (GDScript, 2D top-down).
 - **Job switching** — the hero keeps a level and a gear set for every job and, once a job reaches level 10,
   walks to the Job Crystal in Thornfield Meadow and takes up the least-trained job (a new job starts two levels below
   the best one and inherits usable gear), so all seven jobs get leveled over a long run.
+- **Five-man dungeon** — the Hollowed Vault, an instanced three-room dungeon entered from the Vault Gate in the Sundered
+  Crypt. A role party of five (tank, healer, three damage) forms at the gate and is level-synced; enemies attack the tank, the
+  Hollow King telegraphs heavy strikes and summons adds, and clearing it drops dungeon-only epics.
 - **Personality and story** — each run rolls a trait (Steady, Cautious, Reckless, Greedy or Explorer) that changes
   when the character flees, rests, loots and moves on; a narrator tells the story in the Story chat channel; a recap card
   follows every death; and a journal lists the run's milestones.

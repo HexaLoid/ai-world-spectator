@@ -433,3 +433,41 @@ So in practice the hero changes job when its job reaches level 10 (about every
 back to the crystal in the meadow; the "loop" trigger now only matters if the
 cap was reached elsewhere. Constants: `CATCH_UP_GAP` 2, `LOOP_GAP` 2,
 `LOOP_MIN_ZONES` 3, `LOOP_MIN_LEVEL` = level cap, in `job_switch.gd`.
+
+## 11. The Hollowed Vault (five-man dungeon)
+
+Measured with 120-minute sims, 8 seeds per starting job, `trait=steady`,
+`switching=1 dungeon=1`. The hero enters at level 8+ (HP at least 70%, 15 minute
+cooldown) with a party of five built by role; every party member is level-synced to
+the hero's level minus one. With the dungeon off, seeded runs are identical to the
+phase-2 logs (14 of 14 compared before the scenes were added).
+
+Acceptance: at least one attempt per run, a clear rate of 60% to 90%, a mean run
+time of 3 to 8 minutes, at most 15% timeouts and at most 1.0 hero deaths per 10 minutes.
+
+| start job | attempts | clear rate | mean minutes (all runs) | timeouts | deaths/10 min |
+|---|---|---|---|---|---|
+| warrior | 37 | 28 / 37 (76%) | 2.8 | 0 | 0.2 |
+| white mage | 39 | 28 / 39 (72%) | 2.7 | 0 | 0.1 |
+| thief | 34 | 21 / 34 (62%) | 2.6 | 0 | 0.2 |
+
+The mean run time is slightly under the 3 minute target because failed runs end
+early (a cleared run takes about 3 to 3.5 minutes). All other criteria pass.
+
+Tuning history (enemy numbers; each row was measured before the next change):
+
+| round | change | result |
+|---|---|---|
+| 1 | first numbers (skeleton 90 HP, warden 700, king 1800) | 85% clears, 0.8 minutes: the party out-damaged everything |
+| 2 | HP x4 to x5 (400 / 3200 / 7500), damage x1.4 | Warrior 33%, White Mage 10% clears |
+| 3 | damage x0.75, HP x1.2 | Warrior 65%, White Mage 35% (a healer hero and level 1 to 4 allies) |
+| 4 | level sync: the whole party enters at hero level - 1 | 78% / 70% / 74%, 2.2 minutes |
+| 5 | HP x1.3, damage x0.9 | 72% / 68% / 54% (thief under the floor), 2.6 to 2.8 minutes |
+| 6 | damage x0.93 | 76% / 72% / 62%: kept |
+
+Final numbers: Vault Skeleton 620 HP / 8-13, Vault Wraith 310 / 10-15, Bone Warden
+4900 / 25-37, Hollow King 11700 / 30-44 (heavy strike 2.5x its max damage every
+9 seconds). Also changed by the measurements: inside a dungeon the hero rests
+below 60% HP when nothing hostile is near (it used to press on at half HP and die).
+Level sync leaves allies permanently stronger after a run, so with `dungeon=1` the
+open-world balance is slightly easier than in the sections above.
