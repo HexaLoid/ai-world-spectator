@@ -354,3 +354,28 @@ Greedy stays as designed: it levels fastest (loot upgrades sooner) and its mage
 mean of 0.2 deaths is slightly under the 0.3 target, accepted because the
 Steady mage is itself only at 0.7. Acceptance used: mean deaths 0.3 to 3.0,
 L10 reached in at least 12 of 16 runs, L10 time within 20% of Steady.
+
+## 9. Jobs
+
+Seven jobs, measured with 45-minute sims, 12 seeds each (`class=<job>`,
+`trait=steady`). Acceptance: mean deaths 0.3 to 3.0, level 5 mean at most 13
+min, level 10 reached in at least 10 of 12 runs, mean level 10 time within 25%
+of the Warrior.
+
+### Pass A: original allies (no ally jobs)
+
+| job | deaths/run | L5 (min) | L10 (min) | L10 reached |
+|---|---|---|---|---|
+| warrior (unchanged) | 2.1 | 9.8 | 36.1 | 12 / 12 |
+| black mage (unchanged) | 0.6 | 10.7 | 38.7 | 11 / 12 |
+| white mage | 0.4 | 11.5 | 39.6 | 12 / 12 |
+| thief | 1.4 | 9.0 | 35.9 | 12 / 12 |
+| black belt | 0.9 | 10.6 | 36.9 | 12 / 12 |
+| dragoon | 0.9 | 9.6 | 35.4 | 12 / 12 |
+| red mage | 0.6 | 11.0 | 39.6 | 10 / 12 |
+
+Tuning: the first White Mage (+20 HP, +4 armor, Cure 30%, Benediction 35% every
+25 s) never died (0.0 deaths). Reduced to +10 HP, +2 armor, Cure 20%,
+Benediction 25% every 35 s: 0.4 deaths and level 10 in 12 of 12 runs. The other
+five jobs passed at their first numbers. Warrior and Black Mage runs are
+bit-identical to the pre-job logs (8 of 8 seeded runs compared).
