@@ -50,7 +50,7 @@ def load_run(path, cutoff_s):
     run = {"path": path, "level_t": {1: 0.0}, "deaths": [], "zone_arrive": [],
            "boss_kills": [], "quests": [], "snaps": [], "summary": None,
            "info": {}, "end_t": 0.0, "level": 1, "gold": 0, "fights": [],
-           "jobs": [], "level_events": []}
+           "jobs": [], "level_events": [], "dungeons": []}
     with open(path, encoding="utf-8", errors="replace") as fh:
         for line in fh:
             if not line.startswith("SIM|"):
@@ -74,6 +74,8 @@ def load_run(path, cutoff_s):
                 run["level_events"].append((t, lvl))
             elif kind == "job":
                 run["jobs"].append((t, f.get("from", ""), f.get("to", ""), int(f.get("level", "1"))))
+            elif kind == "dungeon":
+                run["dungeons"].append((f.get("result", "?"), float(f.get("dur", "0"))))
             elif kind == "death":
                 run["deaths"].append((t, f.get("zone", "?"), f.get("last_target", "")))
             elif kind == "zone_arrive":
@@ -215,7 +217,8 @@ def main(argv):
         per_class[cls].append({"lt": lt, "deaths": len(r["deaths"]), "d10": d10, "level": r["level"],
                                "zt": zt, "gold": r["gold"], "spiral": spiral_count(r),
                                "top": ZONE_ORDER.index(highest_zone(r)), "dz": dz,
-                               "jobs": len(r["jobs"]), "switch": switch_outcomes(r)})
+                               "jobs": len(r["jobs"]), "switch": switch_outcomes(r),
+                               "dungeons": r["dungeons"]})
     print(table(headers, rows, args.markdown))
     print()
 
@@ -244,6 +247,13 @@ def main(argv):
         outs = [o for it in items for o in it["switch"]]
         ok = sum(1 for o in outs if o is not None and o <= 1500.0)
         agg_rows.append([cls, n, "switches reaching L10 within 25 min", f"{ok}/{len(outs)}"])
+        dungeons = [d for it in items for d in it["dungeons"]]
+        if dungeons:
+            cleared = sum(1 for res, _ in dungeons if res == "cleared")
+            agg_rows.append([cls, n, "dungeon runs", len(dungeons)])
+            agg_rows.append([cls, n, "dungeon clear rate", f"{cleared}/{len(dungeons)}"])
+            agg_rows.append([cls, n, "dungeon mean minutes", f"{statistics.mean(d for _, d in dungeons) / 60.0:.1f}"])
+            agg_rows.append([cls, n, "dungeon timeouts", sum(1 for res, _ in dungeons if res == "timeout")])
     print(table(agg_headers, agg_rows, args.markdown))
     if args.fights:
         print()

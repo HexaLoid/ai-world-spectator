@@ -53,6 +53,8 @@ func _ready() -> void:
 	GameState.character_xp_changed.connect(_on_xp_changed)
 	GameState.combat_target_changed.connect(_on_target_changed)
 	GameState.job_changed.connect(_on_job_changed)
+	GameState.dungeon_finished.connect(_on_dungeon_finished)
+	GameState.dungeon_event.connect(_on_dungeon_event)
 	if trace_damage:
 		GameState.damage_dealt.connect(func(pos: Vector2, amount: int, is_heal: bool) -> void:
 			_emit("dmg", {"amount": amount, "heal": int(is_heal), "x": roundi(pos.x), "y": roundi(pos.y),
@@ -159,6 +161,14 @@ func _on_level_up(level: int) -> void:
 
 func _on_job_changed(old_id: String, new_id: String, new_level: int) -> void:
 	_emit("job", {"from": old_id, "to": new_id, "level": new_level})
+
+func _on_dungeon_finished(result: String, duration: float) -> void:
+	_emit("dungeon", {"result": result, "dur": "%.0f" % duration})
+
+func _on_dungeon_event(kind: String, _text: String) -> void:
+	if kind == "enter":
+		var ch := _ch()
+		_emit("dungeon_enter", {"level": ch.level if ch else 0})
 
 func _on_zone_changed(zone_id: String) -> void:
 	var ch := _ch()

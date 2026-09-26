@@ -21,6 +21,7 @@ extends Node
 ##   snap=<float>         seconds of game time between snapshots (default 30)
 ##   trait=steady|cautious|reckless|greedy|explorer   forced trait (default: steady)
 ##   switching=0|1        hero changes job at the crystal (default 0 = off)
+##   dungeon=0|1          the Hollowed Vault can be entered (default 0 = off)
 ##   trace=1              also print every damage/heal number (`dmg` lines)
 ##   watch=<enemy name>   also print that enemy's positions/HP with every snap
 ##
@@ -36,6 +37,7 @@ func _ready() -> void:
 	GameState.select_screen_enabled = false
 	var args := _parse_args()
 	GameState.job_switching_enabled = args.get("switching", "0") == "1"
+	GameState.dungeon_enabled = args.get("dungeon", "0") == "1"
 	var character_class: String = args.get("class", "warrior")
 	var seed_base := int(args.get("seed", "0"))
 	var minutes := float(args.get("minutes", "25"))
