@@ -1,6 +1,7 @@
 extends CharacterBody2D
 
 const ATTACK_ANIM_DURATION_MS := 400.0
+const BOSS_EVENT_RANGE := 500.0
 
 @export var enemy_name: String = "Enemy"
 @export var max_hp: int = 20
@@ -178,7 +179,7 @@ func _attack(target: Node2D) -> void:
 	target.take_damage(damage)
 	attack_anim_until_ms = game_time_ms + ATTACK_ANIM_DURATION_MS
 
-func take_damage(amount: int, attacker: Node2D = null) -> void:
+func take_damage(amount: int, attacker: Node2D = null, is_crit: bool = false) -> void:
 	if is_dead:
 		return
 	if attacker != null:
@@ -191,11 +192,17 @@ func take_damage(amount: int, attacker: Node2D = null) -> void:
 	hp = max(0, hp - amount)
 	health_bar.value = hp
 	GameState.emit_signal("damage_dealt", global_position, amount, false)
+	GameState.emit_signal("hit_landed", self, amount, is_crit, false)
 	if hp <= 0:
 		_die()
 
 func _die() -> void:
 	is_dead = true
+	GameState.emit_signal("enemy_died", self)
+	if is_boss():
+		var c = GameState.character
+		if c != null and is_instance_valid(c) and c.global_position.distance_to(global_position) < BOSS_EVENT_RANGE:
+			GameState.emit_signal("boss_event", "victory", enemy_name)
 	if guaranteed_drop_id != "":
 		GameState.emit_signal("chat_event", "elite_kill", {"enemy": enemy_name})
 	if last_attacker != null and is_instance_valid(last_attacker):

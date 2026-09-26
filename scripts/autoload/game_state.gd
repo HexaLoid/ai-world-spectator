@@ -61,6 +61,23 @@ signal party_changed()
 ## "item" or "zone" and `id` the EnemyTable / LootTable / ZoneTable key.
 signal codex_changed(kind: String, id: String)
 
+## A hit landed on `target` (an Enemy, the spectated Character or an ally).
+## `on_character` is true when the target is the spectated character.
+signal hit_landed(target: Node2D, amount: int, is_crit: bool, on_character: bool)
+
+## An enemy is dying; emitted before it is freed so effects can copy its sprite.
+signal enemy_died(enemy: Node2D)
+
+## A boss moment near the character. `kind` is "victory", "defeated" or "fled".
+signal boss_event(kind: String, boss_name: String)
+
+## The speed the human last chose (0 = paused); slow-motion restores to this.
+var user_time_scale: float = 1.0
+
+## Visual effects (flash, shake, slow-mo, camera zoom). The balance sim turns
+## this off so its results never depend on presentation.
+var fx_enabled: bool = true
+
 var character: Node2D = null
 var camera: Camera2D = null
 ## What the spectated character has discovered (see CodexState). Session only.

@@ -389,8 +389,12 @@ func _regen_hp(delta: float) -> void:
 
 func _update_combat_target(combat_hostile: Node2D) -> void:
 	if combat_hostile != last_combat_target:
+		var previous = last_combat_target
 		last_combat_target = combat_hostile
 		GameState.emit_signal("combat_target_changed", combat_hostile)
+		if not is_instance_valid(combat_hostile) and current_state == "flee" \
+				and is_instance_valid(previous) and previous.is_boss():
+			GameState.emit_signal("boss_event", "fled", previous.enemy_name)
 		if combat_hostile != null and is_instance_valid(combat_hostile):
 			for enemy_id in EnemyTable.ids_named(combat_hostile.enemy_name):
 				GameState.discover("enemy", enemy_id)
@@ -407,7 +411,7 @@ func _attack_nearest_hostile() -> void:
 	# Logged before the hit lands so a killing blow reads "hit ... Defeated ...".
 	if roll["is_crit"]:
 		GameState.log_event("Critical hit on %s for %d!" % [hostile.enemy_name, roll["damage"]])
-	hostile.take_damage(roll["damage"], self)
+	hostile.take_damage(roll["damage"], self, roll["is_crit"])
 	attack_anim_until_ms = game_time_ms + ATTACK_ANIM_DURATION_MS
 	_gain_resource(float(class_def.get("rage_per_swing", 0.0)))
 
@@ -423,7 +427,7 @@ func _roll_damage(min_damage: int, max_damage: int, multiplier: float = 1.0) -> 
 		damage *= 2
 	return {"damage": damage, "is_crit": is_crit}
 
-func take_damage(amount: int) -> void:
+func take_damage(amount: int, is_crit: bool = false) -> void:
 	if is_dead:
 		return
 	amount = StatCalculator.mitigate(amount, armor)
@@ -431,6 +435,7 @@ func take_damage(amount: int) -> void:
 	hp = max(0, hp - amount)
 	GameState.emit_signal("character_hp_changed", hp, max_hp)
 	GameState.emit_signal("damage_dealt", global_position, amount, false)
+	GameState.emit_signal("hit_landed", self, amount, is_crit, true)
 	var hp_fraction := float(hp) / float(max_hp)
 	if hp > 0 and hp_fraction < 0.3 and not low_hp_announced:
 		low_hp_announced = true
@@ -445,6 +450,9 @@ func _die() -> void:
 	is_dead = true
 	deaths += 1
 	GameState.emit_signal("chat_event", "leader_died", {})
+	var foe = last_combat_target
+	if is_instance_valid(foe) and foe.is_boss():
+		GameState.emit_signal("boss_event", "defeated", foe.enemy_name)
 	_update_combat_target(null)
 	GameState.log_event("Character died - respawning")
 	visible = false
@@ -565,7 +573,7 @@ func _use_melee_hit(hostile: Node2D, ability_id: String, def: Dictionary) -> voi
 	var roll := _roll_damage(attack_damage_min, attack_damage_max, float(def.get("damage_multiplier", 1.0)))
 	var crit_suffix := " (Critical!)" if roll["is_crit"] else ""
 	GameState.log_event("%s hits %s for %d!%s" % [def.get("name", "An ability"), hostile.enemy_name, roll["damage"], crit_suffix])
-	hostile.take_damage(roll["damage"], self)
+	hostile.take_damage(roll["damage"], self, roll["is_crit"])
 	attack_anim_until_ms = game_time_ms + ATTACK_ANIM_DURATION_MS
 
 ## Checked at the start of the "flee"/"rest" states rather than folded into
