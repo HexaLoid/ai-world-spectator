@@ -57,6 +57,10 @@ const ITEMS := {
 	"champions_plate": {"slot": "chest", "rarity": "epic", "level_req": 3, "icon": "res://assets/icons/champions_plate_icon.png", "stats": {"armor": 9, "max_hp": 40, "strength": 3}},
 	"reinforced_mail": {"slot": "chest", "rarity": "rare", "level_req": 5, "icon": "res://assets/icons/chainmail_armor_icon.png", "stats": {"armor": 11, "max_hp": 45}},
 	"glacier_plate": {"slot": "chest", "rarity": "epic", "level_req": 9, "icon": "res://assets/icons/champions_plate_icon.png", "stats": {"armor": 13, "max_hp": 55, "strength": 4, "intellect": 4}},
+	"wardens_plate": {"slot": "chest", "rarity": "epic", "level_req": 8, "dungeon": true, "icon": "res://assets/icons/champions_plate_icon.png", "stats": {"armor": 12, "max_hp": 50, "strength": 4, "intellect": 4}},
+	"hollow_crown": {"slot": "head", "rarity": "epic", "level_req": 9, "dungeon": true, "icon": "res://assets/icons/crown_of_thornfield_icon.png", "stats": {"armor": 6, "max_hp": 30, "strength": 3, "intellect": 3}},
+	"kings_edge": {"slot": "weapon", "rarity": "epic", "level_req": 9, "dungeon": true, "icon": "res://assets/icons/warlords_greatsword_icon.png", "stats": {"damage": 26, "strength": 7}},
+	"void_scepter": {"slot": "weapon", "rarity": "epic", "level_req": 9, "dungeon": true, "icon": "res://assets/icons/glacier_staff_icon.png", "stats": {"damage": 22, "intellect": 8}},
 	# Neck
 	"lucky_charm": {"slot": "neck", "rarity": "common", "level_req": 1, "icon": "res://assets/icons/lucky_charm_icon.png", "stats": {"crit_chance": 0.05}},
 	"silver_necklace": {"slot": "neck", "rarity": "uncommon", "level_req": 2, "icon": "res://assets/icons/silver_necklace_icon.png", "stats": {"max_hp": 10, "crit_chance": 0.06}},
@@ -116,11 +120,15 @@ static func epic_ids_up_to(loot_level: int) -> Array:
 
 ## Boss bonus roll: with BOSS_BONUS_EPIC_CHANCE returns a uniformly random epic
 ## id usable at `loot_level` (never `exclude_id`), else "" (also "" when no
-## epic is eligible).
-static func roll_boss_bonus(rng: RandomNumberGenerator, loot_level: int, exclude_id: String = "") -> String:
+## epic is eligible). Dungeon epics ("dungeon": true) are rolled only when
+## `dungeon` is true, and then only they are.
+static func roll_boss_bonus(rng: RandomNumberGenerator, loot_level: int, exclude_id: String = "", dungeon: bool = false) -> String:
 	if rng.randf() >= BOSS_BONUS_EPIC_CHANCE:
 		return ""
-	var pool := epic_ids_up_to(loot_level)
+	var pool: Array = []
+	for item_id in epic_ids_up_to(loot_level):
+		if bool(ITEMS[item_id].get("dungeon", false)) == dungeon:
+			pool.append(item_id)
 	pool.erase(exclude_id)
 	if pool.is_empty():
 		return ""

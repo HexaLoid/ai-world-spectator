@@ -1,11 +1,16 @@
 extends RefCounted
 
 func run(t) -> void:
-	t.check_eq(ZoneTable.TRAVEL_ORDER.size(), ZoneTable.ZONES.size(), "travel order covers every zone")
+	var instanced_count := 0
+	for id in ZoneTable.ZONES:
+		if bool(ZoneTable.ZONES[id].get("instanced", false)):
+			instanced_count += 1
+	t.check_eq(ZoneTable.TRAVEL_ORDER.size() + instanced_count, ZoneTable.ZONES.size(), "travel order plus instanced zones cover every zone")
 	for id in ZoneTable.TRAVEL_ORDER:
 		t.check(ZoneTable.ZONES.has(id), "travel order id %s exists" % id)
 	for id in ZoneTable.ZONES:
-		t.check(ZoneTable.TRAVEL_ORDER.has(id), "zone %s is in the travel order" % id)
+		if not bool(ZoneTable.ZONES[id].get("instanced", false)):
+			t.check(ZoneTable.TRAVEL_ORDER.has(id), "zone %s is in the travel order" % id)
 	t.check(ZoneTable.ZONES.has("mirewater_swamp") and ZoneTable.ZONES.has("frostpeak_pass"), "new zones exist")
 	t.check_eq(ZoneTable.ZONES["mirewater_swamp"]["min_level"], 4, "swamp min level")
 	t.check_eq(ZoneTable.ZONES["frostpeak_pass"]["min_level"], 7, "pass min level")
@@ -39,6 +44,18 @@ func run(t) -> void:
 			var overlap: bool = a["bounds_min"].x < b["bounds_max"].x and a["bounds_max"].x > b["bounds_min"].x \
 				and a["bounds_min"].y < b["bounds_max"].y and a["bounds_max"].y > b["bounds_min"].y
 			t.check(not overlap, "%s and %s do not overlap" % [ids[i], ids[j]])
+
+	# the dungeon: instanced, outside the travel loop
+	var vault: Dictionary = ZoneTable.ZONES["hollowed_vault"]
+	t.check(bool(vault.get("instanced", false)), "the vault is instanced")
+	t.check(not ZoneTable.TRAVEL_ORDER.has("hollowed_vault"), "the vault is not in the travel order")
+	t.check_eq(int(vault["min_level"]), 8, "vault min level")
+	t.check_eq(ZoneTable.all_zone_order().back(), "hollowed_vault", "all_zone_order ends with the vault")
+	t.check_eq(ZoneTable.all_zone_order().size(), ZoneTable.ZONES.size(), "all_zone_order lists every zone once")
+	for id in ZoneTable.ZONES:
+		if not bool(ZoneTable.ZONES[id].get("instanced", false)):
+			for level in [1, 8, 12]:
+				t.check(ZoneTable.next_zone_id(id, level) != "hollowed_vault", "next_zone_id never returns the vault (%s at %d)" % [id, level])
 
 	# travel loop by level
 	t.check_eq(ZoneTable.next_zone_id("sundered_crypt", 4), "mirewater_swamp", "crypt -> swamp at level 4")

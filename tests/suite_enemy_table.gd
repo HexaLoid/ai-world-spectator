@@ -14,16 +14,16 @@ const ORIGINAL := {
 	"crypt_lord": {"name": "Crypt Lord", "max_hp": 380, "move_speed": 78.0, "attack_min": 17, "attack_max": 27, "xp_reward": 300, "sprite": "bandit", "guaranteed_drop": "warlords_greatsword"},
 }
 
-const NEW_IDS := ["mire_wolf", "bog_bandit", "mire_tyrant", "frost_wolf", "frost_raider", "raider_captain", "frostpeak_warlord"]
+const NEW_IDS := ["mire_wolf", "bog_bandit", "mire_tyrant", "frost_wolf", "frost_raider", "raider_captain", "frostpeak_warlord", "vault_skeleton", "vault_wraith", "bone_warden", "hollow_king"]
 
 ## Zone min_level for each guaranteed-drop enemy's home zone (the drop's
 ## level_req may be at most 2 above it).
 const BOSS_ZONE_MIN_LEVEL := {
-	"bandit_captain": 1, "crypt_lord": 3, "mire_tyrant": 4, "raider_captain": 7, "frostpeak_warlord": 7,
+	"bandit_captain": 1, "crypt_lord": 3, "mire_tyrant": 4, "raider_captain": 7, "frostpeak_warlord": 7, "bone_warden": 8, "hollow_king": 8,
 }
 
 func run(t) -> void:
-	t.check_eq(EnemyTable.ENEMIES.size(), 12, "twelve enemies")
+	t.check_eq(EnemyTable.ENEMIES.size(), 16, "sixteen enemies")
 	var names := {}
 	for id in EnemyTable.ENEMIES:
 		var def: Dictionary = EnemyTable.ENEMIES[id]
@@ -79,6 +79,6 @@ func run(t) -> void:
 		if has_drop:
 			bosses.append(id)
 	bosses.sort()
-	t.check_eq(bosses, ["bandit_captain", "crypt_lord", "frostpeak_warlord", "mire_tyrant", "raider_captain"], "the five bosses")
+	t.check_eq(bosses, ["bandit_captain", "bone_warden", "crypt_lord", "frostpeak_warlord", "hollow_king", "mire_tyrant", "raider_captain"], "the seven bosses")
 	t.check(not EnemyTable.is_boss("nope"), "unknown id is not a boss")
 	t.done()

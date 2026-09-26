@@ -10,7 +10,9 @@ const DEFAULT_STAY_DURATION_MS := 45000.0
 ## (default 1) gates a zone out of the travel rotation until the character
 ## is strong enough — see next_zone_id(). `stay_duration_ms` overrides
 ## DEFAULT_STAY_DURATION_MS for zones that should feel shorter/longer to
-## dwell in (e.g. a one-boss dungeon room).
+## dwell in (e.g. a one-boss dungeon room). `instanced: true` marks a dungeon:
+## it is not part of the travel rotation (TRAVEL_ORDER) and the dungeon run
+## teleports the party there.
 const ZONES := {
 	"thornfield_meadow": {
 		"name": "Thornfield Meadow",
@@ -49,6 +51,15 @@ const ZONES := {
 		"bounds_max": Vector2(9180, 280),
 		"min_level": 7,
 	},
+	"hollowed_vault": {
+		"name": "Hollowed Vault",
+		"instanced": true,
+		"center": Vector2(12000, 0),
+		"bounds_min": Vector2(11250, -200),
+		"bounds_max": Vector2(12750, 200),
+		"min_level": 8,
+		"stay_duration_ms": 60000.0,
+	},
 }
 
 ## Visited in a fixed rotation by the "travel" AI state, skipping any zone
@@ -60,7 +71,15 @@ const TRAVEL_ORDER := ["thornfield_meadow", "blackthorn_forest", "sundered_crypt
 ## is driven by the two larger outdoor zones; Sundered Crypt's smaller room
 ## fits within it.
 const WORLD_BOUNDS_MIN := Vector2(-380, -280)
-const WORLD_BOUNDS_MAX := Vector2(9180, 280)
+const WORLD_BOUNDS_MAX := Vector2(12750, 280)
+
+## Every zone in display order: the travel loop, then instanced zones (dungeons).
+static func all_zone_order() -> Array:
+	var order: Array = TRAVEL_ORDER.duplicate()
+	for id in ZONES.keys():
+		if bool(ZONES[id].get("instanced", false)) and not order.has(id):
+			order.append(id)
+	return order
 
 ## Next zone in TRAVEL_ORDER after current_zone_id that the character's
 ## `level` actually qualifies for (min_level defaults to 1, so both

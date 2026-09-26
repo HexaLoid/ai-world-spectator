@@ -7,7 +7,8 @@ extends RefCounted
 ##  "boss_bonus": [boss names], "random_from_loot_level": int} for an item.
 ## `boss_bonus` lists (in EnemyTable order) the bosses that can drop an epic
 ## item as an extra bonus: bosses whose loot_level covers the item's level_req,
-## excluding a boss's own guaranteed drop; always empty for non-epics. `random_from_loot_level` is the
+## excluding a boss's own guaranteed drop; always empty for non-epics. Dungeon
+## epics list only dungeon bosses, open-world epics only open-world bosses. `random_from_loot_level` is the
 ## lowest enemy loot_level at which the item can drop randomly, or -1 when it
 ## never drops randomly (epic items, or nothing has a high enough loot level).
 static func item_sources(item_id: String) -> Dictionary:
@@ -27,6 +28,9 @@ static func item_sources(item_id: String) -> Dictionary:
 		for enemy_id in EnemyTable.ENEMIES:
 			var boss: Dictionary = EnemyTable.ENEMIES[enemy_id]
 			var own_drop: String = boss.get("guaranteed_drop", "")
+			var boss_in_dungeon := bool(ZoneTable.ZONES.get(boss.get("zone", ""), {}).get("instanced", false))
+			if boss_in_dungeon != bool(item.get("dungeon", false)):
+				continue
 			if own_drop != "" and own_drop != item_id and int(boss["loot_level"]) >= level_req:
 				result["boss_bonus"].append(boss["name"])
 	var weight := int(LootTable.RARITY_WEIGHTS.get(item.get("rarity", "common"), 0))
@@ -70,12 +74,12 @@ static func zone_level_range(zone_id: String) -> Array:
 	return [low, high]
 
 static func zone_order() -> Array:
-	return ZoneTable.TRAVEL_ORDER.duplicate()
+	return ZoneTable.all_zone_order()
 
-## Every enemy id: by zone in travel order, then weakest first.
+## Every enemy id: by zone in display order (travel loop, then dungeons), then weakest first.
 static func enemy_order() -> Array:
 	var ids: Array = []
-	for zone_id in ZoneTable.TRAVEL_ORDER:
+	for zone_id in ZoneTable.all_zone_order():
 		ids.append_array(zone_enemy_ids(zone_id))
 	return ids
 

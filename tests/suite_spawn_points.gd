@@ -13,6 +13,7 @@ const SCENE_ZONES := {
 	"SunderedCrypt.tscn": "sundered_crypt",
 	"MirewaterSwamp.tscn": "mirewater_swamp",
 	"FrostpeakPass.tscn": "frostpeak_pass",
+	"HollowedVault.tscn": "hollowed_vault",
 }
 
 func run(t) -> void:

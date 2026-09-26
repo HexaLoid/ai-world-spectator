@@ -89,7 +89,37 @@ func run(t) -> void:
 		t.check(LootTable.ITEMS.has(bonus) and LootTable.ITEMS[bonus]["rarity"] == "epic", "bonus roll returns an epic")
 		t.check(int(LootTable.ITEMS[bonus]["level_req"]) <= 9, "bonus roll respects loot_level")
 	t.check(hits >= 500 and hits <= 900, "about 35%% of level-9 bonus rolls succeed (got %d/2000)" % hits)
-	t.check_eq(seen.size(), LootTable.epic_ids_up_to(9).size(), "every eligible epic can be rolled")
+	var open_world_epics: Array = []
+	var dungeon_epics: Array = []
+	for item_id in LootTable.epic_ids_up_to(99):
+		if bool(LootTable.ITEMS[item_id].get("dungeon", false)):
+			dungeon_epics.append(item_id)
+		else:
+			open_world_epics.append(item_id)
+	for item_id in seen:
+		t.check(not bool(LootTable.ITEMS[item_id].get("dungeon", false)), "open-world bonus roll never returns the dungeon epic %s" % item_id)
+	var open_world_up_to_9 := 0
+	for item_id in open_world_epics:
+		if int(LootTable.ITEMS[item_id]["level_req"]) <= 9:
+			open_world_up_to_9 += 1
+	t.check_eq(seen.size(), open_world_up_to_9, "every eligible open-world epic can be rolled")
+	# dungeon bonus rolls: only dungeon epics, and every one can be rolled
+	t.check_eq(dungeon_epics, ["hollow_crown", "kings_edge", "void_scepter", "wardens_plate"], "the four dungeon epics")
+	var dungeon_rng := RandomNumberGenerator.new()
+	dungeon_rng.seed = 909
+	var dungeon_seen := {}
+	for i in 2000:
+		var dungeon_bonus := LootTable.roll_boss_bonus(dungeon_rng, 10, "", true)
+		if dungeon_bonus == "":
+			continue
+		dungeon_seen[dungeon_bonus] = true
+		t.check(dungeon_epics.has(dungeon_bonus), "dungeon bonus roll returns only dungeon epics (%s)" % dungeon_bonus)
+	t.check_eq(dungeon_seen.size(), dungeon_epics.size(), "every dungeon epic can be rolled")
+	t.check_eq(LootTable.roll_boss_bonus(dungeon_rng, 7, "", true), "", "no dungeon epic is eligible below level 8")
+	for item_id in dungeon_epics:
+		var dungeon_def: Dictionary = LootTable.ITEMS[item_id]
+		t.check(int(dungeon_def["level_req"]) == 8 or int(dungeon_def["level_req"]) == 9, "dungeon epic %s has level_req 8 or 9" % item_id)
+		t.check(LootTable.SLOTS.has(dungeon_def["slot"]), "dungeon epic %s has a valid slot" % item_id)
 	var lvl5_rng := RandomNumberGenerator.new()
 	lvl5_rng.seed = 7
 	for i in 500:
