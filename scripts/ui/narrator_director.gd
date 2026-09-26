@@ -9,10 +9,11 @@ const NEVER_MS := -1000000000.0
 
 var game_time_ms: float = 0.0
 var last_line_ms: float = NEVER_MS
-var rng := RandomNumberGenerator.new()
+## Named narrator_rng (not rng) so the balance sim, which seeds every node with an `rng`, skips it.
+var narrator_rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
-	rng.randomize()
+	narrator_rng.randomize()
 	GameState.zone_changed.connect(func(zone_id: String): _say("zone_arrive", {"zone": String(ZoneTable.ZONES[zone_id]["name"])}))
 	GameState.boss_event.connect(_on_boss_event)
 	GameState.character_leveled_up.connect(func(level: int): _say("level_up", {"level": level}))
@@ -46,7 +47,7 @@ func _say(event: String, context: Dictionary) -> void:
 		return
 	var ctx := context.duplicate()
 	ctx["name"] = leader.character_name
-	var line := NarratorLines.line_for(event, leader.character_trait, ctx, rng.randf())
+	var line := NarratorLines.line_for(event, leader.character_trait, ctx, narrator_rng.randf())
 	if line == "":
 		return
 	last_line_ms = game_time_ms
