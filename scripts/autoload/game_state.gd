@@ -6,6 +6,7 @@ extends Node
 
 ## Emitted whenever the AI-controlled character transitions to a new behavior
 ## state (e.g. "idle", "attacking", "fleeing"); new_state is the state name.
+signal panel_opened(panel_name: String)
 signal character_state_changed(new_state: String)
 ## Emitted whenever the character's HP changes; hp and max_hp are the
 ## current and maximum health values, for the unit frame to update.

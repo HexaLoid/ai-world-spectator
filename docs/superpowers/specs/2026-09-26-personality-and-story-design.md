@@ -34,10 +34,10 @@ Five traits, one per character, rolled with the character's own `rng`:
 | Trait id | Title | Effect |
 |---|---|---|
 | `steady` | the Steady | none (exactly today's behavior) |
-| `cautious` | the Cautious | flee below 25% HP (default 10%), rest below 45% (default 30%) |
-| `reckless` | the Reckless | flee below 5% HP, rest below 20% |
+| `cautious` | the Cautious | flee below 14% HP (default 10%), rest below 34% (default 30%) |
+| `reckless` | the Reckless | flee below 7% HP (default 10%), rest below 20% (default 30%) |
 | `greedy` | the Greedy | notices loot from 1.6x the usual distance |
-| `explorer` | the Explorer | zone stays are 30% shorter |
+| `explorer` | the Explorer | zone stays are 20% shorter (`stay_mult` 0.8) |
 
 Each entry: `{"title": String, "flee_hp": float, "rest_hp": float,
 "item_range_mult": float, "stay_mult": float, "blurb": String}`. Steady's
@@ -133,7 +133,7 @@ story line (or `""` when there is nothing to say). Events and context:
   1.0, `stay_mult` 1.0. A sim regression on a forced `trait=steady` run must
   match the pre-change logs for the same seeds (as in the last pass).
 - The sim harness gains `trait=<id>` (forces `character_trait`); the default (no
-  arg) rolls from the seeded rng. All narration/recap/journal work is UI-side
+  arg) rolls from the seeded rng; the sim defaults to `trait=steady` so regressions stay comparable. All narration/recap/journal work is UI-side
   and runs regardless of `fx_enabled`, but touches no gameplay state; the
   `rng` draw for the trait happens once in `_ready`.
 - Because the trait draw consumes one value from the character's `rng`, seeded

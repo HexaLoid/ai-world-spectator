@@ -57,6 +57,8 @@ var _engaged_id: int = 0
 var low_hp_announced: bool = false
 # Session statistics (shown on the character sheet); reset only by relaunching.
 var kills_by_name: Dictionary = {}
+## Summed kills_by_name at the start of the current life (recap shows kills this life).
+var life_start_kills := 0
 var deaths: int = 0
 var damage_dealt_total: int = 0
 var damage_taken_total: int = 0
@@ -492,15 +494,17 @@ func _die() -> void:
 	var total_kills := 0
 	for k in kills_by_name.values():
 		total_kills += int(k)
+	var killer := last_attacker_name
+	if foe != null:
+		killer = String(foe.get("enemy_name"))
+		GameState.emit_signal("boss_event", "defeated", killer)
 	GameState.emit_signal("death_recap", {
 		"name": character_name, "trait_title": TraitTable.title_of(character_trait),
 		"trait_remark": String(trait_def.get("remark", "")), "level": level,
-		"zone": String(ZoneTable.ZONES[current_zone_id]["name"]), "killer": last_attacker_name,
-		"time_alive_s": (game_time_ms - life_started_ms) / 1000.0, "kills": total_kills, "gold": gold,
+		"zone": String(ZoneTable.ZONES[current_zone_id]["name"]), "killer": killer,
+		"time_alive_s": (game_time_ms - life_started_ms) / 1000.0, "kills": total_kills - life_start_kills, "gold": gold,
 	})
 	GameState.emit_signal("chat_event", "leader_died", {})
-	if foe != null:
-		GameState.emit_signal("boss_event", "defeated", String(foe.get("enemy_name")))
 	_update_combat_target(null)
 	boss_foe = null
 	GameState.log_event("Character died - respawning")
@@ -518,6 +522,7 @@ func _die() -> void:
 	set_physics_process(true)
 	is_dead = false
 	life_started_ms = game_time_ms
+	life_start_kills = total_kills
 	last_attacker_name = ""
 	ability_cooldowns.clear()
 	resource_amount = 0.0

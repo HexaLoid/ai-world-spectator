@@ -19,8 +19,8 @@ func _ready() -> void:
 	card.anchor_bottom = 0.5
 	card.offset_left = -190.0
 	card.offset_right = 190.0
-	card.offset_top = -80.0
-	card.offset_bottom = 80.0
+	card.offset_top = 40.0
+	card.offset_bottom = 210.0
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.09, 0.05, 0.05, 0.94)
 	style.border_color = Color(0.7, 0.2, 0.18, 1.0)
@@ -38,6 +38,8 @@ func _ready() -> void:
 	text.offset_top = 10.0
 	text.offset_right = -12.0
 	text.offset_bottom = -10.0
+	for font_prop in ["normal_font_size", "bold_font_size", "italics_font_size"]:
+		text.add_theme_font_size_override(font_prop, 14)
 	card.add_child(text)
 	GameState.death_recap.connect(_on_death_recap)
 
@@ -47,5 +49,6 @@ func _on_death_recap(info: Dictionary) -> void:
 	text.text = RecapText.build(info)
 	card.modulate.a = 1.0
 	tween = create_tween()
+	tween.set_ignore_time_scale(true)
 	tween.tween_interval(HOLD_S)
 	tween.tween_property(card, "modulate:a", 0.0, FADE_S)

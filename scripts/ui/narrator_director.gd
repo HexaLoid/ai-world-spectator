@@ -9,12 +9,22 @@ const NEVER_MS := -1000000000.0
 
 var game_time_ms: float = 0.0
 var last_line_ms: float = NEVER_MS
+var suppress_death_until_ms: float = NEVER_MS
+## Zones already narrated; the start zone counts as visited.
+var visited := {}
 ## Named narrator_rng (not rng) so the balance sim, which seeds every node with an `rng`, skips it.
 var narrator_rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
 	narrator_rng.randomize()
-	GameState.zone_changed.connect(func(zone_id: String): _say("zone_arrive", {"zone": String(ZoneTable.ZONES[zone_id]["name"])}))
+	var leader = GameState.character
+	if leader != null and is_instance_valid(leader):
+		visited[String(leader.current_zone_id)] = true
+	GameState.zone_changed.connect(func(zone_id: String):
+		if visited.has(zone_id):
+			return
+		visited[zone_id] = true
+		_say("zone_arrive", {"zone": String(ZoneTable.ZONES[zone_id]["name"])}))
 	GameState.boss_event.connect(_on_boss_event)
 	GameState.character_leveled_up.connect(func(level: int): _say("level_up", {"level": level}))
 	GameState.item_acquired.connect(func(item_name: String, rarity: String):
@@ -23,7 +33,10 @@ func _ready() -> void:
 	GameState.chat_event.connect(func(event: String, _context: Dictionary):
 		if event == "leader_low_hp":
 			_say("low_hp", {}))
-	GameState.death_recap.connect(func(info: Dictionary): _say("death", {"killer": String(info.get("killer", ""))}))
+	GameState.death_recap.connect(func(info: Dictionary):
+		if game_time_ms < suppress_death_until_ms:
+			return
+		_say("death", {"killer": String(info.get("killer", ""))}))
 	GameState.quest_completed.connect(func(quest_name: String): _say("quest_done", {"quest": quest_name}))
 
 func _process(delta: float) -> void:
@@ -37,18 +50,21 @@ func _on_boss_event(kind: String, boss_name: String) -> void:
 		"fled": event = "boss_fled"
 		"defeated": event = "boss_defeated"
 	if event != "":
-		_say(event, {"boss": boss_name})
+		if _say(event, {"boss": boss_name}) and event == "boss_defeated":
+			suppress_death_until_ms = game_time_ms + 1500.0
 
-func _say(event: String, context: Dictionary) -> void:
+func _say(event: String, context: Dictionary) -> bool:
 	var leader = GameState.character
 	if leader == null or not is_instance_valid(leader):
-		return
-	if game_time_ms - last_line_ms < COOLDOWN_MS:
-		return
+		return false
+	var bypass := event == "death" or event.begins_with("boss_")
+	if not bypass and game_time_ms - last_line_ms < COOLDOWN_MS:
+		return false
 	var ctx := context.duplicate()
 	ctx["name"] = leader.character_name
 	var line := NarratorLines.line_for(event, leader.character_trait, ctx, narrator_rng.randf())
 	if line == "":
-		return
+		return false
 	last_line_ms = game_time_ms
 	GameState.emit_signal("chat_message", "story", "Narrator", line)
+	return true

@@ -16,23 +16,34 @@ func run(t) -> void:
 	t.check_eq(AIDecision.resolve_state(_ctx(rest_hp + 0.01, false))["state"], "wander", "above rest threshold, nothing to do: wander")
 	t.check_eq(AIDecision.resolve_state(_ctx(1.0, true, true))["state"], "combat", "full HP in range: combat")
 	# trait thresholds (optional context keys flee_hp / rest_hp)
-	var cautious := _ctx(0.2, true, true)
-	t.check_eq(AIDecision.resolve_state(cautious)["state"], "combat", "20% HP, default thresholds: keeps fighting")
-	cautious["flee_hp"] = 0.25
-	cautious["rest_hp"] = 0.45
-	t.check_eq(AIDecision.resolve_state(cautious)["state"], "flee", "20% HP, cautious: flees")
-	var cautious_rest := _ctx(0.4, false)
-	cautious_rest["flee_hp"] = 0.25
-	cautious_rest["rest_hp"] = 0.45
-	t.check_eq(AIDecision.resolve_state(cautious_rest)["state"], "rest", "40% HP, cautious, nothing near: rests")
-	t.check_eq(AIDecision.resolve_state(_ctx(0.4, false))["state"], "wander", "40% HP, default: wanders")
-	var reckless := _ctx(0.08, true, true)
-	t.check_eq(AIDecision.resolve_state(reckless)["state"], "flee", "8% HP, default: flees")
-	reckless["flee_hp"] = 0.05
-	reckless["rest_hp"] = 0.20
-	t.check_eq(AIDecision.resolve_state(reckless)["state"], "combat", "8% HP, reckless: keeps fighting")
-	var reckless_low := _ctx(0.04, true, true)
-	reckless_low["flee_hp"] = 0.05
-	reckless_low["rest_hp"] = 0.20
-	t.check_eq(AIDecision.resolve_state(reckless_low)["state"], "flee", "4% HP, reckless: finally flees")
+	var cautious_def := TraitTable.get_def("cautious")
+	var reckless_def := TraitTable.get_def("reckless")
+	var c_flee: float = cautious_def["flee_hp"]
+	var c_rest: float = cautious_def["rest_hp"]
+	var r_flee: float = reckless_def["flee_hp"]
+	var r_rest: float = reckless_def["rest_hp"]
+	t.check(c_flee > flee_hp and c_rest > rest_hp, "cautious thresholds are above the defaults")
+	t.check(r_flee < flee_hp and r_rest < rest_hp, "reckless thresholds are below the defaults")
+	var near_flee := c_flee - 0.01
+	var cautious := _ctx(near_flee, true, true)
+	t.check_eq(AIDecision.resolve_state(cautious)["state"], "combat", "just below cautious flee HP, default thresholds: keeps fighting")
+	cautious["flee_hp"] = c_flee
+	cautious["rest_hp"] = c_rest
+	t.check_eq(AIDecision.resolve_state(cautious)["state"], "flee", "just below cautious flee HP, cautious: flees")
+	var mid_rest := (rest_hp + c_rest) / 2.0
+	var cautious_rest := _ctx(mid_rest, false)
+	cautious_rest["flee_hp"] = c_flee
+	cautious_rest["rest_hp"] = c_rest
+	t.check_eq(AIDecision.resolve_state(cautious_rest)["state"], "rest", "above default rest HP but below cautious rest HP, nothing near: cautious rests")
+	t.check_eq(AIDecision.resolve_state(_ctx(mid_rest, false))["state"], "wander", "same HP, default: wanders")
+	var mid_flee := (r_flee + flee_hp) / 2.0
+	var reckless := _ctx(mid_flee, true, true)
+	t.check_eq(AIDecision.resolve_state(reckless)["state"], "flee", "between reckless and default flee HP, default: flees")
+	reckless["flee_hp"] = r_flee
+	reckless["rest_hp"] = r_rest
+	t.check_eq(AIDecision.resolve_state(reckless)["state"], "combat", "same HP, reckless: keeps fighting")
+	var reckless_low := _ctx(r_flee - 0.01, true, true)
+	reckless_low["flee_hp"] = r_flee
+	reckless_low["rest_hp"] = r_rest
+	t.check_eq(AIDecision.resolve_state(reckless_low)["state"], "flee", "below reckless flee HP: finally flees")
 	t.done()

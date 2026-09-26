@@ -44,6 +44,7 @@ func _ready() -> void:
 	codex_button.pressed.connect(toggle)
 	GameState.codex_changed.connect(_on_codex_changed)
 	visibility_changed.connect(_on_visibility_changed)
+	GameState.panel_opened.connect(func(panel_name: String): if panel_name != "codex": visible = false)
 
 func toggle() -> void:
 	visible = not visible
@@ -55,6 +56,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _on_visibility_changed() -> void:
 	if visible:
+		GameState.emit_signal("panel_opened", "codex")
 		_refresh()
 
 func _on_tab_pressed(index: int) -> void:

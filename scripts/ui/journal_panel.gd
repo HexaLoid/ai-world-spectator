@@ -30,14 +30,17 @@ func _ready() -> void:
 	add_child(text)
 	GameState.journal_changed.connect(func(): if visible: _refresh())
 	GameState.journal_toggle_requested.connect(toggle)
+	GameState.panel_opened.connect(func(panel_name: String): if panel_name != "journal": visible = false)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_J:
 		toggle()
+		get_viewport().set_input_as_handled()
 
 func toggle() -> void:
 	visible = not visible
 	if visible:
+		GameState.emit_signal("panel_opened", "journal")
 		_refresh()
 
 func _refresh() -> void:
