@@ -1,14 +1,5 @@
 extends RefCounted
 
-func _item_at_level(min_level: int, max_level: int) -> String:
-	for id in LootTable.ITEMS.keys():
-		var def: Dictionary = LootTable.ITEMS[id]
-		if LootTable.SLOTS.has(String(def.get("slot", ""))):
-			var req := int(def.get("level_req", 1))
-			if req >= min_level and req <= max_level:
-				return id
-	return ""
-
 func run(t) -> void:
 	# catch_up_level
 	t.check_eq(JobSwitch.catch_up_level({}), 1, "no jobs taken: level 1")
@@ -22,18 +13,15 @@ func run(t) -> void:
 	t.check_eq(JobSwitch.starting_xp(8), LevelingSystem.XP_THRESHOLDS[6], "level 8 threshold")
 
 	# inherit_equipment
-	var low := _item_at_level(1, 1)
-	var high := _item_at_level(5, 10)
-	t.check(low != "" and high != "", "test data: a level-1 item and a level-5+ item exist")
-	var slot_low: String = LootTable.ITEMS[low]["slot"]
-	var slot_high: String = LootTable.ITEMS[high]["slot"]
-	if slot_low != slot_high:
-		var gear := {slot_low: low, slot_high: high}
-		var inherited := JobSwitch.inherit_equipment(gear, 3)
-		t.check_eq(inherited.get(slot_low, ""), low, "a usable item is kept")
-		t.check(not inherited.has(slot_high), "an item above the level is dropped")
-		t.check_eq(JobSwitch.inherit_equipment(gear, 10).size(), 2, "everything usable at level 10 is kept")
-		t.check_eq(gear.size(), 2, "the input dictionary is not modified")
+	# fixed items from different slots: a level-1 weapon and a level-9 chest
+	t.check_eq(int(LootTable.ITEMS["rusty_sword"]["level_req"]), 1, "test data: rusty_sword is level 1")
+	t.check_eq(int(LootTable.ITEMS["glacier_plate"]["level_req"]), 9, "test data: glacier_plate is level 9")
+	var gear := {"weapon": "rusty_sword", "chest": "glacier_plate"}
+	var inherited := JobSwitch.inherit_equipment(gear, 8)
+	t.check_eq(inherited.get("weapon", ""), "rusty_sword", "a usable item is kept")
+	t.check(not inherited.has("chest"), "an item above the level is dropped")
+	t.check_eq(JobSwitch.inherit_equipment(gear, 9).size(), 2, "everything usable at level 9 is kept")
+	t.check_eq(gear.size(), 2, "the input dictionary is not modified")
 	t.check_eq(JobSwitch.inherit_equipment({}, 5), {}, "empty gear stays empty")
 
 	# switch_due

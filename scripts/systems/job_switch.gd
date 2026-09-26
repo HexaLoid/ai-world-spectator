@@ -39,6 +39,9 @@ static func inherit_equipment(equipment: Dictionary, level: int) -> Dictionary:
 			result[slot] = item_id
 	return result
 
+## Note: with LOOP_MIN_LEVEL at the cap the "loop" reason is rarely reached in
+## play (the "cap" reason already flags the change when the job is mastered); it
+## stays so a hero that finished a job away from the meadow still gets checked.
 ## `reason` is "cap" (the active job is at the level cap) or "loop" (arrived in
 ## the meadow on the zone loop). `other_levels` are the levels of every other
 ## job, untaken jobs counted as 1.

@@ -107,6 +107,8 @@ def switch_outcomes(run):
                 if t0 < t <= t1 and level >= MAX_LEVEL:
                     reached = t - t0
                     break
+        if reached is None and i + 1 >= len(jobs) and run["end_t"] - t0 < 1500.0:
+            continue  # the run ended before this change had a fair 25 minutes
         outcomes.append(reached)
     return outcomes
 

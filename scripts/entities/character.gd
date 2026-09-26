@@ -859,6 +859,8 @@ func _set_base_stats_for_level(new_level: int) -> void:
 ## inherited gear). Everything else (quests, gold, party, codex) is shared.
 func _change_job(new_id: String) -> void:
 	if new_id == "" or new_id == character_class or not AbilityTable.CLASSES.has(new_id):
+		wants_job_change = false
+		job_change_reason = ""
 		return
 	var old_id := character_class
 	job_states[old_id] = JobState.create(level, xp, equipment)
@@ -872,6 +874,16 @@ func _change_job(new_id: String) -> void:
 	class_def = AbilityTable.CLASSES[new_id]
 	max_resource = float(class_def.get("max_resource", 0.0))
 	sprite.modulate = class_def.get("sprite_tint", Color(1.0, 1.0, 1.0, 1.0))
+	# HitFeedback remembers the sprite's base colour and fades every hit flash back
+	# to it: point it at the new job's tint and stop a flash that is running.
+	if sprite.has_meta("fx_base_modulate"):
+		sprite.set_meta("fx_base_modulate", sprite.modulate)
+	if sprite.has_meta("fx_tween"):
+		var running = sprite.get_meta("fx_tween")
+		if running is Tween and running.is_valid():
+			running.kill()
+		if sprite.has_meta("fx_base_position"):
+			sprite.position = sprite.get_meta("fx_base_position")
 	level = state.level
 	xp = state.xp
 	equipment = state.equipment.duplicate()
@@ -894,6 +906,9 @@ func _change_job(new_id: String) -> void:
 ## Sets the "go to the crystal" flag when a switch is due for `reason`.
 func _check_job_change(reason: String) -> void:
 	if not GameState.job_switching_enabled or wants_job_change:
+		return
+	# Without a crystal to walk to the hero would wait at the meadow centre forever.
+	if get_tree().get_nodes_in_group("job_crystals").is_empty():
 		return
 	if JobSwitch.switch_due(level, _other_levels(), reason):
 		wants_job_change = true
