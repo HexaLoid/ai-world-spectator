@@ -47,6 +47,9 @@ Built with **Godot 4.7** (GDScript, 2D top-down).
   heavy blows, a name banner and health bar for bosses, slow motion on the killing blow, and an auto-director camera
   that frames boss fights and pulls out while travelling.
 - **Jobs** — seven Final Fantasy style jobs (Warrior, Black Mage, White Mage, Thief, Black Belt, Dragoon, Red Mage) with roles, resources and abilities; pick one on the character select screen or press New Character; allies have jobs too, and the White Mage ally heals the party.
+- **Job switching** — the hero keeps a level and a gear set for every job and, once a job reaches level 10,
+  walks to the Job Crystal in Thornfield Meadow and takes up the least-trained job (a new job starts two levels below
+  the best one and inherits usable gear), so all seven jobs get leveled over a long run.
 - **Personality and story** — each run rolls a trait (Steady, Cautious, Reckless, Greedy or Explorer) that changes
   when the character flees, rests, loots and moves on; a narrator tells the story in the Story chat channel; a recap card
   follows every death; and a journal lists the run's milestones.
