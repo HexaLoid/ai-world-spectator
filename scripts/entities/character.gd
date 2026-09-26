@@ -699,7 +699,8 @@ func _use_melee_hit(hostile: Node2D, ability_id: String, def: Dictionary) -> voi
 			hostile.take_damage(int(roll["damage"]), self, bool(roll["is_crit"]))
 			landed += 1
 			landed_damage += int(roll["damage"])
-		GameState.log_event("%s hits %s %d %s for %d!%s" % [def.get("name", "An ability"), enemy_name, landed, "time" if landed == 1 else "times", landed_damage, crit_suffix])
+		if landed > 0:
+			GameState.log_event("%s hits %s %d %s for %d!%s" % [def.get("name", "An ability"), enemy_name, landed, "time" if landed == 1 else "times", landed_damage, crit_suffix])
 	attack_anim_until_ms = game_time_ms + ATTACK_ANIM_DURATION_MS
 
 ## White Mage's Cure: heals the lowest-HP member among the character and its
