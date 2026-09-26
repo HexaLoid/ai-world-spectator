@@ -19,6 +19,7 @@ extends Node
 ##   scale=<float>        Engine.time_scale (default 1.0; with --fixed-fps
 ##                        60 every physics step is then scale/60 s long)
 ##   snap=<float>         seconds of game time between snapshots (default 30)
+##   trait=steady|cautious|reckless|greedy|explorer   forced trait (default: steady)
 ##   trace=1              also print every damage/heal number (`dmg` lines)
 ##   watch=<enemy name>   also print that enemy's positions/HP with every snap
 ##
@@ -43,6 +44,7 @@ func _ready() -> void:
 	Engine.max_physics_steps_per_frame = maxi(8, ceili(time_scale) * 2)
 	var main: Node = load(MAIN_SCENE).instantiate()
 	main.get_node("Character").character_class = character_class
+	main.get_node("Character").character_trait = args.get("trait", "steady")
 	var monitor: Node = SimMonitor.new()
 	# The monitor (not this bootstrap node, which the scene change frees)
 	# owns the seeding hook, and must be connected before Main enters the tree.
@@ -54,7 +56,7 @@ func _ready() -> void:
 	monitor.snap_interval_s = snap_s
 	monitor.trace_damage = args.get("trace", "0") == "1"
 	monitor.watch_enemy = args.get("watch", "")
-	monitor.run_info = "class=%s|seed=%d|minutes=%s|scale=%s" % [character_class, seed_base, str(minutes), str(time_scale)]
+	monitor.run_info = "class=%s|seed=%d|minutes=%s|scale=%s|trait=%s" % [character_class, seed_base, str(minutes), str(time_scale), str(args.get("trait", "steady"))]
 	main.add_child(monitor)
 	# Deferred: the tree is still busy adding this bootstrap scene.
 	get_tree().change_scene_to_node.call_deferred(main)

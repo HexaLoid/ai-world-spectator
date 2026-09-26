@@ -68,8 +68,28 @@ signal hit_landed(target: Node2D, amount: int, is_crit: bool, on_character: bool
 ## An enemy is dying; emitted before it is freed so effects can copy its sprite.
 signal enemy_died(enemy: Node2D)
 
-## A boss moment near the character. `kind` is "victory", "defeated" or "fled".
+## A boss moment near the character. `kind` is "engaged", "victory", "defeated" or "fled".
 signal boss_event(kind: String, boss_name: String)
+
+## An item was picked up (equipped or not). `rarity` is the LootTable rarity.
+signal item_acquired(item_name: String, rarity: String)
+
+## The character turned in a quest.
+signal quest_completed(quest_name: String)
+
+## The character died. `info` feeds RecapText.build (see Character._die).
+signal death_recap(info: Dictionary)
+
+## The journal gained an entry / the Journal button asked to toggle the panel.
+signal journal_changed()
+signal journal_toggle_requested()
+
+## The run's milestones (see Journal); filled by JournalRecorder.
+var journal := Journal.new()
+
+func record_journal(t_ms: float, kind: String, text: String) -> void:
+	journal.add(t_ms, kind, text)
+	journal_changed.emit()
 
 ## The speed the human last chose (0 = paused); slow-motion restores to this.
 var user_time_scale: float = 1.0

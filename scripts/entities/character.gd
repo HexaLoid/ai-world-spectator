@@ -44,6 +44,15 @@ const STATE_DISPLAY_NAMES := {
 var equipment: Dictionary = {}
 var gold: int = 0
 var character_name: String = ""
+## Personality trait id (see TraitTable). Empty = rolled in _ready with `rng`;
+## the sim harness can force one.
+@export var character_trait: String = ""
+var trait_def: Dictionary = {}
+## Enemy name of the last thing that hit the character (for the death recap).
+var last_attacker_name: String = ""
+## game_time_ms when the current life began (0 at start, reset on respawn).
+var life_started_ms: float = 0.0
+var _engaged_id: int = 0
 # True once the "low HP" chat line fired; re-armed when HP climbs back above 60%.
 var low_hp_announced: bool = false
 # Session statistics (shown on the character sheet); reset only by relaunching.
@@ -109,6 +118,9 @@ func _ready() -> void:
 		character_class = class_ids[rng.randi_range(0, class_ids.size() - 1)]
 	class_def = AbilityTable.CLASSES.get(character_class, {})
 	character_name = NameTable.pick(rng)
+	if character_trait == "" or not TraitTable.TRAITS.has(character_trait):
+		character_trait = TraitTable.pick(rng)
+	trait_def = TraitTable.get_def(character_trait)
 	max_resource = float(class_def.get("max_resource", 0.0))
 	sprite.modulate = class_def.get("sprite_tint", Color(1.0, 1.0, 1.0, 1.0))
 	base_max_hp = max_hp
@@ -180,11 +192,13 @@ func _build_context() -> Dictionary:
 		next_zone_id = ZoneTable.next_zone_id(current_zone_id, level)
 	var context := {
 		"hp_percent": float(hp) / float(max_hp),
+		"flee_hp": float(trait_def.get("flee_hp", AIDecision.FLEE_HP_THRESHOLD)),
+		"rest_hp": float(trait_def.get("rest_hp", AIDecision.REST_HP_THRESHOLD)),
 		"hostile_in_attack_range": false,
 		"hostile_in_aggro_range": false,
 		"hostile_name": "",
 		"item_nearby": false,
-		"ready_to_travel": travel_destination_id != "" or (game_time_ms - zone_entered_time_ms) >= ZoneTable.stay_duration_ms(current_zone_id),
+		"ready_to_travel": travel_destination_id != "" or (game_time_ms - zone_entered_time_ms) >= ZoneTable.stay_duration_ms(current_zone_id) * float(trait_def.get("stay_mult", 1.0)),
 		"next_zone_name": String(ZoneTable.ZONES[next_zone_id]["name"]),
 		"quest_giver_in_zone": quest_giver != null and _zone_id_for_position(quest_giver.global_position) == current_zone_id,
 		"quest_ready": _quest_has_something_to_do(),
@@ -196,7 +210,7 @@ func _build_context() -> Dictionary:
 		context["hostile_name"] = nearest_hostile.enemy_name
 	if nearest_item:
 		var item_dist := global_position.distance_to(nearest_item.global_position)
-		context["item_nearby"] = item_dist <= AGGRO_RANGE
+		context["item_nearby"] = item_dist <= AGGRO_RANGE * float(trait_def.get("item_range_mult", 1.0))
 	return context
 
 func _find_nearest_in_group(group_name: String) -> Node2D:
@@ -406,6 +420,9 @@ func _update_combat_target(combat_hostile: Node2D) -> void:
 	if is_instance_valid(combat_hostile) and combat_hostile.has_method("is_boss") 			and bool(combat_hostile.call("is_boss")):
 		boss_foe = combat_hostile
 		_fled_announced_id = 0
+		if combat_hostile.get_instance_id() != _engaged_id:
+			_engaged_id = combat_hostile.get_instance_id()
+			GameState.emit_signal("boss_event", "engaged", String(combat_hostile.get("enemy_name")))
 	if current_state == "flee":
 		var fled_boss = current_boss()
 		if fled_boss != null and fled_boss.get_instance_id() != _fled_announced_id:
@@ -446,9 +463,11 @@ func _roll_damage(min_damage: int, max_damage: int, multiplier: float = 1.0) -> 
 		damage *= 2
 	return {"damage": damage, "is_crit": is_crit}
 
-func take_damage(amount: int, is_crit: bool = false) -> void:
+func take_damage(amount: int, is_crit: bool = false, attacker: Node2D = null) -> void:
 	if is_dead:
 		return
+	if attacker != null and is_instance_valid(attacker):
+		last_attacker_name = String(attacker.get("enemy_name"))
 	amount = StatCalculator.mitigate(amount, armor)
 	damage_taken_total += mini(amount, hp)
 	hp = max(0, hp - amount)
@@ -470,6 +489,15 @@ func _die() -> void:
 	var foe = current_boss()
 	is_dead = true
 	deaths += 1
+	var total_kills := 0
+	for k in kills_by_name.values():
+		total_kills += int(k)
+	GameState.emit_signal("death_recap", {
+		"name": character_name, "trait_title": TraitTable.title_of(character_trait),
+		"trait_remark": String(trait_def.get("remark", "")), "level": level,
+		"zone": String(ZoneTable.ZONES[current_zone_id]["name"]), "killer": last_attacker_name,
+		"time_alive_s": (game_time_ms - life_started_ms) / 1000.0, "kills": total_kills, "gold": gold,
+	})
 	GameState.emit_signal("chat_event", "leader_died", {})
 	if foe != null:
 		GameState.emit_signal("boss_event", "defeated", String(foe.get("enemy_name")))
@@ -489,6 +517,8 @@ func _die() -> void:
 	visible = true
 	set_physics_process(true)
 	is_dead = false
+	life_started_ms = game_time_ms
+	last_attacker_name = ""
 	ability_cooldowns.clear()
 	resource_amount = 0.0
 	GameState.emit_signal("character_hp_changed", hp, max_hp)
@@ -652,6 +682,8 @@ func get_sheet_snapshot() -> Dictionary:
 		quest_text = "%s %d/%d" % [quest.get("name", ""), quest_progress, int(quest.get("count", 0))]
 	return {
 		"character_name": character_name,
+		"trait_id": character_trait,
+		"trait_title": TraitTable.title_of(character_trait),
 		"level": level,
 		"class_name": character_class,
 		"zone_name": String(ZoneTable.ZONES[current_zone_id]["name"]),
@@ -719,6 +751,7 @@ func _acquire_item(item_id: String) -> void:
 		return
 	var display_name := LootTable.display_name(item_id)
 	GameState.discover("item", item_id)
+	GameState.emit_signal("item_acquired", display_name, String(item_def.get("rarity", "")))
 	if item_def.get("type", "") == "consumable":
 		var old_hp := hp
 		hp = min(max_hp, hp + int(item_def.get("heal", 0)))
@@ -815,6 +848,7 @@ func _interact_with_quest_giver() -> void:
 
 func _turn_in_quest(quest: Dictionary) -> void:
 	GameState.log_event("Turned in quest: %s" % quest.get("name", ""))
+	GameState.emit_signal("quest_completed", String(quest.get("name", "")))
 	gain_xp(int(quest.get("xp_reward", 0)))
 	var item_reward: String = quest.get("item_reward", "")
 	if item_reward != "":

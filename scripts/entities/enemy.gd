@@ -176,7 +176,10 @@ func _attack(target: Node2D) -> void:
 		return
 	last_attack_time_ms = now
 	var damage := CombatSystem.roll_damage(attack_damage_min, attack_damage_max, rng)
-	target.take_damage(damage)
+	if target == GameState.character:
+		target.take_damage(damage, false, self)
+	else:
+		target.take_damage(damage)
 	attack_anim_until_ms = game_time_ms + ATTACK_ANIM_DURATION_MS
 
 func take_damage(amount: int, attacker: Node2D = null, is_crit: bool = false) -> void:
