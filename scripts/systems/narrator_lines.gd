@@ -10,14 +10,21 @@ extends RefCounted
 const TRAIT_CHANCE := 0.6
 
 const EVENTS := ["zone_arrive", "boss_engaged", "boss_victory", "boss_fled", "boss_defeated",
-	"level_up", "epic_loot", "low_hp", "death", "quest_done"]
+	"level_up", "epic_loot", "low_hp", "death", "quest_done", "job_change"]
 
 const FALLBACKS := {
 	"name": "The hero", "zone": "the wilds", "boss": "the beast", "level": "?",
-	"item": "a relic", "killer": "an unseen foe", "quest": "a task",
+	"item": "a relic", "killer": "an unseen foe", "quest": "a task", "job": "a new calling",
 }
 
 const TEMPLATES := {
+	"job_change": {
+		"neutral": ["{name} takes up the {job}'s path, level {level}.", "A new calling: {name} becomes a {job}, level {level}."],
+		"cautious": ["{name} studies the crystal, then chooses the {job}."],
+		"reckless": ["{name} grabs the crystal and becomes a {job} without a second thought."],
+		"greedy": ["The crystal hums. {name} sees profit in being a {job}."],
+		"explorer": ["Another road, another calling: {name} is a {job} now."],
+	},
 	"zone_arrive": {
 		"neutral": ["{name} arrives in {zone}.", "New ground: {name} enters {zone}."],
 		"cautious": ["{name} steps into {zone}, watching every shadow."],

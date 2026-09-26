@@ -29,21 +29,34 @@ func _ready() -> void:
 	GameState.character_leveled_up.connect(_on_leveled_up)
 	GameState.character_equipment_changed.connect(_on_equipment_changed)
 	GameState.gold_changed.connect(_on_gold_changed)
+	GameState.job_changed.connect(_on_job_changed)
 	if GameState.character:
-		# The resource bar's fill color is per-class (e.g. orange Rage vs.
-		# blue Mana) — recolored once here rather than per-update, since the
-		# class never changes after spawn. Duplicated so this doesn't mutate
-		# the shared StyleBoxFlat resource other instances might reference.
-		var resource_color: Color = GameState.character.class_def.get("resource_color", Color(0.8, 0.35, 0.05, 1.0))
-		var resource_style: StyleBox = resource_bar.get_theme_stylebox("fill").duplicate()
-		resource_style.bg_color = resource_color
-		resource_bar.add_theme_stylebox_override("fill", resource_style)
+		_apply_resource_color()
 		_on_hp_changed(GameState.character.hp, GameState.character.max_hp)
 		_on_leveled_up(GameState.character.level)
 		_on_xp_changed(GameState.character.xp)
 		_on_resource_changed(GameState.character.resource_amount, GameState.character.max_resource)
 		_on_equipment_changed(GameState.character.equipment)
 		_on_gold_changed(GameState.character.gold)
+
+## The resource bar's fill color is per-job (e.g. orange Rage vs. blue Mana).
+## Duplicated so this doesn't mutate the shared StyleBoxFlat resource other
+## instances might reference.
+func _apply_resource_color() -> void:
+	var resource_color: Color = GameState.character.class_def.get("resource_color", Color(0.8, 0.35, 0.05, 1.0))
+	var resource_style: StyleBox = resource_bar.get_theme_stylebox("fill").duplicate()
+	resource_style.bg_color = resource_color
+	resource_bar.add_theme_stylebox_override("fill", resource_style)
+
+func _on_job_changed(_old_id: String, _new_id: String, _new_level: int) -> void:
+	if GameState.character == null:
+		return
+	_apply_resource_color()
+	_on_leveled_up(GameState.character.level)
+	_on_xp_changed(GameState.character.xp)
+	_on_resource_changed(GameState.character.resource_amount, GameState.character.max_resource)
+	_on_equipment_changed(GameState.character.equipment)
+	_on_hp_changed(GameState.character.hp, GameState.character.max_hp)
 
 func _on_hp_changed(hp: int, max_hp: int) -> void:
 	hp_bar.max_value = max_hp

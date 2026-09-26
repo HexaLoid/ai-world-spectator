@@ -10,6 +10,13 @@ const ABILITY_SLOT_SCENE: PackedScene = preload("res://scenes/ui/AbilitySlot.tsc
 func _ready() -> void:
 	if GameState.character == null:
 		return
+	_rebuild()
+	GameState.job_changed.connect(func(_o, _n, _l): _rebuild())
+
+func _rebuild() -> void:
+	for child in get_children():
+		remove_child(child)
+		child.queue_free()
 	var class_def: Dictionary = GameState.character.class_def
 	for ability_id in class_def.get("abilities", []):
 		var slot := ABILITY_SLOT_SCENE.instantiate()

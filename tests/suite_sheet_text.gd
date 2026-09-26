@@ -90,4 +90,16 @@ func run(t) -> void:
 	t.check(SheetText.build(job_snap).contains("Level 3 Black Mage"), "sheet shows the job name")
 	var id_snap := _full_snapshot()
 	t.check(SheetText.build(id_snap).contains("Level 3 Warrior"), "no job_name: capitalized class id as before")
+	# Jobs section
+	var jobs_snap := _full_snapshot()
+	jobs_snap["jobs"] = [
+		{"id": "warrior", "name": "Warrior", "level": 10, "active": false},
+		{"id": "white_mage", "name": "White Mage", "level": 8, "active": true},
+		{"id": "thief", "name": "Thief", "level": 0, "active": false},
+	]
+	var jobs_text := SheetText.build(jobs_snap)
+	t.check(jobs_text.contains("Warrior: 10"), "a taken job shows its level")
+	t.check(jobs_text.contains("White Mage: 8 (active)"), "the active job is marked")
+	t.check(jobs_text.contains("Thief: -"), "an untaken job shows a dash")
+	t.check(not SheetText.build(_full_snapshot()).contains("Thief: -"), "no jobs key: no Jobs section")
 	t.done()

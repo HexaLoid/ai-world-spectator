@@ -47,6 +47,16 @@ static func build(snap: Dictionary) -> String:
 		lines.append(_equipment_line(slot, String(equipment.get(slot, ""))))
 	lines.append("")
 
+	var jobs: Array = snap.get("jobs", [])
+	if not jobs.is_empty():
+		lines.append(_header("Jobs"))
+		for job in jobs:
+			var job_level := int(job.get("level", 0))
+			var level_text := "-" if job_level <= 0 else str(job_level)
+			var active_text := " (active)" if bool(job.get("active", false)) else ""
+			lines.append("%s: %s%s" % [String(job.get("name", "")), level_text, active_text])
+		lines.append("")
+
 	lines.append(_header("Progress"))
 	lines.append("Gold: %d" % int(snap.get("gold", 0)))
 	lines.append("Quest: %s" % String(snap.get("quest_text", "none active")))

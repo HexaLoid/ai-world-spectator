@@ -26,6 +26,7 @@ func _ready() -> void:
 		visited[zone_id] = true
 		_say("zone_arrive", {"zone": String(ZoneTable.ZONES[zone_id]["name"])}))
 	GameState.boss_event.connect(_on_boss_event)
+	GameState.job_changed.connect(func(_old_id: String, new_id: String, new_level: int): _say("job_change", {"job": AbilityTable.job_name(new_id), "level": new_level}))
 	GameState.character_leveled_up.connect(func(level: int): _say("level_up", {"level": level}))
 	GameState.item_acquired.connect(func(item_name: String, rarity: String):
 		if rarity == "epic":

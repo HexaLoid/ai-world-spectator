@@ -15,6 +15,14 @@ func _ready() -> void:
 	GameState.item_acquired.connect(_on_item_acquired)
 	GameState.quest_completed.connect(func(quest_name: String): _add("quest", "Completed %s" % quest_name))
 	GameState.death_recap.connect(_on_death)
+	GameState.job_changed.connect(func(_old_id: String, new_id: String, new_level: int): _add("job", "Took up %s (level %d)" % [AbilityTable.job_name(new_id), new_level]))
+	GameState.job_mastered.connect(_on_job_mastered)
+
+func _on_job_mastered(job_id: String) -> void:
+	_add("job", "Mastered %s" % AbilityTable.job_name(job_id))
+	var c = GameState.character
+	if c != null and is_instance_valid(c) and c.jobs_mastered.size() >= AbilityTable.job_ids().size():
+		_add("job", "Mastered every job")
 
 func _add(kind: String, text: String) -> void:
 	var c = GameState.character
