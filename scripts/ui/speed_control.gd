@@ -24,6 +24,10 @@ func _ready() -> void:
 			director_button.text = "Director: On" if on else "Director: Off"
 	)
 	add_child(director_button)
+	var journal_button := Button.new()
+	journal_button.text = "Journal (J)"
+	journal_button.pressed.connect(func(): GameState.journal_toggle_requested.emit())
+	add_child(journal_button)
 
 ## Remembers the human's speed so boss slow-motion can restore it exactly.
 func _set_speed(new_scale: float) -> void:

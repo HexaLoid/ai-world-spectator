@@ -9,6 +9,10 @@ func _ready() -> void:
 	var ui := get_node_or_null("UI")
 	if ui != null:
 		ui.add_child(BossEvents.new())
+		ui.add_child(DeathRecap.new())
+		ui.add_child(JournalPanel.new())
+	add_child(JournalRecorder.new())
+	add_child(NarratorDirector.new())
 
 # Heals still arrive through damage_dealt; damage numbers come from
 # hit_landed, which knows about crits and boss fights.
