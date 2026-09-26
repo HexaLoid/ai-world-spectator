@@ -13,7 +13,8 @@ const REST_HP_THRESHOLD := 0.3
 ## Expected context keys: hp_percent (float, 0.0-1.0), hostile_in_attack_range (bool),
 ## hostile_in_aggro_range (bool), hostile_name (String), item_nearby (bool),
 ## ready_to_travel (bool), next_zone_name (String), quest_giver_in_zone (bool),
-## quest_ready (bool).
+## quest_ready (bool). Optional: flee_hp / rest_hp (floats, default FLEE_HP_THRESHOLD /
+## REST_HP_THRESHOLD) for per-character personality thresholds.
 ## Returns {"state": <one of "flee"/"rest"/"combat"/"chase"/"loot"/"quest"/"travel"/"wander">, "reason": <String>}.
 static func resolve_state(context: Dictionary) -> Dictionary:
 	var hp_percent: float = clampf(float(context.get("hp_percent", 1.0)), 0.0, 1.0)
@@ -27,10 +28,12 @@ static func resolve_state(context: Dictionary) -> Dictionary:
 	var next_zone_name: String = String(context.get("next_zone_name", "the next zone"))
 	var quest_giver_in_zone: bool = bool(context.get("quest_giver_in_zone", false))
 	var quest_ready: bool = bool(context.get("quest_ready", false))
+	var flee_hp: float = float(context.get("flee_hp", FLEE_HP_THRESHOLD))
+	var rest_hp: float = float(context.get("rest_hp", REST_HP_THRESHOLD))
 
-	if hp_percent < FLEE_HP_THRESHOLD and hostile_in_aggro_range:
+	if hp_percent < flee_hp and hostile_in_aggro_range:
 		return {"state": "flee", "reason": "HP low (%d%%) - fleeing from %s" % [round(hp_percent * 100), hostile_name]}
-	if hp_percent < REST_HP_THRESHOLD and not hostile_in_aggro_range:
+	if hp_percent < rest_hp and not hostile_in_aggro_range:
 		return {"state": "rest", "reason": "HP low (%d%%) - resting to recover" % round(hp_percent * 100)}
 	if hostile_in_attack_range:
 		return {"state": "combat", "reason": "%s in range - engaging" % hostile_name}
