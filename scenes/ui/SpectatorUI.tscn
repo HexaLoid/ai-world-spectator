@@ -115,7 +115,7 @@ text = "Gold: 0"
 [node name="ActivityLog" type="Panel" parent="."]
 script = ExtResource("2_activitylog")
 theme = ExtResource("4_theme")
-position = Vector2(16, 400)
+position = Vector2(16, 456)
 size = Vector2(320, 160)
 
 [node name="LogList" type="ItemList" parent="ActivityLog"]
@@ -232,7 +232,7 @@ script = ExtResource("10_chatdirector")
 [node name="ChatPanel" type="Panel" parent="."]
 theme = ExtResource("4_theme")
 script = ExtResource("11_chatpanel")
-position = Vector2(16, 270)
+position = Vector2(16, 326)
 size = Vector2(320, 124)
 
 [node name="Body" type="RichTextLabel" parent="ChatPanel"]

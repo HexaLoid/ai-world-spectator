@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/entities/SpawnPoint.tscn" id="1_spawnpoint"]
 [ext_resource type="PackedScene" path="res://scenes/entities/Enemy.tscn" id="2_enemy"]
@@ -8,6 +8,7 @@
 [ext_resource type="Texture2D" path="res://assets/tiles/decor_rock.png" id="6_rock"]
 [ext_resource type="Texture2D" path="res://assets/tiles/ruin_crypt_tower.png" id="7_tower"]
 [ext_resource type="Texture2D" path="res://assets/tiles/ruin_torch.png" id="8_torch"]
+[ext_resource type="PackedScene" path="res://scenes/world/VaultGate.tscn" id="9_gate"]
 
 [node name="SunderedCrypt" type="Node2D"]
 
@@ -53,3 +54,6 @@ position = Vector2(0, 0)
 respawn_delay_s = 90.0
 enemy_scene = ExtResource("2_enemy")
 enemy_id = "crypt_lord"
+
+[node name="VaultGate" parent="." instance=ExtResource("9_gate")]
+position = Vector2(-120, 120)

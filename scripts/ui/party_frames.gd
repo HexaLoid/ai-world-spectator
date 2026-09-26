@@ -5,8 +5,8 @@ extends VBoxContainer
 ## GameState.party_changed and polls each member every frame (like the target
 ## frame), so it needs no per-member signals.
 
-const FRAME_SIZE := Vector2(224, 40)
-const BAR_SIZE := Vector2(208, 12)
+const FRAME_SIZE := Vector2(224, 32)
+const BAR_SIZE := Vector2(208, 10)
 const DOWN_MODULATE := Color(1.0, 1.0, 1.0, 0.5)
 
 # Each row: {"member": Node, "panel": Panel, "name": Label, "bar": ProgressBar, "text": Label}
@@ -32,13 +32,13 @@ func _make_row(member: Node) -> Dictionary:
 	var panel := Panel.new()
 	panel.custom_minimum_size = FRAME_SIZE
 	var name_label := Label.new()
-	name_label.position = Vector2(8, 1)
+	name_label.position = Vector2(8, 0)
 	var bar := ProgressBar.new()
 	bar.custom_minimum_size = BAR_SIZE
-	bar.position = Vector2(8, 22)
+	bar.position = Vector2(8, 17)
 	bar.show_percentage = false
 	var text := Label.new()
-	text.position = Vector2(8, 22)
+	text.position = Vector2(8, 17)
 	text.size = BAR_SIZE
 	text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER

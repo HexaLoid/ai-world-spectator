@@ -18,6 +18,7 @@ func _ready() -> void:
 		ui.add_child(JournalPanel.new())
 	add_child(JournalRecorder.new())
 	add_child(NarratorDirector.new())
+	add_child(DungeonRun.new())
 
 # Heals still arrive through damage_dealt; damage numbers come from
 # hit_landed, which knows about crits and boss fights.
