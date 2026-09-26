@@ -30,6 +30,7 @@ const SUITES := [
 	"res://tests/suite_trait_table.gd",
 	"res://tests/suite_journal.gd",
 	"res://tests/suite_narrator_lines.gd",
+	"res://tests/suite_recap_text.gd",
 ]
 
 var checks := 0

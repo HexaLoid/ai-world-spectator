@@ -18,7 +18,8 @@ static func build(snap: Dictionary) -> String:
 	var lines: Array[String] = []
 	var character_name := String(snap.get("character_name", ""))
 	if character_name != "":
-		lines.append("[b]%s[/b]" % character_name)
+		var trait_title := String(snap.get("trait_title", ""))
+		lines.append("[b]%s[/b]" % (character_name if trait_title == "" else "%s %s" % [character_name, trait_title]))
 
 	var class_text := String(snap.get("class_name", "")).capitalize()
 	if class_text == "":

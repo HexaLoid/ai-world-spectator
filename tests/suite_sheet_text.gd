@@ -75,4 +75,12 @@ func run(t) -> void:
 	t.check(SheetText.build(named).begins_with("[b]Aldric[/b]"), "sheet starts with the character's name")
 	t.check(not SheetText.build(_full_snapshot()).contains("[b]Aldric[/b]"), "no name line without a name")
 	t.check(SheetText.build({}).begins_with("[b]Level 1 Adventurer[/b]"), "empty snapshot still starts with the level line")
+	# trait title on the name line
+	var titled := _full_snapshot()
+	titled["character_name"] = "Aldric"
+	titled["trait_title"] = "the Cautious"
+	t.check(SheetText.build(titled).contains("Aldric the Cautious"), "trait title appears on the sheet")
+	var plain := _full_snapshot()
+	plain["character_name"] = "Aldric"
+	t.check(not SheetText.build(plain).contains("the Cautious"), "no trait title without the key")
 	t.done()
