@@ -136,7 +136,7 @@ func _on_dungeon_event(kind: String, text: String) -> void:
 		"enter":
 			_show_banner("ENTERING THE HOLLOWED VAULT", DUNGEON_COLOR)
 		"warning":
-			_show_banner("%s!" % text.to_upper(), DEFEATED_COLOR, WARNING_HOLD_S)
+			_show_banner(text.to_upper(), DEFEATED_COLOR, WARNING_HOLD_S)
 		"clear":
 			_show_banner("DUNGEON CLEARED", VICTORY_COLOR)
 		"fail":

@@ -106,6 +106,8 @@ var job_change_reason: String = ""
 const DUNGEON_MIN_LEVEL := 8
 const DUNGEON_COOLDOWN_MS := 900000.0
 const DUNGEON_ENTER_RANGE := 30.0
+## Inside a dungeon the hero rests (nothing hostile near) below this HP fraction.
+const DUNGEON_REST_HP := 0.6
 var dungeon_cooldown_until_ms: float = 0.0
 var dungeons_cleared: int = 0
 
@@ -236,7 +238,8 @@ func _build_context() -> Dictionary:
 	var context := {
 		"hp_percent": float(hp) / float(max_hp),
 		"flee_hp": float(trait_def.get("flee_hp", AIDecision.FLEE_HP_THRESHOLD)),
-		"rest_hp": float(trait_def.get("rest_hp", AIDecision.REST_HP_THRESHOLD)),
+		# Inside a dungeon the hero recovers before pulling the next room.
+		"rest_hp": maxf(float(trait_def.get("rest_hp", AIDecision.REST_HP_THRESHOLD)), DUNGEON_REST_HP) if GameState.in_dungeon else float(trait_def.get("rest_hp", AIDecision.REST_HP_THRESHOLD)),
 		"hostile_in_attack_range": false,
 		"hostile_in_aggro_range": false,
 		"hostile_name": "",
