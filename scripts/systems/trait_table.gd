@@ -17,13 +17,13 @@ const TRAITS := {
 		"remark": "Steady on. Try again.",
 	},
 	"cautious": {
-		"title": "the Cautious", "flee_hp": 0.25, "rest_hp": 0.45,
+		"title": "the Cautious", "flee_hp": 0.14, "rest_hp": 0.34,
 		"item_range_mult": 1.0, "stay_mult": 1.0,
 		"blurb": "Retreats early and rests often. Rarely dies, but loses time.",
 		"remark": "Perhaps a little more caution next time.",
 	},
 	"reckless": {
-		"title": "the Reckless", "flee_hp": 0.05, "rest_hp": 0.20,
+		"title": "the Reckless", "flee_hp": 0.07, "rest_hp": 0.20,
 		"item_range_mult": 1.0, "stay_mult": 1.0,
 		"blurb": "Fights to the last breath. Fast, and often fatal.",
 		"remark": "Bold to the very end.",
@@ -36,7 +36,7 @@ const TRAITS := {
 	},
 	"explorer": {
 		"title": "the Explorer", "flee_hp": AIDecision.FLEE_HP_THRESHOLD, "rest_hp": AIDecision.REST_HP_THRESHOLD,
-		"item_range_mult": 1.0, "stay_mult": 0.7,
+		"item_range_mult": 1.0, "stay_mult": 0.8,
 		"blurb": "Restless. Moves on to the next zone sooner.",
 		"remark": "There is always another road.",
 	},

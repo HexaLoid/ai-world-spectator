@@ -24,12 +24,12 @@ func run(t) -> void:
 	t.check_near(float(steady["stay_mult"]), 1.0, "steady stay")
 
 	# the spec's numbers
-	t.check_near(float(TraitTable.get_def("cautious")["flee_hp"]), 0.25, "cautious flees at 25%")
-	t.check_near(float(TraitTable.get_def("cautious")["rest_hp"]), 0.45, "cautious rests below 45%")
-	t.check_near(float(TraitTable.get_def("reckless")["flee_hp"]), 0.05, "reckless flees at 5%")
+	t.check_near(float(TraitTable.get_def("cautious")["flee_hp"]), 0.14, "cautious flees at 14%")
+	t.check_near(float(TraitTable.get_def("cautious")["rest_hp"]), 0.34, "cautious rests below 34%")
+	t.check_near(float(TraitTable.get_def("reckless")["flee_hp"]), 0.07, "reckless flees at 7%")
 	t.check_near(float(TraitTable.get_def("reckless")["rest_hp"]), 0.20, "reckless rests below 20%")
 	t.check_near(float(TraitTable.get_def("greedy")["item_range_mult"]), 1.6, "greedy notices loot from 1.6x")
-	t.check_near(float(TraitTable.get_def("explorer")["stay_mult"]), 0.7, "explorer stays 30% shorter")
+	t.check_near(float(TraitTable.get_def("explorer")["stay_mult"]), 0.8, "explorer stays 20% shorter")
 
 	# unknown ids
 	t.check(TraitTable.get_def("nope").is_empty(), "unknown trait: empty def")

@@ -324,3 +324,33 @@ Changes (45-minute sims, 16-32 seeds per class):
 Trade-off: the mage's cushion is what closes the level-5 gap, and it also
 makes the mage safer (median 1 death, warrior 2). Weakening the bonus
 reintroduces the gap, so the classes stay at different danger levels.
+
+## 8. Personality traits
+
+Each trait was measured with 45-minute sims, 16 seeds per class
+(`tests/sim/run_batch.sh ... trait=<id>`). A forced `trait=steady` run is
+identical to the pre-trait logs for the same seeds (8 of 8 runs compared), so
+Steady is unchanged. (The narrator's random generator is named `narrator_rng`
+so the sim's per-node seeding does not count it; a node called `rng` would
+have shifted every later seed.)
+
+| trait | class | deaths/run | L5 (min) | L10 (min) | L10 reached |
+|---|---|---|---|---|---|
+| steady | mage / warrior | 0.7 / 2.1 | 11.1 / 10.0 | 38.5 / 36.6 | 13 / 16 |
+| cautious (flee 14%, rest 34%) | mage / warrior | 0.4 / 0.9 | 11.2 / 10.0 | 40.0 / 35.7 | 14 / 16 |
+| reckless (flee 7%, rest 20%) | mage / warrior | 1.0 / 2.2 | 11.3 / 10.1 | 38.6 / 35.5 | 14 / 15 |
+| greedy (loot range 1.6x) | mage / warrior | 0.2 / 1.5 | 9.3 / 8.6 | 38.2 / 33.3 | 14 / 16 |
+| explorer (stay x0.8) | mage / warrior | 0.9 / 1.7 | 10.2 / 11.1 | 38.7 / 36.6 | 15 / 16 |
+
+Tuning from the spec's first numbers:
+
+| trait | first try | result | final |
+|---|---|---|---|
+| cautious | flee 25%, rest 45% | 0.0 / 0.1 deaths: it almost never died, the trait had no risk | 18%/38% still 0.1 / 0.3; 14%/34% gives 0.4 / 0.9 |
+| reckless | flee 5% | warrior 3.1 deaths per run, over the 3.0 cap | flee 7% |
+| explorer | stay x0.7 | mage reached L10 in only 11 of 16 runs | stay x0.8 |
+
+Greedy stays as designed: it levels fastest (loot upgrades sooner) and its mage
+mean of 0.2 deaths is slightly under the 0.3 target, accepted because the
+Steady mage is itself only at 0.7. Acceptance used: mean deaths 0.3 to 3.0,
+L10 reached in at least 12 of 16 runs, L10 time within 20% of Steady.
