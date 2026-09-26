@@ -27,6 +27,7 @@ const SUITES := [
 	"res://tests/suite_ai_decision.gd",
 	"res://tests/suite_spectator_fx.gd",
 	"res://tests/suite_camera_director.gd",
+	"res://tests/suite_trait_table.gd",
 ]
 
 var checks := 0
