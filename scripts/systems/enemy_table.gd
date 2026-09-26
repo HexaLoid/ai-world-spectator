@@ -86,6 +86,10 @@ const ENEMIES := {
 static func get_def(id: String) -> Dictionary:
 	return ENEMIES.get(id, {})
 
+## Bosses and elites are the enemies with a guaranteed drop.
+static func is_boss(id: String) -> bool:
+	return String(get_def(id).get("guaranteed_drop", "")) != ""
+
 static func name_of(id: String) -> String:
 	return String(ENEMIES.get(id, {}).get("name", ""))
 

@@ -57,6 +57,9 @@ func _ready() -> void:
 	health_bar.value = hp
 	sprite.modulate = sprite_tint
 
+func is_boss() -> bool:
+	return guaranteed_drop_id != ""
+
 ## Applies (or refreshes) a bleed DoT: `tick_count` hits of
 ## [damage_min, damage_max] damage, one every `tick_interval_ms`. `source`
 ## is who applied it (for kill-credit purposes if a tick lands the kill).

@@ -70,4 +70,15 @@ func run(t) -> void:
 	t.check_eq(EnemyTable.ids_named("Dire Wolf"), ["dire_wolf"], "ids_named")
 	t.check_eq(EnemyTable.ids_named("Nobody"), [], "ids_named unknown")
 	t.check(EnemyTable.get_def("nope").is_empty(), "get_def unknown is empty")
+
+	# is_boss: exactly the enemies with a guaranteed drop
+	var bosses: Array = []
+	for id in EnemyTable.ENEMIES.keys():
+		var has_drop: bool = String(EnemyTable.ENEMIES[id].get("guaranteed_drop", "")) != ""
+		t.check_eq(EnemyTable.is_boss(id), has_drop, "is_boss matches guaranteed_drop for %s" % id)
+		if has_drop:
+			bosses.append(id)
+	bosses.sort()
+	t.check_eq(bosses, ["bandit_captain", "crypt_lord", "frostpeak_warlord", "mire_tyrant", "raider_captain"], "the five bosses")
+	t.check(not EnemyTable.is_boss("nope"), "unknown id is not a boss")
 	t.done()
