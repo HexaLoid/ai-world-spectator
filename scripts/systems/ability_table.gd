@@ -58,7 +58,7 @@ const CLASSES := {
 		"abilities": ["frost_nova", "arcane_bolt", "mana_ward"],
 	},
 	"white_mage": {
-		"name": "White Mage", "role": "healer", "blurb": "Heals the party and herself. Light damage.",
+		"name": "White Mage", "role": "healer", "blurb": "Heals the party and self. Light damage.",
 		"resource_name": "Mana", "resource_color": Color(0.85, 0.85, 1.0, 1.0),
 		"max_resource": 100.0, "resource_regen_per_second": 6.0,
 		"primary_stat": "intellect", "bonus_max_hp": 10, "bonus_armor": 2,

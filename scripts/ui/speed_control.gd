@@ -30,7 +30,17 @@ func _ready() -> void:
 	add_child(journal_button)
 	var new_button := Button.new()
 	new_button.text = "New Character"
+	# Two clicks (the first arms it for 3 seconds) so a misclick cannot end the run.
+	var armed := [false]
 	new_button.pressed.connect(func():
+		if not armed[0]:
+			armed[0] = true
+			new_button.text = "Sure? Click again"
+			get_tree().create_timer(3.0, true, false, true).timeout.connect(func():
+				armed[0] = false
+				if is_instance_valid(new_button):
+					new_button.text = "New Character")
+			return
 		GameState.reset_run()
 		GameState.job_chosen = false
 		get_tree().change_scene_to_file("res://scenes/CharacterSelect.tscn")

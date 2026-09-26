@@ -645,13 +645,21 @@ func _use_melee_hit(hostile: Node2D, ability_id: String, def: Dictionary) -> voi
 		any_crit = any_crit or bool(roll["is_crit"])
 	var crit_suffix := " (Critical!)" if any_crit else ""
 	if count == 1:
+		# Logged before the hit lands so a killing blow reads "hit ... Defeated ...".
 		GameState.log_event("%s hits %s for %d!%s" % [def.get("name", "An ability"), hostile.enemy_name, total, crit_suffix])
+		hostile.take_damage(int(rolls[0]["damage"]), self, bool(rolls[0]["is_crit"]))
 	else:
-		GameState.log_event("%s hits %s %d times for %d!%s" % [def.get("name", "An ability"), hostile.enemy_name, count, total, crit_suffix])
-	for roll in rolls:
-		if not is_instance_valid(hostile) or hostile.is_dead:
-			break
-		hostile.take_damage(int(roll["damage"]), self, bool(roll["is_crit"]))
+		# A combo logs what actually landed (a hit that kills stops the rest).
+		var enemy_name: String = hostile.enemy_name
+		var landed := 0
+		var landed_damage := 0
+		for roll in rolls:
+			if not is_instance_valid(hostile) or hostile.is_dead:
+				break
+			hostile.take_damage(int(roll["damage"]), self, bool(roll["is_crit"]))
+			landed += 1
+			landed_damage += int(roll["damage"])
+		GameState.log_event("%s hits %s %d %s for %d!%s" % [def.get("name", "An ability"), enemy_name, landed, "time" if landed == 1 else "times", landed_damage, crit_suffix])
 	attack_anim_until_ms = game_time_ms + ATTACK_ANIM_DURATION_MS
 
 ## White Mage's Cure: heals the lowest-HP member among the character and its
@@ -680,7 +688,7 @@ func _try_ally_heal() -> void:
 	_start_cooldown(ability_id, int(def.get("cooldown_ms", 0)))
 	var target = members[index]
 	target.receive_heal(AbilityMath.heal_amount(int(max_hps[index]), float(def.get("heal_percent", 0.0))))
-	var who: String = "herself" if target == self else String(target.player_name)
+	var who: String = character_name if target == self else String(target.player_name)
 	GameState.log_event("%s heals %s" % [def.get("name", "Cure"), who])
 
 ## Restores HP from an ally's heal (see SimulatedPlayer's healer role).

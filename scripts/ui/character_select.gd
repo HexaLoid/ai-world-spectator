@@ -38,6 +38,7 @@ func _ready() -> void:
 
 	var grid := GridContainer.new()
 	grid.columns = 4
+	grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	grid.add_theme_constant_override("h_separation", 12)
 	grid.add_theme_constant_override("v_separation", 12)
 	grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -45,6 +46,8 @@ func _ready() -> void:
 	for job_id in AbilityTable.job_ids():
 		grid.add_child(_make_card(job_id))
 	grid.add_child(_make_random_card())
+	# Keyboard users can pick with the arrow keys and Enter.
+	grid.get_child(0).call_deferred("grab_focus")
 
 func _make_card(job_id: String) -> Button:
 	var def: Dictionary = AbilityTable.CLASSES[job_id]
@@ -53,7 +56,7 @@ func _make_card(job_id: String) -> Button:
 	button.text = "%s\n[%s]\n%s" % [def["name"], ROLE_LABELS.get(def["role"], def["role"]), def["blurb"]]
 	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var tint: Color = def["sprite_tint"]
-	button.add_theme_color_override("font_color", tint.lightened(0.35))
+	button.add_theme_color_override("font_color", tint.lightened(0.6))
 	button.add_theme_color_override("font_hover_color", Color(1, 1, 1, 1))
 	button.pressed.connect(_start.bind(job_id))
 	return button
@@ -67,6 +70,7 @@ func _make_random_card() -> Button:
 	return button
 
 func _start(job_id: String) -> void:
+	GameState.reset_run()
 	GameState.selected_job = job_id
 	GameState.job_chosen = true
 	get_tree().change_scene_to_file(MAIN_SCENE)
