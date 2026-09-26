@@ -13,9 +13,10 @@ const REST_HP_THRESHOLD := 0.3
 ## Expected context keys: hp_percent (float, 0.0-1.0), hostile_in_attack_range (bool),
 ## hostile_in_aggro_range (bool), hostile_name (String), item_nearby (bool),
 ## ready_to_travel (bool), next_zone_name (String), quest_giver_in_zone (bool),
-## quest_ready (bool). Optional: job_change_ready (bool, default false), flee_hp / rest_hp (floats, default FLEE_HP_THRESHOLD /
+## quest_ready (bool). Optional: job_change_ready (bool, default false), dungeon_ready (bool, default false: at the
+## Vault Gate and fit to enter), dungeon_active (bool, default false: inside a dungeon), flee_hp / rest_hp (floats, default FLEE_HP_THRESHOLD /
 ## REST_HP_THRESHOLD) for per-character personality thresholds.
-## Returns {"state": <one of "flee"/"rest"/"combat"/"chase"/"loot"/"quest"/"job_change"/"travel"/"wander">, "reason": <String>}.
+## Returns {"state": <one of "flee"/"rest"/"combat"/"chase"/"loot"/"quest"/"job_change"/"dungeon_enter"/"dungeon_advance"/"travel"/"wander">, "reason": <String>}.
 static func resolve_state(context: Dictionary) -> Dictionary:
 	var hp_percent: float = clampf(float(context.get("hp_percent", 1.0)), 0.0, 1.0)
 	var hostile_in_attack_range: bool = bool(context.get("hostile_in_attack_range", false))
@@ -29,6 +30,8 @@ static func resolve_state(context: Dictionary) -> Dictionary:
 	var quest_giver_in_zone: bool = bool(context.get("quest_giver_in_zone", false))
 	var quest_ready: bool = bool(context.get("quest_ready", false))
 	var job_change_ready: bool = bool(context.get("job_change_ready", false))
+	var dungeon_ready: bool = bool(context.get("dungeon_ready", false))
+	var dungeon_active: bool = bool(context.get("dungeon_active", false))
 	var flee_hp: float = float(context.get("flee_hp", FLEE_HP_THRESHOLD))
 	var rest_hp: float = float(context.get("rest_hp", REST_HP_THRESHOLD))
 
@@ -48,10 +51,14 @@ static func resolve_state(context: Dictionary) -> Dictionary:
 		return {"state": "quest", "reason": "Heading to the quest board"}
 	if job_change_ready:
 		return {"state": "job_change", "reason": "Heading to the job crystal"}
+	if dungeon_ready:
+		return {"state": "dungeon_enter", "reason": "Heading to the Vault Gate"}
 	if hostile_in_aggro_range:
 		return {"state": "chase", "reason": "%s spotted - closing in" % hostile_name}
 	if item_nearby:
 		return {"state": "loot", "reason": "Item nearby - moving to pick it up"}
+	if dungeon_active:
+		return {"state": "dungeon_advance", "reason": "Pressing on through the Vault"}
 	if ready_to_travel:
 		return {"state": "travel", "reason": "Time to move on - heading to %s" % next_zone_name}
 	return {"state": "wander", "reason": "Nothing pressing - wandering"}

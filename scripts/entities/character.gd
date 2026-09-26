@@ -24,6 +24,8 @@ const STATE_DISPLAY_NAMES := {
 	"travel": "Traveling",
 	"quest": "Questing",
 	"job_change": "Changing job",
+	"dungeon_enter": "Entering the Vault",
+	"dungeon_advance": "Pressing on",
 }
 
 @export var max_hp: int = 60
@@ -100,6 +102,12 @@ var job_states: Dictionary = {}
 var jobs_mastered: Array = []
 var wants_job_change: bool = false
 var job_change_reason: String = ""
+
+const DUNGEON_MIN_LEVEL := 8
+const DUNGEON_COOLDOWN_MS := 900000.0
+const DUNGEON_ENTER_RANGE := 30.0
+var dungeon_cooldown_until_ms: float = 0.0
+var dungeons_cleared: int = 0
 
 ## The active job's role (tank/healer/melee/magic).
 var job_role: String:
@@ -233,11 +241,13 @@ func _build_context() -> Dictionary:
 		"hostile_in_aggro_range": false,
 		"hostile_name": "",
 		"item_nearby": false,
-		"ready_to_travel": (wants_job_change and current_zone_id != CRYSTAL_ZONE_ID) or travel_destination_id != "" or (game_time_ms - zone_entered_time_ms) >= ZoneTable.stay_duration_ms(current_zone_id) * float(trait_def.get("stay_mult", 1.0)),
+		"ready_to_travel": not GameState.in_dungeon and ((wants_job_change and current_zone_id != CRYSTAL_ZONE_ID) or travel_destination_id != "" or (game_time_ms - zone_entered_time_ms) >= ZoneTable.stay_duration_ms(current_zone_id) * float(trait_def.get("stay_mult", 1.0))),
 		"next_zone_name": String(ZoneTable.ZONES[next_zone_id]["name"]),
 		"quest_giver_in_zone": quest_giver != null and _zone_id_for_position(quest_giver.global_position) == current_zone_id,
 		"quest_ready": _quest_has_something_to_do(),
 		"job_change_ready": _job_crystal_here() != null,
+		"dungeon_ready": _dungeon_ready(),
+		"dungeon_active": GameState.in_dungeon,
 	}
 	if nearest_hostile:
 		var dist := global_position.distance_to(nearest_hostile.global_position)
@@ -349,6 +359,24 @@ func _act(delta: float, _context: Dictionary) -> void:
 				else:
 					_move_toward(to_crystal, MOVE_SPEED)
 			base_anim = "walk"
+		"dungeon_enter":
+			var gate := _vault_gate_here()
+			if gate:
+				var to_gate := gate.global_position - global_position
+				if to_gate.length() <= DUNGEON_ENTER_RANGE:
+					var run = get_tree().get_first_node_in_group("dungeon_run")
+					if run != null:
+						run.start(self, gate.global_position)
+					else:
+						dungeon_cooldown_until_ms = game_time_ms + 60000.0
+				else:
+					_move_toward(to_gate, MOVE_SPEED)
+			base_anim = "walk"
+		"dungeon_advance":
+			var foe := _find_nearest_in_group("dungeon_enemies")
+			if foe:
+				_move_toward(foe.global_position - global_position, MOVE_SPEED)
+			base_anim = "run"
 		"travel":
 			_do_travel()
 			base_anim = "run"
@@ -921,12 +949,34 @@ func _check_job_change(reason: String) -> void:
 
 ## The crystal in the current zone if a job change is pending, else null.
 func _job_crystal_here() -> Node2D:
+	if GameState.in_dungeon:
+		return null
 	if not wants_job_change:
 		return null
 	var crystal := _find_nearest_in_group("job_crystals")
 	if crystal != null and _zone_id_for_position(crystal.global_position) == current_zone_id:
 		return crystal
 	return null
+
+## The Vault Gate in the current zone, or null.
+func _vault_gate_here() -> Node2D:
+	var gate := _find_nearest_in_group("vault_gates")
+	if gate != null and _zone_id_for_position(gate.global_position) == current_zone_id:
+		return gate
+	return null
+
+func _dungeon_ready() -> bool:
+	if not GameState.dungeon_enabled or GameState.in_dungeon:
+		return false
+	if level < DUNGEON_MIN_LEVEL or float(hp) < float(max_hp) * 0.7 or game_time_ms < dungeon_cooldown_until_ms:
+		return false
+	return _vault_gate_here() != null
+
+## Bonus for clearing the dungeon (called by DungeonRun).
+func grant_dungeon_reward(bonus_xp: int, bonus_gold: int) -> void:
+	dungeons_cleared += 1
+	gain_xp(bonus_xp)
+	_gain_gold(bonus_gold)
 
 func _job_rows() -> Array:
 	var rows: Array = []

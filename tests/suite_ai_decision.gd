@@ -70,4 +70,45 @@ func run(t) -> void:
 	t.check_eq(AIDecision.resolve_state(crystal_quest)["state"], "quest", "a quest to turn in comes first")
 	t.check(String(AIDecision.resolve_state(crystal)["reason"]).contains("crystal"), "the reason mentions the crystal")
 	t.check_eq(AIDecision.resolve_state(_ctx(1.0, false))["state"], "wander", "no key: unchanged")
+	# dungeon_enter: below flee/rest/combat, quest and job change, above chase
+	var gate := _ctx(1.0, false)
+	gate["dungeon_ready"] = true
+	t.check_eq(AIDecision.resolve_state(gate)["state"], "dungeon_enter", "dungeon ready, nothing else to do: dungeon_enter")
+	var gate_chase := _ctx(1.0, true)
+	gate_chase["dungeon_ready"] = true
+	t.check_eq(AIDecision.resolve_state(gate_chase)["state"], "dungeon_enter", "dungeon_enter beats chase")
+	var gate_fight := _ctx(1.0, true, true)
+	gate_fight["dungeon_ready"] = true
+	t.check_eq(AIDecision.resolve_state(gate_fight)["state"], "combat", "combat beats dungeon_enter")
+	var gate_hurt := _ctx(0.05, true, true)
+	gate_hurt["dungeon_ready"] = true
+	t.check_eq(AIDecision.resolve_state(gate_hurt)["state"], "flee", "flee beats dungeon_enter")
+	var gate_quest := _ctx(1.0, false)
+	gate_quest["dungeon_ready"] = true
+	gate_quest["quest_giver_in_zone"] = true
+	gate_quest["quest_ready"] = true
+	t.check_eq(AIDecision.resolve_state(gate_quest)["state"], "quest", "a quest to turn in comes first")
+	var gate_job := _ctx(1.0, false)
+	gate_job["dungeon_ready"] = true
+	gate_job["job_change_ready"] = true
+	t.check_eq(AIDecision.resolve_state(gate_job)["state"], "job_change", "a job change comes first")
+	t.check(String(AIDecision.resolve_state(gate)["reason"]).contains("Vault Gate"), "the reason mentions the gate")
+
+	# dungeon_advance: inside a dungeon with nothing to fight or pick up
+	var inside := _ctx(1.0, false)
+	inside["dungeon_active"] = true
+	t.check_eq(AIDecision.resolve_state(inside)["state"], "dungeon_advance", "inside the dungeon: press on")
+	var inside_fight := _ctx(1.0, true)
+	inside_fight["dungeon_active"] = true
+	t.check_eq(AIDecision.resolve_state(inside_fight)["state"], "chase", "a hostile in aggro range: chase first")
+	var inside_loot := _ctx(1.0, false)
+	inside_loot["dungeon_active"] = true
+	inside_loot["item_nearby"] = true
+	t.check_eq(AIDecision.resolve_state(inside_loot)["state"], "loot", "loot before pressing on")
+	var inside_travel := _ctx(1.0, false)
+	inside_travel["dungeon_active"] = true
+	inside_travel["ready_to_travel"] = true
+	t.check_eq(AIDecision.resolve_state(inside_travel)["state"], "dungeon_advance", "pressing on beats travel")
+	t.check_eq(AIDecision.resolve_state(_ctx(1.0, false))["state"], "wander", "no keys: unchanged")
+
 	t.done()
