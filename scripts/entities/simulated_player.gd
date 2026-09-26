@@ -296,6 +296,21 @@ func take_kill_credit(_enemy_name: String, xp_reward: int) -> void:
 		GameState.log_event("[Ally] %s levels up to %d!" % [player_name, level])
 		GameState.emit_signal("chat_event", "ally_level_up", {"ally": self, "level": level})
 
+## Duty-Finder style level sync for a dungeon run: raises the ally to
+## `target_level` (never lowers it) with the same per-level bonuses as leveling
+## up normally.
+func sync_to_level(target_level: int) -> void:
+	var goal := clampi(target_level, 1, LevelingSystem.MAX_LEVEL)
+	if level >= goal:
+		return
+	var gained := goal - level
+	level = goal
+	xp = maxi(xp, JobSwitch.starting_xp(goal))
+	max_hp += gained * LevelingSystem.HP_PER_LEVEL
+	hp = mini(max_hp, hp + gained * LevelingSystem.HP_PER_LEVEL)
+	attack_damage_min += gained * LevelingSystem.DAMAGE_PER_LEVEL
+	attack_damage_max += gained * LevelingSystem.DAMAGE_PER_LEVEL
+
 func _facing_from_velocity(vel: Vector2) -> String:
 	if vel.length() < 1.0:
 		return "down"

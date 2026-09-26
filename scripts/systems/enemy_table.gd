@@ -84,22 +84,22 @@ const ENEMIES := {
 	# --- Hollowed Vault (dungeon, level 8+) ---
 	"vault_skeleton": {
 		"name": "Vault Skeleton", "zone": "hollowed_vault", "sprite": "bandit", "tint": Color(0.78, 0.78, 0.86, 1.0), "sprite_size": 42.0,
-		"max_hp": 90, "move_speed": 52.0, "attack_min": 10, "attack_max": 16, "aggro_range": 140.0,
+		"max_hp": 620, "move_speed": 52.0, "attack_min": 9, "attack_max": 14, "aggro_range": 140.0,
 		"xp_reward": 120, "gold_min": 6, "gold_max": 11, "loot_level": 10, "guaranteed_drop": "",
 	},
 	"vault_wraith": {
 		"name": "Vault Wraith", "zone": "hollowed_vault", "sprite": "wolf", "tint": Color(0.6, 0.5, 0.95, 1.0), "sprite_size": 42.0,
-		"max_hp": 60, "move_speed": 84.0, "attack_min": 12, "attack_max": 18, "aggro_range": 200.0,
+		"max_hp": 310, "move_speed": 84.0, "attack_min": 11, "attack_max": 16, "aggro_range": 200.0,
 		"xp_reward": 60, "gold_min": 4, "gold_max": 8, "loot_level": 10, "guaranteed_drop": "",
 	},
 	"bone_warden": {
 		"name": "Bone Warden", "zone": "hollowed_vault", "sprite": "bandit", "tint": Color(0.9, 0.88, 0.7, 1.0), "sprite_size": 64.0,
-		"max_hp": 700, "move_speed": 60.0, "attack_min": 30, "attack_max": 45, "aggro_range": 200.0,
+		"max_hp": 4900, "move_speed": 60.0, "attack_min": 27, "attack_max": 40, "aggro_range": 200.0,
 		"xp_reward": 700, "gold_min": 20, "gold_max": 30, "loot_level": 10, "guaranteed_drop": "wardens_plate",
 	},
 	"hollow_king": {
 		"name": "Hollow King", "zone": "hollowed_vault", "sprite": "bandit", "tint": Color(0.5, 0.3, 0.65, 1.0), "sprite_size": 80.0,
-		"max_hp": 1800, "move_speed": 66.0, "attack_min": 38, "attack_max": 55, "aggro_range": 260.0,
+		"max_hp": 11700, "move_speed": 66.0, "attack_min": 32, "attack_max": 47, "aggro_range": 260.0,
 		"xp_reward": 1600, "gold_min": 40, "gold_max": 60, "loot_level": 10, "guaranteed_drop": "hollow_crown",
 		"mechanics": "hollow_king",
 	},

@@ -48,6 +48,10 @@ func start(hero_node: Node2D, gate_pos: Vector2) -> bool:
 		hero.party.append(ally)
 		pulled.append(ally)
 		GameState.log_event("%s answers the call" % ally.player_name)
+	# Level sync: everyone in the party comes in one level below the hero.
+	for ally in hero.party:
+		if is_instance_valid(ally):
+			ally.sync_to_level(int(hero.get("level")) - 1)
 	GameState.emit_signal("party_changed")
 	vault = (load(VAULT_SCENE) as PackedScene).instantiate()
 	vault.position = VAULT_ORIGIN
