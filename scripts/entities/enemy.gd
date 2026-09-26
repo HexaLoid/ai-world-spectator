@@ -21,6 +21,8 @@ const BOSS_EVENT_RANGE := 500.0
 ## When set, always drops this item on death instead of a random LootTable
 ## roll — used by elites to guarantee a worthwhile drop for the fight.
 @export var guaranteed_drop_id: String = ""
+## Boss mechanics id ("" = none); see BossMechanics.
+@export var mechanics: String = ""
 
 var hp: int
 var last_attack_time_ms: int = 0
@@ -57,6 +59,8 @@ func _ready() -> void:
 	health_bar.max_value = max_hp
 	health_bar.value = hp
 	sprite.modulate = sprite_tint
+	if mechanics != "":
+		add_child(BossMechanics.new())
 
 func is_boss() -> bool:
 	return guaranteed_drop_id != ""
@@ -159,6 +163,8 @@ func _play_animation(base_anim: String, facing: String) -> void:
 ## whichever adventurer is closest rather than only ever the spectated one,
 ## the same "populated world" illusion Erenshor's simulated players give.
 func _find_nearest_target() -> Node2D:
+	if GameState.in_dungeon:
+		return _find_target_with_threat()
 	var nearest: Node2D = null
 	var nearest_dist := INF
 	for node in get_tree().get_nodes_in_group("combat_targets"):
@@ -169,6 +175,17 @@ func _find_nearest_target() -> Node2D:
 			nearest_dist = d
 			nearest = node
 	return nearest
+
+func _find_target_with_threat() -> Node2D:
+	var nodes: Array = []
+	var candidates: Array = []
+	for node in get_tree().get_nodes_in_group("combat_targets"):
+		if not is_instance_valid(node) or node.is_dead:
+			continue
+		nodes.append(node)
+		candidates.append({"dist": global_position.distance_to(node.global_position), "is_tank": str(node.get("job_role")) == "tank"})
+	var index := ThreatRules.pick_target(candidates, aggro_range)
+	return null if index < 0 else nodes[index]
 
 func _attack(target: Node2D) -> void:
 	var now := int(game_time_ms)
@@ -227,7 +244,7 @@ func _drop_loot() -> void:
 	item.global_position = global_position
 	get_tree().current_scene.add_child.call_deferred(item)
 	if guaranteed_drop_id != "":
-		var bonus_id := LootTable.roll_boss_bonus(rng, loot_level, guaranteed_drop_id)
+		var bonus_id := LootTable.roll_boss_bonus(rng, loot_level, guaranteed_drop_id, is_in_group("dungeon_enemies"))
 		if bonus_id != "":
 			var bonus := item_scene.instantiate()
 			bonus.item_id = bonus_id

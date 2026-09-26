@@ -100,6 +100,11 @@ var job_states: Dictionary = {}
 var jobs_mastered: Array = []
 var wants_job_change: bool = false
 var job_change_reason: String = ""
+
+## The active job's role (tank/healer/melee/magic).
+var job_role: String:
+	get:
+		return String(class_def.get("role", ""))
 var _left_crystal_zone: bool = false
 ## Zones (other than the crystal's) entered since the last job change.
 var _zones_since_switch: Dictionary = {}

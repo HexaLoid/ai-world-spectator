@@ -113,6 +113,17 @@ signal job_changed(old_id: String, new_id: String, level: int)
 ## A job reached the level cap for the first time.
 signal job_mastered(job_id: String)
 
+## The dungeon (Hollowed Vault) can be entered (phase 3). The balance sim turns
+## this off unless it is measuring the feature (`dungeon=1`).
+var dungeon_enabled: bool = true
+## True while a DungeonRun is active: enemies then use ThreatRules.
+var in_dungeon: bool = false
+
+## kind: "enter", "warning", "clear" or "fail"; `text` is the dungeon or boss name.
+signal dungeon_event(kind: String, text: String)
+## A run ended: result is "cleared", "failed" or "timeout".
+signal dungeon_finished(result: String, duration_s: float)
+
 var character: Node2D = null
 var camera: Camera2D = null
 ## What the spectated character has discovered (see CodexState). Session only.
@@ -124,6 +135,7 @@ func reset_run() -> void:
 	journal = Journal.new()
 	character = null
 	camera = null
+	in_dungeon = false
 	Engine.time_scale = 1.0
 	user_time_scale = 1.0
 
