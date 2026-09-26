@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/job_crystal.gd" id="1_crystal"]
+
+[node name="JobCrystal" type="Node2D"]
+script = ExtResource("1_crystal")
