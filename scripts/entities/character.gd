@@ -116,8 +116,11 @@ func _ready() -> void:
 	GameState.character = self
 	add_to_group("combat_targets")
 	if character_class == "":
-		var class_ids := AbilityTable.CLASSES.keys()
-		character_class = class_ids[rng.randi_range(0, class_ids.size() - 1)]
+		if GameState.selected_job != "" and AbilityTable.CLASSES.has(GameState.selected_job):
+			character_class = GameState.selected_job
+		else:
+			var job_ids := AbilityTable.job_ids()
+			character_class = job_ids[rng.randi_range(0, job_ids.size() - 1)]
 	class_def = AbilityTable.CLASSES.get(character_class, {})
 	character_name = NameTable.pick(rng)
 	if character_trait == "" or not TraitTable.TRAITS.has(character_trait):
@@ -153,6 +156,7 @@ func _physics_process(delta: float) -> void:
 		GameState.emit_signal("character_state_changed", current_state)
 		action_label.text = STATE_DISPLAY_NAMES.get(current_state, current_state.capitalize())
 	_act(delta, context)
+	_try_ally_heal()
 
 func _facing_from_velocity(vel: Vector2) -> String:
 	if vel.length() < 1.0:
@@ -590,6 +594,10 @@ func _try_gap_closer(hostile: Node2D) -> bool:
 	global_position = hostile.global_position - to_hostile.normalized() * (ATTACK_RANGE * 0.9)
 	_gain_resource(float(def.get("resource_gain", 0.0)))
 	GameState.log_event("Uses %s on %s!" % [def.get("name", "an ability"), hostile.enemy_name])
+	var jump_mult := AbilityMath.jump_multiplier(def)
+	if jump_mult > 0.0:
+		var jump_roll := _roll_damage(attack_damage_min, attack_damage_max, jump_mult)
+		hostile.take_damage(int(jump_roll["damage"]), self, bool(jump_roll["is_crit"]))
 	return true
 
 ## Layers the class's non-gap-closer/self-heal abilities (a bonus-damage hit
@@ -626,11 +634,64 @@ func _use_bleed(hostile: Node2D, ability_id: String, def: Dictionary) -> void:
 func _use_melee_hit(hostile: Node2D, ability_id: String, def: Dictionary) -> void:
 	_spend_resource(float(def.get("resource_cost", 0.0)))
 	_start_cooldown(ability_id, int(def.get("cooldown_ms", 0)))
-	var roll := _roll_damage(attack_damage_min, attack_damage_max, float(def.get("damage_multiplier", 1.0)))
-	var crit_suffix := " (Critical!)" if roll["is_crit"] else ""
-	GameState.log_event("%s hits %s for %d!%s" % [def.get("name", "An ability"), hostile.enemy_name, roll["damage"], crit_suffix])
-	hostile.take_damage(roll["damage"], self, roll["is_crit"])
+	var count := AbilityMath.hit_count(def)
+	var rolls: Array = []
+	var total := 0
+	var any_crit := false
+	for i in range(count):
+		var roll := _roll_damage(attack_damage_min, attack_damage_max, float(def.get("damage_multiplier", 1.0)))
+		rolls.append(roll)
+		total += int(roll["damage"])
+		any_crit = any_crit or bool(roll["is_crit"])
+	var crit_suffix := " (Critical!)" if any_crit else ""
+	if count == 1:
+		GameState.log_event("%s hits %s for %d!%s" % [def.get("name", "An ability"), hostile.enemy_name, total, crit_suffix])
+	else:
+		GameState.log_event("%s hits %s %d times for %d!%s" % [def.get("name", "An ability"), hostile.enemy_name, count, total, crit_suffix])
+	for roll in rolls:
+		if not is_instance_valid(hostile) or hostile.is_dead:
+			break
+		hostile.take_damage(int(roll["damage"]), self, bool(roll["is_crit"]))
 	attack_anim_until_ms = game_time_ms + ATTACK_ANIM_DURATION_MS
+
+## White Mage's Cure: heals the lowest-HP member among the character and its
+## party when one is below the ability's threshold. No-op for jobs without an
+## ally_heal ability (no rng use, no state change).
+func _try_ally_heal() -> void:
+	var ability_id := _find_class_ability_id("ally_heal")
+	if ability_id == "":
+		return
+	var def: Dictionary = AbilityTable.ABILITIES.get(ability_id, {})
+	if not _ability_ready(ability_id, float(def.get("resource_cost", 0.0))):
+		return
+	var members: Array = [self]
+	for ally in party:
+		if is_instance_valid(ally) and not ally.is_dead:
+			members.append(ally)
+	var hps: Array = []
+	var max_hps: Array = []
+	for member in members:
+		hps.append(member.hp)
+		max_hps.append(member.max_hp)
+	var index := AbilityMath.pick_heal_target(hps, max_hps, float(def.get("heal_below", 0.65)))
+	if index < 0:
+		return
+	_spend_resource(float(def.get("resource_cost", 0.0)))
+	_start_cooldown(ability_id, int(def.get("cooldown_ms", 0)))
+	var target = members[index]
+	target.receive_heal(AbilityMath.heal_amount(int(max_hps[index]), float(def.get("heal_percent", 0.0))))
+	var who: String = "herself" if target == self else String(target.player_name)
+	GameState.log_event("%s heals %s" % [def.get("name", "Cure"), who])
+
+## Restores HP from an ally's heal (see SimulatedPlayer's healer role).
+func receive_heal(amount: int) -> void:
+	if is_dead or amount <= 0:
+		return
+	var old_hp := hp
+	hp = mini(max_hp, hp + amount)
+	GameState.emit_signal("character_hp_changed", hp, max_hp)
+	if hp > old_hp:
+		GameState.emit_signal("damage_dealt", global_position, hp - old_hp, true)
 
 ## Checked at the start of the "flee"/"rest" states rather than folded into
 ## AIDecision, so the FSM's pure state-selection logic stays untouched — this
@@ -668,6 +729,7 @@ func _recompute_stats() -> void:
 	hp = mini(hp, max_hp)
 
 func _gain_gold(amount: int) -> void:
+	amount = roundi(float(amount) * float(class_def.get("gold_bonus_mult", 1.0)))
 	gold += amount
 	gold_earned += amount
 	GameState.emit_signal("gold_changed", gold)
@@ -691,6 +753,8 @@ func get_sheet_snapshot() -> Dictionary:
 		"trait_title": TraitTable.title_of(character_trait),
 		"level": level,
 		"class_name": character_class,
+		"job_name": AbilityTable.job_name(character_class),
+		"role": String(class_def.get("role", "")),
 		"zone_name": String(ZoneTable.ZONES[current_zone_id]["name"]),
 		"xp": xp - prev_threshold,
 		"xp_next": 0 if next_threshold <= 0 else next_threshold - prev_threshold,

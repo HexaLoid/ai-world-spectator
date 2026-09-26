@@ -98,6 +98,8 @@ var user_time_scale: float = 1.0
 ## Visual effects (flash, shake, slow-mo, camera zoom). The balance sim turns
 ## this off so its results never depend on presentation.
 var fx_enabled: bool = true
+## Job picked on the character select screen ("" until chosen).
+var selected_job: String = ""
 
 var character: Node2D = null
 var camera: Camera2D = null

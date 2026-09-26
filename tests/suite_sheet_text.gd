@@ -83,4 +83,11 @@ func run(t) -> void:
 	var plain := _full_snapshot()
 	plain["character_name"] = "Aldric"
 	t.check(not SheetText.build(plain).contains("the Cautious"), "no trait title without the key")
+	# job name replaces the capitalized class id when present
+	var job_snap := _full_snapshot()
+	job_snap["class_name"] = "mage"
+	job_snap["job_name"] = "Black Mage"
+	t.check(SheetText.build(job_snap).contains("Level 3 Black Mage"), "sheet shows the job name")
+	var id_snap := _full_snapshot()
+	t.check(SheetText.build(id_snap).contains("Level 3 Warrior"), "no job_name: capitalized class id as before")
 	t.done()

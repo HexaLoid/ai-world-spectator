@@ -21,7 +21,9 @@ static func build(snap: Dictionary) -> String:
 		var trait_title := String(snap.get("trait_title", ""))
 		lines.append("[b]%s[/b]" % (character_name if trait_title == "" else "%s %s" % [character_name, trait_title]))
 
-	var class_text := String(snap.get("class_name", "")).capitalize()
+	var class_text := String(snap.get("job_name", ""))
+	if class_text == "":
+		class_text = String(snap.get("class_name", "")).capitalize()
 	if class_text == "":
 		class_text = "Adventurer"
 	lines.append("[b]Level %d %s[/b] - %s" % [int(snap.get("level", 1)), class_text, String(snap.get("zone_name", "?"))])

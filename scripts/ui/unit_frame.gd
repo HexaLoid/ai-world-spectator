@@ -76,7 +76,7 @@ func _on_xp_changed(xp: int) -> void:
 func _on_leveled_up(level: int) -> void:
 	var class_name_display := ""
 	if GameState.character:
-		class_name_display = " %s" % GameState.character.character_class.capitalize()
+		class_name_display = " %s" % AbilityTable.job_name(GameState.character.character_class)
 	level_label.text = "Level %d%s" % [level, class_name_display]
 
 func _build_slots() -> void:
