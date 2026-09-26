@@ -1,10 +1,10 @@
 extends RefCounted
 
-const CONTEXT := {"name": "Aldric", "zone": "Mirewater Swamp", "boss": "the Crypt Lord", "level": 5, "item": "Frostbrand", "killer": "the Crypt Lord", "quest": "Cull the Wolves", "job": "White Mage"}
+const CONTEXT := {"name": "Aldric", "zone": "Mirewater Swamp", "boss": "the Crypt Lord", "level": 5, "item": "Frostbrand", "killer": "the Crypt Lord", "quest": "Cull the Wolves", "job": "White Mage", "dungeon": "the Hollowed Vault"}
 const ROLLS := [0.0, 0.3, 0.59, 0.6, 0.85, 0.999]
 
 func run(t) -> void:
-	t.check_eq(NarratorLines.EVENTS.size(), 11, "eleven narrated events")
+	t.check_eq(NarratorLines.EVENTS.size(), 14, "fourteen narrated events")
 	for event in NarratorLines.EVENTS:
 		for trait_id in TraitTable.ids():
 			for roll in ROLLS:
@@ -34,4 +34,7 @@ func run(t) -> void:
 	t.check_eq(NarratorLines.line_for("level_up", "cautious", CONTEXT, 0.9), NarratorLines.line_for("level_up", "steady", CONTEXT, 0.9), "high roll gives the same neutral line for any trait")
 	t.check(NarratorLines.line_for("job_change", "steady", CONTEXT, 0.1).contains("White Mage"), "job change line names the job")
 	t.check(NarratorLines.line_for("job_change", "explorer", CONTEXT, 0.1) != NarratorLines.line_for("job_change", "steady", CONTEXT, 0.1), "explorer has its own job change line")
+	t.check(NarratorLines.line_for("dungeon_enter", "steady", CONTEXT, 0.1).contains("Hollowed Vault"), "dungeon entry line names the dungeon")
+	t.check(NarratorLines.line_for("dungeon_clear", "steady", CONTEXT, 0.1).contains("Hollowed Vault"), "clear line names the dungeon")
+	t.check(NarratorLines.line_for("dungeon_fail", "steady", CONTEXT, 0.1) != "", "fail line exists")
 	t.done()

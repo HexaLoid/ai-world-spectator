@@ -3,18 +3,19 @@ extends RefCounted
 
 ## Story lines for key moments, chosen per event and personality trait. Pure:
 ## `line_for` returns text, `NarratorDirector` decides when to speak.
-## Placeholders: {name} {zone} {boss} {level} {item} {killer} {quest}.
+## Placeholders: {name} {zone} {boss} {level} {item} {killer} {quest} {job} {dungeon}.
 ## Lines are plain text (no BBCode, no % characters).
 
 ## Below this roll a trait-specific line is used (when the event has one).
 const TRAIT_CHANCE := 0.6
 
 const EVENTS := ["zone_arrive", "boss_engaged", "boss_victory", "boss_fled", "boss_defeated",
-	"level_up", "epic_loot", "low_hp", "death", "quest_done", "job_change"]
+	"level_up", "epic_loot", "low_hp", "death", "quest_done", "job_change",
+	"dungeon_enter", "dungeon_clear", "dungeon_fail"]
 
 const FALLBACKS := {
 	"name": "The hero", "zone": "the wilds", "boss": "the beast", "level": "?",
-	"item": "a relic", "killer": "an unseen foe", "quest": "a task", "job": "a new calling",
+	"item": "a relic", "killer": "an unseen foe", "quest": "a task", "job": "a new calling", "dungeon": "the dungeon",
 }
 
 const TEMPLATES := {
@@ -94,6 +95,27 @@ const TEMPLATES := {
 		"reckless": ["{quest}: done, and quickly."],
 		"greedy": ["{quest} is done. Payment, please."],
 		"explorer": ["{quest} is done. On to the next horizon."],
+	},
+	"dungeon_enter": {
+		"neutral": ["The party gathers and steps through the gate into {dungeon}.", "{name} leads four companions into {dungeon}."],
+		"cautious": ["{name} counts the party twice before entering {dungeon}."],
+		"reckless": ["{name} is through the gate into {dungeon} before the others can speak."],
+		"greedy": ["{dungeon} must be full of treasure. {name} goes in first."],
+		"explorer": ["A place no map shows: {name} enters {dungeon}."],
+	},
+	"dungeon_clear": {
+		"neutral": ["{dungeon} is cleared. The party walks out victorious.", "Silence falls in {dungeon}. It is done."],
+		"cautious": ["{dungeon} is cleared, and everyone is still standing. {name} exhales."],
+		"reckless": ["{dungeon} is cleared. {name} wants to do it again."],
+		"greedy": ["{dungeon} is cleared, and the loot is even better than hoped."],
+		"explorer": ["{dungeon} is cleared. {name} is already thinking about the next one."],
+	},
+	"dungeon_fail": {
+		"neutral": ["{dungeon} was too much. The party retreats.", "The run in {dungeon} ends in defeat."],
+		"cautious": ["{name} should have known better than to trust the odds in {dungeon}."],
+		"reckless": ["{name} pushed too far in {dungeon}."],
+		"greedy": ["{dungeon} keeps its treasure, this time."],
+		"explorer": ["{dungeon} was a road too far, for now."],
 	},
 }
 

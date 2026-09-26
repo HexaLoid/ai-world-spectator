@@ -10,6 +10,8 @@ const FADE_S := 0.6
 const ENGAGED_COLOR := Color(1.0, 0.85, 0.3, 1.0)
 const VICTORY_COLOR := Color(1.0, 0.9, 0.35, 1.0)
 const DEFEATED_COLOR := Color(1.0, 0.35, 0.3, 1.0)
+const DUNGEON_COLOR := Color(0.7, 0.5, 1.0, 1.0)
+const WARNING_HOLD_S := 0.9
 const FLED_COLOR := Color(0.75, 0.85, 1.0, 1.0)
 
 var boss: Node2D = null
@@ -84,6 +86,7 @@ func _ready() -> void:
 
 	GameState.combat_target_changed.connect(_on_target_changed)
 	GameState.boss_event.connect(_on_boss_event)
+	GameState.dungeon_event.connect(_on_dungeon_event)
 
 func _process(_delta: float) -> void:
 	var character = GameState.character
@@ -128,13 +131,24 @@ func _on_boss_event(kind: String, boss_name: String) -> void:
 		"fled":
 			_show_banner("Fled from %s" % boss_name, FLED_COLOR)
 
-func _show_banner(text: String, color: Color) -> void:
+func _on_dungeon_event(kind: String, text: String) -> void:
+	match kind:
+		"enter":
+			_show_banner("ENTERING THE HOLLOWED VAULT", DUNGEON_COLOR)
+		"warning":
+			_show_banner("%s!" % text.to_upper(), DEFEATED_COLOR, WARNING_HOLD_S)
+		"clear":
+			_show_banner("DUNGEON CLEARED", VICTORY_COLOR)
+		"fail":
+			_show_banner("DUNGEON FAILED", DEFEATED_COLOR)
+
+func _show_banner(text: String, color: Color, hold: float = HOLD_S) -> void:
 	if banner_tween != null and banner_tween.is_valid():
 		banner_tween.kill()
 	banner.text = text
 	banner.modulate = color
 	banner_tween = create_tween()
-	banner_tween.tween_interval(HOLD_S)
+	banner_tween.tween_interval(hold)
 	banner_tween.tween_property(banner, "modulate:a", 0.0, FADE_S)
 
 var slow_active := false

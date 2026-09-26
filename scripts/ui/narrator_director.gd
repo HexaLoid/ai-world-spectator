@@ -26,6 +26,7 @@ func _ready() -> void:
 		visited[zone_id] = true
 		_say("zone_arrive", {"zone": String(ZoneTable.ZONES[zone_id]["name"])}))
 	GameState.boss_event.connect(_on_boss_event)
+	GameState.dungeon_event.connect(_on_dungeon_event)
 	GameState.job_changed.connect(func(_old_id: String, new_id: String, new_level: int): _say("job_change", {"job": AbilityTable.job_name(new_id), "level": new_level}))
 	GameState.character_leveled_up.connect(func(level: int): _say("level_up", {"level": level}))
 	GameState.item_acquired.connect(func(item_name: String, rarity: String):
@@ -54,11 +55,20 @@ func _on_boss_event(kind: String, boss_name: String) -> void:
 		if _say(event, {"boss": boss_name}) and event == "boss_defeated":
 			suppress_death_until_ms = game_time_ms + 1500.0
 
+func _on_dungeon_event(kind: String, _text: String) -> void:
+	var event := ""
+	match kind:
+		"enter": event = "dungeon_enter"
+		"clear": event = "dungeon_clear"
+		"fail": event = "dungeon_fail"
+	if event != "":
+		_say(event, {"dungeon": "the Hollowed Vault"})
+
 func _say(event: String, context: Dictionary) -> bool:
 	var leader = GameState.character
 	if leader == null or not is_instance_valid(leader):
 		return false
-	var bypass := event == "death" or event.begins_with("boss_")
+	var bypass := event == "death" or event.begins_with("boss_") or event.begins_with("dungeon_")
 	if not bypass and game_time_ms - last_line_ms < COOLDOWN_MS:
 		return false
 	var ctx := context.duplicate()

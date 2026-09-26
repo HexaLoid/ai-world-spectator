@@ -11,6 +11,7 @@ func _ready() -> void:
 		_add("zone", "First visit to %s" % ZoneTable.ZONES[c.current_zone_id]["name"])
 	GameState.zone_changed.connect(_on_zone_changed)
 	GameState.boss_event.connect(_on_boss_event)
+	GameState.dungeon_event.connect(_on_dungeon_event)
 	GameState.character_leveled_up.connect(func(level: int): _add("level", "Reached level %d" % level))
 	GameState.item_acquired.connect(_on_item_acquired)
 	GameState.quest_completed.connect(func(quest_name: String): _add("quest", "Completed %s" % quest_name))
@@ -44,6 +45,15 @@ func _on_boss_event(kind: String, boss_name: String) -> void:
 			_add("boss", "Defeated %s" % boss_name)
 		"fled":
 			_add("boss", "Fled from %s" % boss_name)
+
+func _on_dungeon_event(kind: String, _text: String) -> void:
+	match kind:
+		"enter":
+			_add("dungeon", "Entered the Hollowed Vault")
+		"clear":
+			_add("dungeon", "Cleared the Hollowed Vault")
+		"fail":
+			_add("dungeon", "Fell in the Hollowed Vault")
 
 func _on_item_acquired(item_name: String, rarity: String) -> void:
 	if rarity == "epic":
