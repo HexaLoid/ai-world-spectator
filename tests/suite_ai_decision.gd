@@ -46,4 +46,28 @@ func run(t) -> void:
 	reckless_low["flee_hp"] = r_flee
 	reckless_low["rest_hp"] = r_rest
 	t.check_eq(AIDecision.resolve_state(reckless_low)["state"], "flee", "below reckless flee HP: finally flees")
+
+	# job_change: below flee/rest/combat and the quest board, above chase
+	var crystal := _ctx(1.0, false)
+	crystal["job_change_ready"] = true
+	t.check_eq(AIDecision.resolve_state(crystal)["state"], "job_change", "wants a job change, nothing else to do: job_change")
+	var crystal_chase := _ctx(1.0, true)
+	crystal_chase["job_change_ready"] = true
+	t.check_eq(AIDecision.resolve_state(crystal_chase)["state"], "job_change", "job_change beats chase")
+	var crystal_fight := _ctx(1.0, true, true)
+	crystal_fight["job_change_ready"] = true
+	t.check_eq(AIDecision.resolve_state(crystal_fight)["state"], "combat", "combat beats job_change")
+	var crystal_hurt := _ctx(0.05, true, true)
+	crystal_hurt["job_change_ready"] = true
+	t.check_eq(AIDecision.resolve_state(crystal_hurt)["state"], "flee", "flee beats job_change")
+	var crystal_rest := _ctx(0.2, false)
+	crystal_rest["job_change_ready"] = true
+	t.check_eq(AIDecision.resolve_state(crystal_rest)["state"], "rest", "rest beats job_change")
+	var crystal_quest := _ctx(1.0, false)
+	crystal_quest["job_change_ready"] = true
+	crystal_quest["quest_giver_in_zone"] = true
+	crystal_quest["quest_ready"] = true
+	t.check_eq(AIDecision.resolve_state(crystal_quest)["state"], "quest", "a quest to turn in comes first")
+	t.check(String(AIDecision.resolve_state(crystal)["reason"]).contains("crystal"), "the reason mentions the crystal")
+	t.check_eq(AIDecision.resolve_state(_ctx(1.0, false))["state"], "wander", "no key: unchanged")
 	t.done()
