@@ -33,6 +33,8 @@ const SUITES := [
 	"res://tests/suite_recap_text.gd",
 	"res://tests/suite_ability_math.gd",
 	"res://tests/suite_job_table.gd",
+	"res://tests/suite_job_state.gd",
+	"res://tests/suite_job_switch.gd",
 ]
 
 var checks := 0
