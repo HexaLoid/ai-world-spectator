@@ -13,9 +13,10 @@ const NUDGE_WINDOW := 2
 ## "loop" trigger: this many different zones must have been visited since the
 ## last change, so wandering across the meadow's border is not a loop.
 const LOOP_MIN_ZONES := 3
-## "loop" trigger: the active job must be at least this level (nearly done),
-## otherwise a short loop would swap jobs before any of them got trained.
-const LOOP_MIN_LEVEL := 8
+## "loop" trigger: the active job must be at this level. Measured with the sim:
+## switching earlier (level 8) keeps every job stuck at levels 6 to 8, because the
+## best job never rises and each new job starts two levels below it.
+const LOOP_MIN_LEVEL := LevelingSystem.MAX_LEVEL
 
 static func catch_up_level(levels: Dictionary) -> int:
 	var best := 1
