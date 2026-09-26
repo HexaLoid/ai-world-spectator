@@ -77,30 +77,37 @@ func _physics_process(delta: float) -> void:
 	if not running:
 		return
 	run_time_s += delta
-	if not is_instance_valid(hero) or bool(hero.get("is_dead")):
-		_end_run("failed")
-	elif clear_timer_s >= 0.0:
+	if clear_timer_s >= 0.0:
+		# Once the final boss is down the run is a clear, whatever happens next.
 		clear_timer_s -= delta
 		if clear_timer_s <= 0.0:
 			_end_run("cleared")
+	elif not is_instance_valid(hero) or bool(hero.get("is_dead")):
+		_end_run("failed")
 	elif run_time_s >= RUN_TIMEOUT_S:
 		_end_run("timeout")
 
 func _on_enemy_died(enemy: Node2D) -> void:
 	if running and clear_timer_s < 0.0 and is_instance_valid(enemy) and enemy.is_in_group("dungeon_final"):
 		clear_timer_s = CLEAR_DELAY_S
-		hero.grant_dungeon_reward(CLEAR_BONUS_XP, CLEAR_BONUS_GOLD)
+		if is_instance_valid(hero):
+			hero.grant_dungeon_reward(CLEAR_BONUS_XP, CLEAR_BONUS_GOLD)
 		GameState.log_event("The Hollow King falls: dungeon cleared!")
-		GameState.emit_signal("dungeon_event", "clear", "Hollowed Vault")
+		# The add phase's wraiths must not keep fighting (or block the loot walk).
+		for other in get_tree().get_nodes_in_group("dungeon_enemies"):
+			if is_instance_valid(other) and other != enemy:
+				other.queue_free()
 
 func _end_run(result: String) -> void:
 	running = false
 	for enemy in get_tree().get_nodes_in_group("dungeon_enemies"):
 		if is_instance_valid(enemy):
 			enemy.queue_free()
+	var leftover_spot := gate_position + Vector2(0.0, 60.0)
 	for item in get_tree().get_nodes_in_group("items"):
+		# Drops nobody picked up move to the gate instead of vanishing.
 		if is_instance_valid(item) and item.global_position.x > LEFTOVER_ITEM_X:
-			item.queue_free()
+			item.global_position = leftover_spot + Vector2(randf_range(-24.0, 24.0), randf_range(-24.0, 24.0))
 	if is_instance_valid(vault):
 		vault.queue_free()
 	GameState.in_dungeon = false
@@ -123,7 +130,10 @@ func _end_run(result: String) -> void:
 				slot += 1
 	pulled.clear()
 	GameState.emit_signal("party_changed")
-	if result != "cleared":
+	if result == "cleared":
+		# Announced on the way out, after the boss's own VICTORY banner has faded.
+		GameState.emit_signal("dungeon_event", "clear", "Hollowed Vault")
+	else:
 		GameState.log_event("The dungeon run ended (%s)" % result)
 		GameState.emit_signal("dungeon_event", "fail", "Hollowed Vault")
 	GameState.emit_signal("dungeon_finished", result, run_time_s)

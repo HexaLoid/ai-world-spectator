@@ -396,7 +396,7 @@ func _act(delta: float, _context: Dictionary) -> void:
 	# character outside its "home" zone's own bounds without that meaning
 	# it left the world. Clamping to current_zone_id's bounds here instead
 	# would snap it straight back across the map the instant that happens.
-	global_position = global_position.clamp(ZoneTable.WORLD_BOUNDS_MIN, ZoneTable.WORLD_BOUNDS_MAX)
+	global_position = global_position.clamp(ZoneTable.WORLD_BOUNDS_MIN, ZoneTable.world_bounds_max(GameState.in_dungeon))
 	_sync_current_zone()
 
 func _move_toward(direction: Vector2, speed: float) -> void:
@@ -969,7 +969,7 @@ func _vault_gate_here() -> Node2D:
 	return null
 
 func _dungeon_ready() -> bool:
-	if not GameState.dungeon_enabled or GameState.in_dungeon:
+	if not GameState.dungeon_enabled or GameState.in_dungeon or wants_job_change:
 		return false
 	if level < DUNGEON_MIN_LEVEL or float(hp) < float(max_hp) * 0.7 or game_time_ms < dungeon_cooldown_until_ms:
 		return false

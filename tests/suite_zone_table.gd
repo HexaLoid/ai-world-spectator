@@ -32,7 +32,8 @@ func run(t) -> void:
 		t.check(min_level <= LevelingSystem.MAX_LEVEL, "%s min_level is reachable" % id)
 		previous_min = min_level
 		t.check(bmin.x >= ZoneTable.WORLD_BOUNDS_MIN.x and bmin.y >= ZoneTable.WORLD_BOUNDS_MIN.y, "%s min bounds inside the world" % id)
-		t.check(bmax.x <= ZoneTable.WORLD_BOUNDS_MAX.x and bmax.y <= ZoneTable.WORLD_BOUNDS_MAX.y, "%s max bounds inside the world" % id)
+		var world_max: Vector2 = ZoneTable.world_bounds_max(bool(zone.get("instanced", false)))
+		t.check(bmax.x <= world_max.x and bmax.y <= world_max.y, "%s max bounds inside the world" % id)
 		t.check(ZoneTable.stay_duration_ms(id) > 0.0, "%s has a stay duration" % id)
 
 	# zones must not overlap each other

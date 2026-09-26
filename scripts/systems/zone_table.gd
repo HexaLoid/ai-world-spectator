@@ -71,7 +71,12 @@ const TRAVEL_ORDER := ["thornfield_meadow", "blackthorn_forest", "sundered_crypt
 ## is driven by the two larger outdoor zones; Sundered Crypt's smaller room
 ## fits within it.
 const WORLD_BOUNDS_MIN := Vector2(-380, -280)
-const WORLD_BOUNDS_MAX := Vector2(12750, 280)
+const WORLD_BOUNDS_MAX := Vector2(9180, 280)
+## Wider bounds used only while a dungeon run is active (the vault lies past the open world).
+const DUNGEON_BOUNDS_MAX := Vector2(12750, 280)
+
+static func world_bounds_max(in_dungeon: bool) -> Vector2:
+	return DUNGEON_BOUNDS_MAX if in_dungeon else WORLD_BOUNDS_MAX
 
 ## Every zone in display order: the travel loop, then instanced zones (dungeons).
 static func all_zone_order() -> Array:

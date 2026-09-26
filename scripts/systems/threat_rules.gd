@@ -5,7 +5,7 @@ extends RefCounted
 ## enemy's aggro range beats a nearer non-tank; otherwise the nearest wins.
 ## `candidates` is an array of {"dist": float, "is_tank": bool}; returns an
 ## index or -1 for none.
-const TANK_PULL_MULT := 1.3
+const TANK_PULL_MULT := 1.0
 
 static func pick_target(candidates: Array, aggro_range: float) -> int:
 	var nearest := -1

@@ -163,7 +163,7 @@ func _play_animation(base_anim: String, facing: String) -> void:
 ## whichever adventurer is closest rather than only ever the spectated one,
 ## the same "populated world" illusion Erenshor's simulated players give.
 func _find_nearest_target() -> Node2D:
-	if GameState.in_dungeon:
+	if GameState.in_dungeon and is_in_group("dungeon_enemies"):
 		return _find_target_with_threat()
 	var nearest: Node2D = null
 	var nearest_dist := INF

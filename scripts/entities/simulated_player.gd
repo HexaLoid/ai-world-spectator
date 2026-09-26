@@ -229,7 +229,7 @@ func _act(delta: float, _context: Dictionary, preferred_hostile: Node2D) -> void
 	# into Sundered Crypt); ungrouped ones stay clamped to their own zone,
 	# same as before.
 	if group_leader != null and is_instance_valid(group_leader):
-		global_position = global_position.clamp(ZoneTable.WORLD_BOUNDS_MIN, ZoneTable.WORLD_BOUNDS_MAX)
+		global_position = global_position.clamp(ZoneTable.WORLD_BOUNDS_MIN, ZoneTable.world_bounds_max(GameState.in_dungeon))
 	else:
 		var zone: Dictionary = ZoneTable.ZONES[home_zone_id]
 		global_position = global_position.clamp(zone["bounds_min"], zone["bounds_max"])
