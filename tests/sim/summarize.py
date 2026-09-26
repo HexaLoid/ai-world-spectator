@@ -49,7 +49,8 @@ def parse_line(line):
 def load_run(path, cutoff_s):
     run = {"path": path, "level_t": {1: 0.0}, "deaths": [], "zone_arrive": [],
            "boss_kills": [], "quests": [], "snaps": [], "summary": None,
-           "info": {}, "end_t": 0.0, "level": 1, "gold": 0, "fights": []}
+           "info": {}, "end_t": 0.0, "level": 1, "gold": 0, "fights": [],
+           "jobs": [], "level_events": []}
     with open(path, encoding="utf-8", errors="replace") as fh:
         for line in fh:
             if not line.startswith("SIM|"):
@@ -70,6 +71,9 @@ def load_run(path, cutoff_s):
             if kind == "level_up":
                 lvl = int(f["level"])
                 run["level_t"].setdefault(lvl, t)
+                run["level_events"].append((t, lvl))
+            elif kind == "job":
+                run["jobs"].append((t, f.get("from", ""), f.get("to", ""), int(f.get("level", "1"))))
             elif kind == "death":
                 run["deaths"].append((t, f.get("zone", "?"), f.get("last_target", "")))
             elif kind == "zone_arrive":
@@ -87,6 +91,24 @@ def load_run(path, cutoff_s):
             elif kind == "summary":
                 run["summary"] = f
     return run
+
+
+def switch_outcomes(run):
+    """For each job change: did the new job reach level 10 before the next change (or the end), and when."""
+    outcomes = []
+    jobs = run["jobs"]
+    for i, (t0, _from, to, lvl) in enumerate(jobs):
+        t1 = jobs[i + 1][0] if i + 1 < len(jobs) else run["end_t"]
+        reached = None
+        if lvl >= MAX_LEVEL:
+            reached = 0.0
+        else:
+            for (t, level) in run["level_events"]:
+                if t0 < t <= t1 and level >= MAX_LEVEL:
+                    reached = t - t0
+                    break
+        outcomes.append(reached)
+    return outcomes
 
 
 def zone_times(run, cutoff_s=None):
@@ -190,7 +212,8 @@ def main(argv):
             ZONE_SHORT[highest_zone(r)], len(r["quests"]), r["gold"]])
         per_class[cls].append({"lt": lt, "deaths": len(r["deaths"]), "d10": d10, "level": r["level"],
                                "zt": zt, "gold": r["gold"], "spiral": spiral_count(r),
-                               "top": ZONE_ORDER.index(highest_zone(r)), "dz": dz})
+                               "top": ZONE_ORDER.index(highest_zone(r)), "dz": dz,
+                               "jobs": len(r["jobs"]), "switch": switch_outcomes(r)})
     print(table(headers, rows, args.markdown))
     print()
 
@@ -215,6 +238,10 @@ def main(argv):
         for it in items:
             tops[ZONE_SHORT[ZONE_ORDER[it["top"]]]] += 1
         agg_rows.append([cls, n, "highest zone reached", " ".join(f"{k}:{v}" for k, v in tops.items())])
+        agg_rows.append([cls, n, "job switches", stats([it["jobs"] for it in items])])
+        outs = [o for it in items for o in it["switch"]]
+        ok = sum(1 for o in outs if o is not None and o <= 1500.0)
+        agg_rows.append([cls, n, "switches reaching L10 within 25 min", f"{ok}/{len(outs)}"])
     print(table(agg_headers, agg_rows, args.markdown))
     if args.fights:
         print()

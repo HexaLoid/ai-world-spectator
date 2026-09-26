@@ -52,6 +52,7 @@ func _ready() -> void:
 	GameState.character_equipment_changed.connect(_on_equipment_changed)
 	GameState.character_xp_changed.connect(_on_xp_changed)
 	GameState.combat_target_changed.connect(_on_target_changed)
+	GameState.job_changed.connect(_on_job_changed)
 	if trace_damage:
 		GameState.damage_dealt.connect(func(pos: Vector2, amount: int, is_heal: bool) -> void:
 			_emit("dmg", {"amount": amount, "heal": int(is_heal), "x": roundi(pos.x), "y": roundi(pos.y),
@@ -154,7 +155,10 @@ func _summary() -> void:
 
 func _on_level_up(level: int) -> void:
 	var ch := _ch()
-	_emit("level_up", {"level": level, "zone": ch.current_zone_id, "deaths": ch.deaths})
+	_emit("level_up", {"level": level, "zone": ch.current_zone_id, "deaths": ch.deaths, "job": ch.character_class})
+
+func _on_job_changed(old_id: String, new_id: String, new_level: int) -> void:
+	_emit("job", {"from": old_id, "to": new_id, "level": new_level})
 
 func _on_zone_changed(zone_id: String) -> void:
 	var ch := _ch()
